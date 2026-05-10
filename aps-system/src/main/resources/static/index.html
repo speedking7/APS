@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>APS 高级计划排程系统 · 原型导航</title>
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=satoshi:400,500,700,900|instrument-sans:400,500,600|geist:400,500,600,700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --color-primary:#0057b8;
+  --color-secondary:#FF6B35;
+  --color-accent:#00875A;
+  --color-neutral-050:#f1f2f3;
+  --color-neutral-100:#fafbfc;
+  --color-neutral-200:#c1c6c8;
+  --color-neutral-400:#8A96A8;
+  --color-neutral-600:#5A6B7D;
+  --color-neutral-800:#3d3f40;
+  --color-success:#4caf50;
+  --color-warning:#fbc02d;
+  --color-error:#f44339;
+  --color-info:#03a9f4;
+  --font-display:'Satoshi',-apple-system,sans-serif;
+  --font-body:'Instrument Sans',-apple-system,sans-serif;
+  --font-data:'Geist',-apple-system,sans-serif;
+  --spacing-2xs:4px;--spacing-xs:8px;--spacing-sm:12px;
+  --spacing-md:16px;--spacing-lg:24px;--spacing-xl:32px;
+  --radius-sm:4px;--radius-md:8px;--radius-lg:12px;
+  --bg-sidebar:#1c2333;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(--color-neutral-800);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* sidebar */
+.sidebar{
+  width:240px;flex-shrink:0;
+  background:var(--bg-sidebar);
+  color:#c8d0da;
+  display:flex;flex-direction:column;
+  border-right:1px solid rgba(255,255,255,.05);
+  position:fixed;left:0;top:0;bottom:0;overflow-y:auto;
+}
+.sidebar-logo{
+  height:64px;display:flex;align-items:center;
+  padding:0 18px;gap:11px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  flex-shrink:0;
+}
+.logo-mark{
+  width:34px;height:34px;border-radius:8px;
+  background:var(--color-primary);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:13px;font-weight:900;
+  color:#fff;letter-spacing:-.5px;
+  box-shadow:0 4px 12px rgba(0,87,184,.4);
+}
+.logo-text{font-family:var(--font-display);font-size:14px;font-weight:700;color:#f0f4f8;letter-spacing:-.2px}
+.logo-sub{font-size:9px;color:#6b7a8d;letter-spacing:.1em;margin-top:2px}
+
+.nav-group{padding:14px 0 6px}
+.nav-group-label{
+  padding:6px 18px;font-family:var(--font-data);
+  font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:#6b7a8d;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 18px;cursor:pointer;
+  color:#c8d0da;font-size:13px;
+  text-decoration:none;
+  transition:all .12s;position:relative;
+}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav-item.active{background:rgba(0,87,184,.22);color:#78b4ff}
+.nav-item.active::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;background:var(--color-primary);
+}
+.nav-item .ni{width:16px;flex-shrink:0;text-align:center;font-size:13px;opacity:.75}
+.nav-item.active .ni{opacity:1}
+
+/* main */
+.main{flex:1;margin-left:240px;display:flex;flex-direction:column;min-height:100vh}
+.topbar{
+  height:52px;background:#fff;border-bottom:1px solid var(--color-neutral-200);
+  display:flex;align-items:center;padding:0 28px;gap:14px;flex-shrink:0;
+}
+.crumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-400)}
+.crumb b{font-weight:600;color:var(--color-neutral-800);font-family:var(--font-display)}
+.crumb .sep{opacity:.4}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.version-pill{
+  font-size:11px;font-family:var(--font-data);
+  padding:3px 9px;border-radius:99px;
+  background:rgba(0,135,90,.1);color:var(--color-accent);
+  font-weight:600;letter-spacing:.04em;
+}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;font-family:var(--font-display)}
+
+/* content */
+.content{padding:32px 36px;flex:1}
+.hero{margin-bottom:32px}
+.hero h1{
+  font-family:var(--font-display);font-size:30px;font-weight:800;
+  color:var(--color-neutral-800);letter-spacing:-.5px;margin-bottom:8px;
+}
+.hero h1 .accent{color:var(--color-accent)}
+.hero p{font-size:14px;color:var(--color-neutral-600);max-width:640px;line-height:1.7}
+.hero-stats{display:flex;gap:32px;margin-top:18px;padding-top:18px;border-top:1px solid var(--color-neutral-200)}
+.hero-stat .n{font-family:var(--font-data);font-size:24px;font-weight:700;color:var(--color-neutral-800);font-feature-settings:'tnum'}
+.hero-stat .l{font-size:11px;color:var(--color-neutral-400);letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
+
+/* module group */
+.mod-group{margin-bottom:28px}
+.mod-head{display:flex;align-items:baseline;gap:14px;margin-bottom:14px}
+.mod-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--color-neutral-800);letter-spacing:.05em;text-transform:uppercase}
+.mod-title .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--color-accent);margin-right:8px;vertical-align:middle}
+.mod-meta{font-size:12px;color:var(--color-neutral-400);font-family:var(--font-data)}
+.mod-line{flex:1;height:1px;background:var(--color-neutral-200)}
+
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{
+  background:#fff;border:1px solid var(--color-neutral-200);
+  border-radius:12px;padding:18px;text-decoration:none;color:inherit;
+  display:flex;flex-direction:column;gap:10px;
+  transition:all .18s ease;position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--color-accent);transform:scaleX(0);transform-origin:left;transition:transform .25s ease;
+}
+.card:hover{border-color:var(--color-accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,135,90,.10)}
+.card:hover::before{transform:scaleX(1)}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start}
+.card-icon{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;background:rgba(0,87,184,.08);
+}
+.card-num{font-family:var(--font-data);font-size:11px;font-weight:600;color:var(--color-neutral-400);letter-spacing:.06em}
+.card-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--color-neutral-800);letter-spacing:-.2px}
+.card-desc{font-size:12.5px;color:var(--color-neutral-600);line-height:1.6;flex:1}
+.card-foot{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-family:var(--font-data);color:var(--color-neutral-400);padding-top:10px;border-top:1px dashed var(--color-neutral-200)}
+.card-arrow{color:var(--color-accent);font-weight:600}
+
+@media(max-width:1280px){.cards{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:960px){.cards{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">APS</div>
+    <div>
+      <div class="logo-text">高级计划排程</div>
+      <div class="logo-sub">MANUFACTURING · v1.0</div>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">导航</div>
+    <a href="index.html" class="nav-item active"><span class="ni">◉</span>原型总览</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">工作台</div>
+    <a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">基础数据</div>
+    <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>预测管理</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>物料参数</a>
+    <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
+    <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">生产计划</div>
+    <a href="07-plan-calculate.html" class="nav-item"><span class="ni">⚙</span>计划计算</a>
+    <a href="08-plan-result.html" class="nav-item"><span class="ni">▤</span>计划结果</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">能力测算</div>
+    <a href="09-capacity-calendar.html" class="nav-item"><span class="ni">▥</span>工作日历</a>
+    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
+    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="crumb"><b>APS</b><span class="sep">/</span><span>原型总览</span></div>
+    <div class="topbar-right">
+      <span class="version-pill">v1.0 · 2026-05</span>
+      <div class="user-avatar">规</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="hero">
+      <h1>APS 高级计划排程系统 · <span class="accent">原型集</span></h1>
+      <p>面向汽车零部件制造的端到端计划排程系统。从预测到 BOM 展开、从能力测算到设备负荷，覆盖月度计划计算的完整数据链路。</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="n">12</div><div class="l">原型页面</div></div>
+        <div class="hero-stat"><div class="n">3</div><div class="l">业务模块</div></div>
+        <div class="hero-stat"><div class="n">54</div><div class="l">计划行示例</div></div>
+        <div class="hero-stat"><div class="n">6</div><div class="l">物料示例</div></div>
+      </div>
+    </div>
+
+    <!-- 工作台 -->
+    <div class="mod-group">
+      <div class="mod-head">
+        <div class="mod-title"><span class="dot"></span>工作台</div>
+        <div class="mod-line"></div>
+        <div class="mod-meta">DASHBOARD · 1 页</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="01-dashboard.html">
+          <div class="card-head"><div class="card-icon">◐</div><span class="card-num">01</span></div>
+          <div class="card-title">工作台</div>
+          <div class="card-desc">KPI 概览、快捷操作、近 3 期计划趋势、设备负荷预警一览。</div>
+          <div class="card-foot"><span>DASHBOARD</span><span class="card-arrow">进入 →</span></div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 基础数据 -->
+    <div class="mod-group">
+      <div class="mod-head">
+        <div class="mod-title"><span class="dot"></span>基础数据</div>
+        <div class="mod-line"></div>
+        <div class="mod-meta">MASTER DATA · 5 页</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="02-forecast-list.html">
+          <div class="card-head"><div class="card-icon">◇</div><span class="card-num">02</span></div>
+          <div class="card-title">预测管理</div>
+          <div class="card-desc">完成品月度需求预测的导入、维护与版本控制。</div>
+          <div class="card-foot"><span>FORECAST</span><span class="card-arrow">进入 →</span></div>
+        </a>
+        <a class="card" href="03-bom-list.html">
+          <div class="card-head"><div class="card-icon">▣</div><span class="card-num">03</span></div>
+          <div class="card-title">BOM 管理</div>
+          <div class="card-desc">物料清单维护，支持列表与多层级树形结构两种视图。</div>
+          <div class="card-foot"><span>BOM</span><span class="card-arrow">进入 →</span></div>
+        </a>
+        <a class="card" href="04-material-params.html">
+          <div class="card-head"><div class="card-icon">⊞</div><span class="card-num">04</span></div>
+          <div class="card-title">物料参数</div>
+          <div class="card-desc">报废率、库存安全/最大天数等计算参数。</div>
+          <div class="card-foot"><span>PARAMS</span><span class="card-arrow">进入 →</span></div>
+        </a>
+        <a class="card" href="05-operating-days.html">
+          <div class="card-head"><div class="card-icon">◫</div><span class="card-num">05</span></div>
+          <div class="card-title">稼动天数</div>
+          <div class="card-desc">月度有效工作天数维护，影响日均需求计算。</div>
+          <div class="card-foot"><span>WORK DAYS</span><span class="card-arrow">进入 →</span></div>
+        </a>
+        <a class="card" href="06-inventory-count.html">
+          <div class="card-head"><div class="card-icon">▦</div><span class="card-num">06</span></div>
+          <div class="card-title">盘点数</div>
+          <div class="card-desc">期初库存录入，作为计划计算的库存基线。</div>
+          <div class="card-foot"><span>INVENTORY</span><span class="card-arrow">进入 →</span></div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 生产计划 -->
+    <div class="mod-group">
+      <div class="mod-head">
+        <div class="mod-title"><span class="dot"></span>生产计划</div>
+        <div class="mod-line"></div>
+        <div class="mod-meta">PRODUCTION · 2 页</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="07-plan-calculate.html">
+          <div class="card-head"><div class="card-icon">⚙</div><span class="card-num">07</span></div>
+          <div class="card-title">计划计算</div>
+          <div class="card-desc">配置计算参数、检查数据就绪状态、触发执行并实时查看进度。</div>
+          <div class="card-foot"><span>CALCULATE</span><span class="card-arrow">进入 →</span></div>
+        </a>
+        <a class="card" href="08-plan-result.html">
+          <div class="card-head"><div class="card-icon">▤</div><span class="card-num">08</span></div>
+          <div class="card-title">计划结果</div>
+          <div class="card-desc">查看计划数量、库存递推、是否生产判定，支持详情追溯。</div>
+          <div class="card-foot"><span>RESULT</span><span class="card-arrow">进入 →</span></div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 能力测算 -->
+    <div class="mod-group">
+      <div class="mod-head">
+        <div class="mod-title"><span class="dot"></span>能力测算</div>
+        <div class="mod-line"></div>
+        <div class="mod-meta">CAPACITY · 3 页</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="09-capacity-calendar.html">
+          <div class="card-head"><div class="card-icon">▥</div><span class="card-num">09</span></div>
+          <div class="card-title">工作日历</div>
+          <div class="card-desc">月历视图维护节假日、调休、双休，自动统计当月工时。</div>
+          <div class="card-foot"><span>CALENDAR</span><span class="card-arrow">进入 →</span></div>
+        </a>
+        <a class="card" href="10-workforce-report.html">
+          <div class="card-head"><div class="card-icon">⚐</div><span class="card-num">10</span></div>
+          <div class="card-title">人员需求</div>
+          <div class="card-desc">按工序/期间汇总一线人员需求，识别缺口期间。</div>
+          <div class="card-foot"><span>WORKFORCE</span><span class="card-arrow">进入 →</span></div>
+        </a>
+        <a class="card" href="11-equipment-load.html">
+          <div class="card-head"><div class="card-icon">⌬</div><span class="card-num">11</span></div>
+          <div class="card-title">设备负荷</div>
+          <div class="card-desc">关键设备月度负荷率监控，识别预警与超载，给出处置建议。</div>
+          <div class="card-foot"><span>EQUIPMENT</span><span class="card-arrow">进入 →</span></div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

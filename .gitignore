@@ -1,0 +1,18 @@
+# Maven
+aps-system/target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Test artifacts
+test-results/
+*.webm
+*.png
+
+# OS
+.DS_Store
+
+# OMC internal
+.omc/

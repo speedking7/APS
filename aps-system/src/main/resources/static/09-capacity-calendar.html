@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=1440">
+<title>APS · 工作日历</title>
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=satoshi:400,500,700,900|instrument-sans:400,500,600|geist:400,500,600,700&display=swap" rel="stylesheet"/>
+<style>
+:root{--color-primary:#0057b8;--color-accent:#00875A;--color-neutral-050:#f1f2f3;--color-neutral-100:#fafbfc;--color-neutral-200:#c1c6c8;--color-neutral-400:#8A96A8;--color-neutral-600:#5A6B7D;--color-neutral-800:#3d3f40;--color-success:#4caf50;--color-warning:#fbc02d;--color-error:#f44339;--font-display:'Satoshi',-apple-system,sans-serif;--font-body:'Instrument Sans',-apple-system,sans-serif;--font-data:'Geist',-apple-system,sans-serif;--bg-sidebar:#1c2333;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(--color-neutral-800);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
+.sidebar{width:240px;flex-shrink:0;background:var(--bg-sidebar);color:#c8d0da;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);position:fixed;left:0;top:0;bottom:0;overflow-y:auto;z-index:100}
+.sidebar-logo{height:64px;display:flex;align-items:center;padding:0 18px;gap:11px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-mark{width:34px;height:34px;border-radius:8px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:900;color:#fff}
+.logo-text{font-family:var(--font-display);font-size:14px;font-weight:700;color:#f0f4f8}.logo-sub{font-size:9px;color:#6b7a8d;letter-spacing:.1em;margin-top:2px}
+.nav-group{padding:14px 0 6px}.nav-group-label{padding:6px 18px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6b7a8d}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;color:#c8d0da;font-size:13px;text-decoration:none;transition:all .12s;position:relative}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav-item.active{background:rgba(0,87,184,.22);color:#78b4ff}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--color-primary)}
+.ni{width:16px;flex-shrink:0;text-align:center;font-size:13px;opacity:.75}
+.main{flex:1;margin-left:240px;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:52px;background:#fff;border-bottom:1px solid var(--color-neutral-200);display:flex;align-items:center;padding:0 28px;gap:6px}
+.crumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-400)}
+.crumb a{color:var(--color-primary);text-decoration:none}.crumb a:hover{text-decoration:underline}
+.crumb .now{color:var(--color-neutral-800);font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.version-pill{font-size:11px;font-family:var(--font-data);padding:3px 9px;border-radius:99px;background:rgba(0,135,90,.1);color:var(--color-accent);font-weight:600}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.content{padding:32px 36px;flex:1}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+.page-title{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--color-neutral-800);letter-spacing:-.4px}
+.page-sub{font-size:13px;color:var(--color-neutral-400);margin-top:4px}
+.btn{padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:none;transition:all .15s;font-weight:500;font-family:var(--font-body)}
+.btn-primary{background:var(--color-primary);color:#fff}.btn-primary:hover{background:#0049a0}
+.btn-secondary{background:#fff;color:var(--color-primary);border:1px solid var(--color-primary)}.btn-secondary:hover{background:rgba(0,87,184,.04)}
+.btn-ghost{background:transparent;color:var(--color-neutral-600);border:1px solid var(--color-neutral-200)}.btn-ghost:hover{border-color:var(--color-neutral-400)}
+/* year nav */
+.year-nav{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.year-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--color-neutral-200);background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--color-neutral-600)}
+.year-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.year-label{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--color-neutral-800)}
+/* layout */
+.cal-layout{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start}
+/* month grid */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;background:#fff;border:1px solid var(--color-neutral-200);border-radius:12px;padding:20px;overflow:hidden}
+.month-header-row{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.month-nav-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--color-neutral-800)}
+.dow-label{text-align:center;font-size:11px;font-weight:700;color:var(--color-neutral-400);padding:6px 0;letter-spacing:.06em}
+.day-cell{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;position:relative;gap:2px}
+.day-cell:hover{transform:scale(1.05);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.day-cell.work{background:#fff;border:1px solid var(--color-neutral-200)}
+.day-cell.work:hover{border-color:var(--color-primary)}
+.day-cell.weekend{background:var(--color-neutral-050);border:1px solid var(--color-neutral-050)}
+.day-cell.holiday{background:rgba(244,67,57,.07);border:1px solid rgba(244,67,57,.15)}
+.day-cell.makeup{background:rgba(3,169,244,.07);border:1px solid rgba(3,169,244,.2)}
+.day-cell.empty{background:transparent;border:none;cursor:default}
+.day-num{font-family:var(--font-data);font-size:14px;font-weight:600;line-height:1}
+.day-cell.weekend .day-num{color:var(--color-neutral-400)}
+.day-cell.holiday .day-num{color:var(--color-error)}
+.day-cell.makeup .day-num{color:#0288d1}
+.day-tag{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;letter-spacing:.04em}
+.day-cell.holiday .day-tag{background:rgba(244,67,57,.15);color:var(--color-error)}
+.day-cell.makeup .day-tag{background:rgba(3,169,244,.15);color:#0288d1}
+/* legend */
+.legend{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-neutral-600)}
+.legend-dot{width:14px;height:14px;border-radius:3px}
+.ld-work{background:#fff;border:1px solid var(--color-neutral-200)}
+.ld-weekend{background:var(--color-neutral-050)}
+.ld-holiday{background:rgba(244,67,57,.1);border:1px solid rgba(244,67,57,.2)}
+.ld-makeup{background:rgba(3,169,244,.1);border:1px solid rgba(3,169,244,.25)}
+/* stat panel */
+.stat-panel{background:#fff;border:1px solid var(--color-neutral-200);border-radius:12px;overflow:hidden}
+.stat-panel-head{padding:16px 20px;border-bottom:1px solid var(--color-neutral-050)}
+.stat-panel-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--color-neutral-800)}
+.stat-panel-sub{font-size:12px;color:var(--color-neutral-400);margin-top:2px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--color-neutral-050)}
+.stat-row:last-child{border-bottom:none}
+.stat-row-label{font-size:13px;color:var(--color-neutral-600)}
+.stat-row-val{font-family:var(--font-data);font-size:15px;font-weight:600;color:var(--color-neutral-800)}
+.stat-row-val.green{color:var(--color-success)}
+.stat-row-val.red{color:var(--color-error)}
+.stat-row-val.blue{color:#0288d1}
+.workhour-badge{background:rgba(0,87,184,.08);color:var(--color-primary);padding:4px 10px;border-radius:6px;font-family:var(--font-data);font-size:13px;font-weight:600}
+/* month quick nav */
+.month-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;padding:16px 20px;border-top:1px solid var(--color-neutral-050)}
+.mq-item{padding:8px;border-radius:6px;border:1px solid var(--color-neutral-200);text-align:center;cursor:pointer;transition:all .12s}
+.mq-item:hover{border-color:var(--color-primary);background:rgba(0,87,184,.04)}
+.mq-item.active{background:var(--color-primary);border-color:var(--color-primary);color:#fff}
+.mq-item.active .mq-days{color:rgba(255,255,255,.7)}
+.mq-month{font-size:12px;font-weight:600}
+.mq-days{font-size:11px;color:var(--color-neutral-400);font-family:var(--font-data)}
+/* day modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--color-neutral-050);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:var(--font-display);font-size:15px;font-weight:700}
+.modal-close{cursor:pointer;color:var(--color-neutral-400);font-size:18px;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:var(--color-neutral-050)}
+.modal-body{padding:22px}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.type-opt{padding:14px;border:2px solid var(--color-neutral-200);border-radius:8px;cursor:pointer;text-align:center;transition:all .12s}
+.type-opt:hover{border-color:var(--color-primary)}
+.type-opt.selected{border-color:var(--color-primary);background:rgba(0,87,184,.06)}
+.type-opt-icon{font-size:22px;margin-bottom:6px}
+.type-opt-label{font-size:13px;font-weight:600;color:var(--color-neutral-800)}
+.type-opt-sub{font-size:11px;color:var(--color-neutral-400);margin-top:2px}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--color-neutral-050);display:flex;justify-content:flex-end;gap:10px}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">APS</div>
+    <div><div class="logo-text">APS 计划排程</div><div class="logo-sub">ADVANCED PLANNING</div></div>
+  </div>
+  <a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a>
+  <div class="nav-group"><div class="nav-group-label">工作台</div>
+    <a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a>
+  </div>
+  <div class="nav-group"><div class="nav-group-label">基础数据</div>
+    <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>预测管理</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>物料参数</a>
+    <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
+    <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
+  </div>
+  <div class="nav-group"><div class="nav-group-label">生产计划</div>
+    <a href="07-plan-calculate.html" class="nav-item"><span class="ni">⚙</span>计划计算</a>
+    <a href="08-plan-result.html" class="nav-item"><span class="ni">▤</span>计划结果</a>
+  </div>
+  <div class="nav-group"><div class="nav-group-label">能力测算</div>
+    <a href="09-capacity-calendar.html" class="nav-item active"><span class="ni">▥</span>工作日历</a>
+    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
+    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="crumb">
+      <a href="01-dashboard.html">首页</a><span>/</span>
+      <a href="#">能力测算</a><span>/</span>
+      <span class="now">工作日历</span>
+    </div>
+    <div class="topbar-right">
+      <span class="version-pill">v1.0 DEMO</span>
+      <div class="user-avatar">能</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="page-head">
+      <div>
+        <div class="page-title">工作日历</div>
+        <div class="page-sub">定义工作日、节假日、双休日与调休，为稼动天数统计和能力计算提供基础</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost">同步至稼动天数</button>
+        <button class="btn btn-primary">保存修改</button>
+      </div>
+    </div>
+
+    <div class="year-nav">
+      <button class="year-btn" onclick="changeYear(-1)">‹</button>
+      <span class="year-label" id="yearLabel">2026 年</span>
+      <button class="year-btn" onclick="changeYear(1)">›</button>
+      <span style="margin-left:8px;font-size:13px;color:var(--color-neutral-400)">点击日期可修改类型</span>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot ld-work"></div>工作日</div>
+      <div class="legend-item"><div class="legend-dot ld-weekend"></div>双休日</div>
+      <div class="legend-item"><div class="legend-dot ld-holiday"></div>法定节假日</div>
+      <div class="legend-item"><div class="legend-dot ld-makeup"></div>调休（补班）</div>
+    </div>
+
+    <div class="cal-layout">
+      <div>
+        <div class="month-grid" id="calGrid"></div>
+      </div>
+      <div>
+        <div class="stat-panel">
+          <div class="stat-panel-head">
+            <div class="stat-panel-title" id="statTitle">2026年1月 统计</div>
+            <div class="stat-panel-sub">每日标准工时 10.5 小时</div>
+          </div>
+          <div class="stat-row"><span class="stat-row-label">工作日</span><span class="stat-row-val green" id="s-work">20 天</span></div>
+          <div class="stat-row"><span class="stat-row-label">法定节假日</span><span class="stat-row-val red" id="s-holiday">3 天</span></div>
+          <div class="stat-row"><span class="stat-row-label">双休日</span><span class="stat-row-val" id="s-weekend">8 天</span></div>
+          <div class="stat-row"><span class="stat-row-label">调休补班</span><span class="stat-row-val blue" id="s-makeup">0 天</span></div>
+          <div class="stat-row"><span class="stat-row-label">稼动天数</span><span class="stat-row-val green" id="s-total">20 天</span></div>
+          <div class="stat-row">
+            <span class="stat-row-label">月标准工时</span>
+            <span class="workhour-badge" id="s-hours">210 h</span>
+          </div>
+          <div class="month-quick" id="monthQuick"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 日期编辑 Modal -->
+<div class="overlay" id="dayModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="dayModalTitle">修改日期类型</span>
+      <span class="modal-close" onclick="document.getElementById('dayModal').classList.remove('open')">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="type-grid">
+        <div class="type-opt selected" onclick="selectType(this,'work')">
+          <div class="type-opt-icon">💼</div>
+          <div class="type-opt-label">工作日</div>
+          <div class="type-opt-sub">正常生产</div>
+        </div>
+        <div class="type-opt" onclick="selectType(this,'weekend')">
+          <div class="type-opt-icon">🏖️</div>
+          <div class="type-opt-label">双休日</div>
+          <div class="type-opt-sub">不计入稼动</div>
+        </div>
+        <div class="type-opt" onclick="selectType(this,'holiday')">
+          <div class="type-opt-icon">🎉</div>
+          <div class="type-opt-label">法定节假日</div>
+          <div class="type-opt-sub">不计入稼动</div>
+        </div>
+        <div class="type-opt" onclick="selectType(this,'makeup')">
+          <div class="type-opt-icon">🔄</div>
+          <div class="type-opt-label">调休补班</div>
+          <div class="type-opt-sub">计入稼动</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="document.getElementById('dayModal').classList.remove('open')">取消</button>
+      <button class="btn btn-primary" onclick="document.getElementById('dayModal').classList.remove('open')">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Calendar data for 2026
+const monthData = {
+  1:{days:31,start:4, holidays:[1,2,3], makeup:[]},   // Jan: 元旦
+  2:{days:28,start:0, holidays:[17,18,19,20,21,22,23], makeup:[25,26]}, // Spring Festival
+  3:{days:31,start:0, holidays:[], makeup:[]},
+  4:{days:30,start:3, holidays:[4,5,6], makeup:[7]},  // Qingming
+  5:{days:31,start:5, holidays:[1,2,3,4,5], makeup:[6,7]}, // Labor Day
+  6:{days:30,start:1, holidays:[], makeup:[]},
+};
+const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+let currentMonth = 4; // April by default (matching plan periods)
+let currentYear = 2026;
+
+function isWeekend(year, month, day) {
+  const d = new Date(year, month-1, day).getDay();
+  return d === 0 || d === 6;
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  const md = monthData[currentMonth] || {days:30, start:0, holidays:[], makeup:[]};
+  const dows = ['日','一','二','三','四','五','六'];
+
+  let html = `<div class="month-header-row">
+    <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="changeMonth(-1)">‹ 上月</button>
+    <span class="month-nav-title">${currentYear} 年 ${currentMonth} 月</span>
+    <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="changeMonth(1)">下月 ›</button>
+  </div>`;
+
+  dows.forEach(d => { html += `<div class="dow-label">${d}</div>`; });
+
+  for(let i=0; i<md.start; i++) html += `<div class="day-cell empty"></div>`;
+
+  let workCount=0, holidayCount=0, weekendCount=0, makeupCount=0;
+
+  for(let d=1; d<=md.days; d++) {
+    const isHol = md.holidays.includes(d);
+    const isMakeup = md.makeup.includes(d);
+    const isWknd = isWeekend(currentYear, currentMonth, d) && !isMakeup;
+    let cls = 'work', tag = '';
+    if(isHol) { cls='holiday'; tag='<div class="day-tag">节</div>'; holidayCount++; }
+    else if(isMakeup) { cls='makeup'; tag='<div class="day-tag">调</div>'; makeupCount++; workCount++; }
+    else if(isWknd) { cls='weekend'; weekendCount++; }
+    else { workCount++; }
+    html += `<div class="day-cell ${cls}" onclick="openDayModal(${d},'${cls}')"><div class="day-num">${d}</div>${tag}</div>`;
+  }
+
+  grid.innerHTML = html;
+
+  // Update stats
+  document.getElementById('statTitle').textContent = `${currentYear}年${currentMonth}月 统计`;
+  document.getElementById('s-work').textContent = `${workCount} 天`;
+  document.getElementById('s-holiday').textContent = `${holidayCount} 天`;
+  document.getElementById('s-weekend').textContent = `${weekendCount} 天`;
+  document.getElementById('s-makeup').textContent = `${makeupCount} 天`;
+  document.getElementById('s-total').textContent = `${workCount} 天`;
+  document.getElementById('s-hours').textContent = `${workCount * 10.5} h`;
+}
+
+function renderMonthQuick() {
+  const monthDays = {1:20,2:18,3:22,4:22,5:21,6:22,7:23,8:22,9:21,10:22,11:21,12:21};
+  let html = '';
+  for(let m=1; m<=12; m++) {
+    const active = m === currentMonth ? 'active' : '';
+    html += `<div class="mq-item ${active}" onclick="currentMonth=${m};renderCalendar();renderMonthQuick()">
+      <div class="mq-month">${m}月</div>
+      <div class="mq-days">${monthDays[m]||22}天</div>
+    </div>`;
+  }
+  document.getElementById('monthQuick').innerHTML = html;
+}
+
+function changeYear(delta) {
+  currentYear += delta;
+  document.getElementById('yearLabel').textContent = currentYear + ' 年';
+  renderCalendar();
+}
+function changeMonth(delta) {
+  currentMonth += delta;
+  if(currentMonth < 1) { currentMonth = 12; currentYear--; }
+  if(currentMonth > 12) { currentMonth = 1; currentYear++; }
+  document.getElementById('yearLabel').textContent = currentYear + ' 年';
+  renderCalendar();
+  renderMonthQuick();
+}
+function openDayModal(day, type) {
+  document.getElementById('dayModalTitle').textContent = `${currentYear}年${currentMonth}月${day}日`;
+  document.querySelectorAll('.type-opt').forEach(o => o.classList.remove('selected'));
+  const map = {work:0,weekend:1,holiday:2,makeup:3};
+  const idx = map[type] || 0;
+  document.querySelectorAll('.type-opt')[idx]?.classList.add('selected');
+  document.getElementById('dayModal').classList.add('open');
+}
+function selectType(el) {
+  document.querySelectorAll('.type-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+renderCalendar();
+renderMonthQuick();
+</script>
+</body>
+</html>
