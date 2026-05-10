@@ -148,7 +148,9 @@ mvn clean package -DskipTests
 java -jar target/aps-system-1.0.0.jar --spring.sql.init.mode=always
 ```
 
-`--spring.sql.init.mode=always` 会在启动时执行 `schema.sql` 写入示例数据。  
+> **建表说明**：应用启动时，Hibernate（`ddl-auto: update`）会根据 Entity 类自动在 `aps_db` 中创建所有数据表，无需手动执行任何 DDL 脚本。  
+> `--spring.sql.init.mode=always` 的作用是在建表后额外执行 `src/main/resources/schema.sql`，写入预置示例数据。
+
 **后续启动去掉此参数**，避免重复插入：
 
 ```bash
