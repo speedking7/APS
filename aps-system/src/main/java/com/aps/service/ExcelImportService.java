@@ -104,7 +104,7 @@ public class ExcelImportService {
     private List<Demand> parseDemands(Sheet sheet, ImportResult result) {
         final String SN = "完成品入库需求数";
         List<Demand> list = new ArrayList<>();
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+        for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null || isBlankRow(row)) continue;
 
@@ -138,7 +138,7 @@ public class ExcelImportService {
     private List<Bom> parseBoms(Sheet sheet, ImportResult result) {
         final String SN = "BOM";
         List<Bom> list = new ArrayList<>();
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+        for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null || isBlankRow(row)) continue;
 
@@ -182,7 +182,7 @@ public class ExcelImportService {
     private List<InventoryCount> parseInventoryCounts(Sheet sheet, ImportResult result) {
         final String SN = "半成品期末盘点数";
         List<InventoryCount> list = new ArrayList<>();
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+        for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null || isBlankRow(row)) continue;
 
@@ -211,7 +211,7 @@ public class ExcelImportService {
     private List<SafetyStock> parseSafetyStocks(Sheet sheet, ImportResult result) {
         final String SN = "半成品安全库存";
         List<SafetyStock> list = new ArrayList<>();
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+        for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null || isBlankRow(row)) continue;
 
@@ -241,7 +241,7 @@ public class ExcelImportService {
     private List<OperatingDays> parseOperatingDays(Sheet sheet, ImportResult result) {
         final String SN = "稼动天数";
         List<OperatingDays> list = new ArrayList<>();
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+        for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null || isBlankRow(row)) continue;
 
