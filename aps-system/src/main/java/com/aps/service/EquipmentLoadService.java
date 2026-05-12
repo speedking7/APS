@@ -68,7 +68,7 @@ public class EquipmentLoadService {
         // 填充可用时间、利用率、状态
         for (EquipmentLoadRow row : rowMap.values()) {
             double opDays = operatingDaysRepository.findByYearMonth(row.getYearMonth())
-                    .map(od -> od.getDays()).orElse(0.0);
+                    .map(od -> od.getWorkDays()).orElse(0.0);
             double available = opDays * DEFAULT_HOURS_PER_DAY;
             row.setAvailableTimeHours(available);
 

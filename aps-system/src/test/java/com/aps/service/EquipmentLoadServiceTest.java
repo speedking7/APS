@@ -63,7 +63,7 @@ class EquipmentLoadServiceTest {
         when(productionPlanRepository.findAll())
                 .thenReturn(List.of(makePlan("EQ-01", "CNC", 202601, 3600.0, 1.0)));
         when(operatingDaysRepository.findByYearMonth(202601))
-                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
 
         List<EquipmentLoadRow> result = service.calculateEquipmentLoad(null);
 
@@ -88,7 +88,7 @@ class EquipmentLoadServiceTest {
         );
         when(productionPlanRepository.findAll()).thenReturn(plans);
         when(operatingDaysRepository.findByYearMonth(202601))
-                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
 
         List<EquipmentLoadRow> result = service.calculateEquipmentLoad(null);
 
@@ -107,7 +107,7 @@ class EquipmentLoadServiceTest {
         );
         when(productionPlanRepository.findAll()).thenReturn(plans);
         when(operatingDaysRepository.findByYearMonth(202601))
-                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
 
         List<EquipmentLoadRow> result = service.calculateEquipmentLoad(null);
 
@@ -127,7 +127,7 @@ class EquipmentLoadServiceTest {
         when(productionPlanRepository.findAll())
                 .thenReturn(List.of(makePlan("EQ-01", "CNC", 202601, 100.0, 1.0)));
         when(operatingDaysRepository.findByYearMonth(202601))
-                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
 
         List<EquipmentLoadRow> result = service.calculateEquipmentLoad(null);
 
@@ -146,7 +146,7 @@ class EquipmentLoadServiceTest {
         when(productionPlanRepository.findAll())
                 .thenReturn(List.of(makePlan("EQ-01", "CNC", 202601, planQty, 1.0)));
         when(operatingDaysRepository.findByYearMonth(202601))
-                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
 
         List<EquipmentLoadRow> result = service.calculateEquipmentLoad(null);
 
@@ -164,7 +164,7 @@ class EquipmentLoadServiceTest {
         when(productionPlanRepository.findAll())
                 .thenReturn(List.of(makePlan("EQ-01", "CNC", 202601, planQty, 1.0)));
         when(operatingDaysRepository.findByYearMonth(202601))
-                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
 
         List<EquipmentLoadRow> result = service.calculateEquipmentLoad(null);
 
@@ -181,7 +181,7 @@ class EquipmentLoadServiceTest {
         when(productionPlanRepository.findAll())
                 .thenReturn(List.of(makePlan("EQ-01", "CNC", 202601, planQty, 1.0)));
         when(operatingDaysRepository.findByYearMonth(202601))
-                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
 
         List<EquipmentLoadRow> result = service.calculateEquipmentLoad(null);
 

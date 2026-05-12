@@ -11,4 +11,6 @@ public interface InventoryCountRepository extends JpaRepository<InventoryCount, 
 
     /** 获取某物料最新的盘点数（按年月降序取第一条） */
     Optional<InventoryCount> findFirstByItemCodeOrderByYearMonthDesc(String itemCode);
+
+    void deleteByVersion(String version);
 }

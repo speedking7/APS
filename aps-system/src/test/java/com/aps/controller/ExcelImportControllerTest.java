@@ -23,8 +23,8 @@ class ExcelImportControllerTest {
     @Test
     void upload_returnsImportResult() throws Exception {
         ImportResult r = new ImportResult();
-        r.setForecastCount(3);
-        r.setScrapRateCount(6);
+        r.setDemandCount(3);
+        r.setSafetyStockCount(6);
         r.setBomCount(5);
         when(excelImportService.importFromExcel(any())).thenReturn(r);
 

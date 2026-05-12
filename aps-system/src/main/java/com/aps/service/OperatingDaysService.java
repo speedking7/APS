@@ -31,7 +31,10 @@ public class OperatingDaysService {
     public OperatingDays update(Long id, OperatingDays entity) {
         OperatingDays existing = findById(id);
         existing.setYearMonth(entity.getYearMonth());
-        existing.setDays(entity.getDays());
+        existing.setTotalDays(entity.getTotalDays());
+        existing.setWorkDays(entity.getWorkDays());
+        existing.setWeekendDays(entity.getWeekendDays());
+        existing.setHolidayDays(entity.getHolidayDays());
         return repository.save(existing);
     }
 

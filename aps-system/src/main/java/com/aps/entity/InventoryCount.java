@@ -32,7 +32,7 @@ public class InventoryCount {
     @Column(name = "available_qty", nullable = false)
     private Double availableQty;
 
-    /** 删除重写标记 */
-    @Column(name = "delete_flag", length = 20)
-    private String deleteFlag;
+    /** 版本号 */
+    @Column(name = "version", length = 50)
+    private String version;
 }

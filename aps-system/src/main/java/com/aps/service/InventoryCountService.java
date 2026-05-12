@@ -33,7 +33,7 @@ public class InventoryCountService {
         existing.setItemCode(entity.getItemCode());
         existing.setYearMonth(entity.getYearMonth());
         existing.setAvailableQty(entity.getAvailableQty());
-        existing.setDeleteFlag(entity.getDeleteFlag());
+        existing.setVersion(entity.getVersion());
         return repository.save(existing);
     }
 

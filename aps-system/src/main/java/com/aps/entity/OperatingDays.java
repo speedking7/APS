@@ -24,7 +24,19 @@ public class OperatingDays {
     @Column(name = "`year_month`", nullable = false, unique = true)
     private Integer yearMonth;
 
-    /** 天数 */
-    @Column(nullable = false)
-    private Double days;
+    /** 总出勤天数 */
+    @Column(name = "total_days")
+    private Double totalDays;
+
+    /** 工作日（剔除双休日和节假日，计划计算使用此字段） */
+    @Column(name = "work_days", nullable = false)
+    private Double workDays;
+
+    /** 双休日天数 */
+    @Column(name = "weekend_days")
+    private Double weekendDays;
+
+    /** 国定节假日天数 */
+    @Column(name = "holiday_days")
+    private Double holidayDays;
 }

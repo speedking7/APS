@@ -15,4 +15,6 @@ public interface BomRepository extends JpaRepository<Bom, Long> {
 
     /** 获取某物料作为父零件的工序信息（含叶节点） */
     Optional<Bom> findFirstByParentCode(String parentCode);
+
+    void deleteByVersion(String version);
 }

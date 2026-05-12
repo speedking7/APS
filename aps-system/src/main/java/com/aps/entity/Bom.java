@@ -55,4 +55,12 @@ public class Bom {
     /** 单件节拍 (S) */
     @Column(name = "takt_time")
     private Double taktTime;
+
+    /** 报废率（该制造工步的报废率，0~1） */
+    @Column(name = "scrap_rate")
+    private Double scrapRate;
+
+    /** 版本号 */
+    @Column(name = "version", length = 50)
+    private String version;
 }

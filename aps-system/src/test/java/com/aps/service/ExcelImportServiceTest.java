@@ -124,9 +124,6 @@ class ExcelImportServiceTest {
         byte[] bytes = buildWorkbook();
         ImportResult result = service.importFromExcel(new ByteArrayInputStream(bytes));
 
-        assertThat(result.getForecastCount()).isEqualTo(2);
-        assertThat(result.getScrapRateCount()).isEqualTo(2);
-        assertThat(result.getInventoryDaysCount()).isEqualTo(1);
         assertThat(result.getOperatingDaysCount()).isEqualTo(2);
         assertThat(result.getBomCount()).isEqualTo(2);
         assertThat(result.getInventoryCountCount()).isEqualTo(2);
@@ -193,7 +190,7 @@ class ExcelImportServiceTest {
         List<OperatingDays> saved = opDays.getValue();
         assertThat(saved).hasSize(2);
         assertThat(saved.get(0).getYearMonth()).isEqualTo(202601);
-        assertThat(saved.get(0).getDays()).isEqualTo(22.0);
+        assertThat(saved.get(0).getWorkDays()).isEqualTo(22.0);
     }
 
     // =========================================================================

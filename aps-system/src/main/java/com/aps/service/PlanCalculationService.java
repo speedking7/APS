@@ -17,15 +17,17 @@ import java.util.*;
  * 计划计算核心服务
  *
  * 计算逻辑：
- * 1) 遍历每个完成品（来自预测的 distinct itemCode）
+ * 1) 遍历每个完成品（来自需求表的 distinct itemCode）
  * 2) 对每个完成品按年月升序处理
  * 3) BOM树展开（父→子→孙），从上到下计算每个节点
  *
  * 节点指标：
- *   - 当前库存：第一期取最新盘点，后续期 = 上期planQty*(1-上期scrapRate) - 上期demand + 上期currentInventory
- *   - 需求：根节点取预测；子件 = 父件本期 planQty * 用量
- *   - 计划数量 = (需求/稼动天数*安全天数 + 需求 - 当前库存) / (1 - 报废率)；负值取 0
- *   - 是否生产：需求 > 当前库存 → Y，否则 N
+ *   - 报废率：从 BOM 行取（每制造工步独立），不再使用独立报废率表
+ *   - 安全天数：从 t_safety_stock 取
+ *   - 稼动天数：使用 t_operating_days.work_days
+ *   - 根节点需求：取 t_demand.net_demand（完成品入库需求数）
+ *   - 子件需求：父件本期 planQty × BOM 用量
+ *   - planQty = ceil((需求/稼动天数×安全天数 + 需求 - 当前库存) / (1 - 报废率))；负值取0
  */
 @Service
 @Transactional
@@ -33,53 +35,43 @@ public class PlanCalculationService {
 
     private static final Logger log = LoggerFactory.getLogger(PlanCalculationService.class);
 
-    @Autowired private ForecastRepository forecastRepository;
-    @Autowired private ScrapRateRepository scrapRateRepository;
-    @Autowired private InventoryDaysRepository inventoryDaysRepository;
-    @Autowired private OperatingDaysRepository operatingDaysRepository;
-    @Autowired private BomRepository bomRepository;
-    @Autowired private InventoryCountRepository inventoryCountRepository;
-    @Autowired private ProductionPlanRepository productionPlanRepository;
+    @Autowired private DemandRepository          demandRepository;
+    @Autowired private SafetyStockRepository     safetyStockRepository;
+    @Autowired private OperatingDaysRepository   operatingDaysRepository;
+    @Autowired private BomRepository             bomRepository;
+    @Autowired private InventoryCountRepository  inventoryCountRepository;
+    @Autowired private ProductionPlanRepository  productionPlanRepository;
 
-    /**
-     * 全量重算：清空 t_production_plan 后按上述逻辑生成计划
-     */
     public void calculate() {
         log.info("=== APS Plan Calculation Start ===");
-
-        // 1. 清空结果表
         productionPlanRepository.deleteAllInBatch();
 
-        // 2. 获取所有完成品 & 所有期间
-        List<String> finishedProducts = forecastRepository.findDistinctItemCodes();
-        List<Integer> allPeriods = forecastRepository.findDistinctYearMonths();
+        List<String>  finishedProducts = demandRepository.findDistinctItemCodes();
+        List<Integer> allPeriods       = demandRepository.findDistinctYearMonths();
         log.info("Finished products: {}, periods: {}", finishedProducts, allPeriods);
 
-        // 3. 对每个完成品按期间顺序计算
-        for (String finishedProduct : finishedProducts) {
-            log.info("--- Calculating finished product: {} ---", finishedProduct);
-            List<BomNode> bomNodes = expandBomTree(finishedProduct);
-            log.info("BOM tree for {}: {} nodes", finishedProduct, bomNodes.size());
+        for (String fp : finishedProducts) {
+            log.info("--- Calculating: {} ---", fp);
+            List<BomNode> bomNodes = expandBomTree(fp);
+            log.info("BOM tree for {}: {} nodes", fp, bomNodes.size());
 
             Map<String, PlanResult> prevPeriodData = new HashMap<>();
 
             for (Integer period : allPeriods) {
-                // 该完成品在本期间是否有预测
-                Optional<Forecast> fcOpt = forecastRepository.findFirstByItemCodeAndYearMonth(finishedProduct, period);
-                if (!fcOpt.isPresent()) {
-                    continue;
-                }
-                double rootDemand = fcOpt.get().getQuantity();
+                Optional<Demand> dOpt = demandRepository.findFirstByItemCodeAndYearMonth(fp, period);
+                if (!dOpt.isPresent()) continue;
+
+                // 完成品根节点需求 = 完成品入库需求数
+                double rootDemand  = dOpt.get().getNetDemand() != null ? dOpt.get().getNetDemand() : 0.0;
+                double workDays    = operatingDaysRepository.findByYearMonth(period)
+                        .map(OperatingDays::getWorkDays).orElse(0.0);
 
                 Map<String, PlanResult> currentPeriodData = new HashMap<>();
-                double operatingDays = operatingDaysRepository.findByYearMonth(period)
-                        .map(OperatingDays::getDays).orElse(0.0);
 
                 for (BomNode node : bomNodes) {
-                    double scrapRate = scrapRateRepository.findByItemCode(node.itemCode)
-                            .map(ScrapRate::getScrapRate).orElse(0.0);
-                    double safetyDays = inventoryDaysRepository.findByItemCode(node.itemCode)
-                            .map(InventoryDays::getSafetyDays).orElse(0.0);
+                    double scrapRate = node.scrapRate;  // 来自 BOM 行
+                    double safetyDays = safetyStockRepository.findByItemCode(node.itemCode)
+                            .map(SafetyStock::getSafetyDays).orElse(0.0);
 
                     // 当前库存
                     double currentInventory;
@@ -100,22 +92,16 @@ public class PlanCalculationService {
                         demand = rootDemand;
                     } else {
                         PlanResult parentResult = currentPeriodData.get(node.parentCode);
-                        if (parentResult == null) {
-                            log.warn("Parent {} not yet calculated for {}, defaulting demand to 0",
-                                    node.parentCode, node.itemCode);
-                            demand = 0.0;
-                        } else {
-                            demand = parentResult.planQty * node.usageQty;
-                        }
+                        demand = (parentResult != null) ? parentResult.planQty * node.usageQty : 0.0;
                     }
 
                     // 计划数量
                     double planQty;
                     double oneMinusScrap = 1.0 - scrapRate;
-                    if (oneMinusScrap == 0.0) {
+                    if (oneMinusScrap <= 0.0) {
                         planQty = 0.0;
-                    } else if (operatingDays > 0) {
-                        planQty = (demand / operatingDays * safetyDays + demand - currentInventory) / oneMinusScrap;
+                    } else if (workDays > 0) {
+                        planQty = (demand / workDays * safetyDays + demand - currentInventory) / oneMinusScrap;
                     } else {
                         planQty = (demand - currentInventory) / oneMinusScrap;
                     }
@@ -124,9 +110,8 @@ public class PlanCalculationService {
 
                     String isProduce = demand > currentInventory ? "Y" : "N";
 
-                    // 保存结果
                     ProductionPlan plan = new ProductionPlan();
-                    plan.setFinishedProductCode(finishedProduct);
+                    plan.setFinishedProductCode(fp);
                     plan.setItemCode(node.itemCode);
                     plan.setYearMonth(period);
                     plan.setProcess(node.process);
@@ -138,7 +123,7 @@ public class PlanCalculationService {
                     plan.setCurrentInventory(currentInventory);
                     plan.setForecast(demand);
                     plan.setSafetyDays(safetyDays);
-                    plan.setOperatingDays(operatingDays);
+                    plan.setOperatingDays(workDays);
                     plan.setScrapRate(scrapRate);
                     plan.setIsProduce(isProduce);
                     plan.setPlanQty(planQty);
@@ -147,86 +132,68 @@ public class PlanCalculationService {
                     currentPeriodData.put(node.itemCode,
                             new PlanResult(planQty, scrapRate, demand, currentInventory));
                 }
-
                 prevPeriodData = currentPeriodData;
             }
         }
-
         log.info("=== APS Plan Calculation Done ===");
     }
 
-    /**
-     * 展开 BOM 树（深度优先，父在前，子在后）
-     * 节点的工序/设备等取自该物料作为 parentCode 的 BOM 行（含叶节点）
-     */
-    private List<BomNode> expandBomTree(String finishedProduct) {
-        List<BomNode> result = new ArrayList<>();
-        Set<String> visited = new HashSet<>();
-
-        // 根节点（usageQty 不适用，置 0）
-        BomNode root = buildNode(finishedProduct, null, 0.0);
+    private List<BomNode> expandBomTree(String fp) {
+        List<BomNode> result  = new ArrayList<>();
+        Set<String>   visited = new HashSet<>();
+        BomNode root = buildNode(fp, null, 0.0);
         result.add(root);
-        visited.add(finishedProduct);
-
-        traverse(finishedProduct, result, visited);
+        visited.add(fp);
+        traverse(fp, result, visited);
         return result;
     }
 
     private void traverse(String parentCode, List<BomNode> result, Set<String> visited) {
-        List<Bom> children = bomRepository.findByParentCode(parentCode);
-        for (Bom row : children) {
+        for (Bom row : bomRepository.findByParentCode(parentCode)) {
             String childCode = row.getChildCode();
-            if (childCode == null || childCode.isEmpty()) {
-                continue; // 当前父零件是叶节点；它本身已在父级递归时加入
-            }
+            if (childCode == null || childCode.isEmpty()) continue;
             if (visited.contains(childCode)) {
-                log.warn("Circular BOM detected: parent={} child={} - skipping",
-                        parentCode, childCode);
+                log.warn("Circular BOM: parent={} child={}", parentCode, childCode);
                 continue;
             }
             visited.add(childCode);
-            double usage = row.getUsageQty() == null ? 0.0 : row.getUsageQty();
-            BomNode node = buildNode(childCode, parentCode, usage);
-            result.add(node);
+            double usage = row.getUsageQty() != null ? row.getUsageQty() : 0.0;
+            result.add(buildNode(childCode, parentCode, usage));
             traverse(childCode, result, visited);
         }
     }
 
-    /**
-     * 取 itemCode 作为父零件的第一行作为该物料的工序/设备/工艺信息
-     */
     private BomNode buildNode(String itemCode, String parentCode, double usageQty) {
         BomNode node = new BomNode();
-        node.itemCode = itemCode;
+        node.itemCode   = itemCode;
         node.parentCode = parentCode;
-        node.usageQty = usageQty;
-
+        node.usageQty   = usageQty;
         bomRepository.findFirstByParentCode(itemCode).ifPresent(b -> {
-            node.process = b.getProcess();
-            node.equipment = b.getEquipment();
+            node.process    = b.getProcess();
+            node.equipment  = b.getEquipment();
             node.moldCavity = b.getMoldCavity();
-            node.cycleTime = b.getCycleTime();
+            node.cycleTime  = b.getCycleTime();
             node.staffCount = b.getStaffCount();
-            node.taktTime = b.getTaktTime();
+            node.taktTime   = b.getTaktTime();
+            node.scrapRate  = b.getScrapRate() != null ? b.getScrapRate() : 0.0;
         });
         return node;
     }
 
-    /** BOM 树节点 */
     @Data
     static class BomNode {
-        String itemCode;
-        String parentCode;
-        double usageQty;
-        String process;
-        String equipment;
+        String  itemCode;
+        String  parentCode;
+        double  usageQty;
+        String  process;
+        String  equipment;
         Integer moldCavity;
-        Double cycleTime;
-        Double staffCount;
-        Double taktTime;
+        Double  cycleTime;
+        Double  staffCount;
+        Double  taktTime;
+        double  scrapRate;   // 来自 BOM 行
     }
 
-    /** 周期内单条计算结果（用于跨期/跨节点引用） */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

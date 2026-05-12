@@ -55,7 +55,7 @@ class PlanCalculationServiceTest {
         when(forecastRepository.findFirstByItemCodeAndYearMonth(itemCode, period))
                 .thenReturn(Optional.of(new Forecast(null, itemCode, period, demand, null)));
         when(operatingDaysRepository.findByYearMonth(period))
-                .thenReturn(Optional.of(new OperatingDays(null, period, opDays)));
+                .thenReturn(Optional.of(new OperatingDays(null, period, opDays, opDays, 0.0, 0.0)));
         when(scrapRateRepository.findByItemCode(itemCode))
                 .thenReturn(Optional.of(new ScrapRate(null, itemCode, scrap)));
         when(inventoryDaysRepository.findByItemCode(itemCode))
@@ -208,7 +208,7 @@ class PlanCalculationServiceTest {
         when(forecastRepository.findFirstByItemCodeAndYearMonth(item, 202602))
                 .thenReturn(Optional.of(new Forecast(null, item, 202602, 120.0, null)));
         when(operatingDaysRepository.findByYearMonth(anyInt()))
-                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
         when(scrapRateRepository.findByItemCode(item))
                 .thenReturn(Optional.of(new ScrapRate(null, item, 0.1)));
         when(inventoryDaysRepository.findByItemCode(item))
@@ -250,7 +250,7 @@ class PlanCalculationServiceTest {
         when(forecastRepository.findFirstByItemCodeAndYearMonth(item, 202602))
                 .thenReturn(Optional.empty()); // 202602 无预测
         when(operatingDaysRepository.findByYearMonth(202601))
-                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
         when(scrapRateRepository.findByItemCode(item)).thenReturn(Optional.empty());
         when(inventoryDaysRepository.findByItemCode(item)).thenReturn(Optional.empty());
         when(inventoryCountRepository.findFirstByItemCodeOrderByYearMonthDesc(item))
@@ -283,7 +283,7 @@ class PlanCalculationServiceTest {
         when(forecastRepository.findFirstByItemCodeAndYearMonth(parent, period))
                 .thenReturn(Optional.of(new Forecast(null, parent, period, 100.0, null)));
         when(operatingDaysRepository.findByYearMonth(period))
-                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0, 22.0, 0.0, 0.0)));
 
         // 父件参数
         when(scrapRateRepository.findByItemCode(parent))
@@ -303,7 +303,7 @@ class PlanCalculationServiceTest {
         when(bomRepository.findFirstByParentCode(child)).thenReturn(Optional.empty());
 
         // BOM 关系
-        Bom bomRow = new Bom(null, parent, child, 2.0, null, null, null, null, null, null);
+        Bom bomRow = new Bom(null, parent, child, 2.0, null, null, null, null, null, null, null, null);
         when(bomRepository.findByParentCode(parent)).thenReturn(List.of(bomRow));
 
         service.calculate();
@@ -340,7 +340,7 @@ class PlanCalculationServiceTest {
         when(forecastRepository.findFirstByItemCodeAndYearMonth(parent, period))
                 .thenReturn(Optional.of(new Forecast(null, parent, period, 100.0, null)));
         when(operatingDaysRepository.findByYearMonth(period))
-                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0, 22.0, 0.0, 0.0)));
 
         for (String code : List.of(parent, child)) {
             when(scrapRateRepository.findByItemCode(code)).thenReturn(Optional.empty());
@@ -351,11 +351,11 @@ class PlanCalculationServiceTest {
         }
 
         // C001 作为父零件的 BOM 行，含工序/设备信息
-        Bom childBomInfo = new Bom(null, child, null, 0.0, "CNC", "EQ-01", 4, 30.0, 2.0, 15.0);
+        Bom childBomInfo = new Bom(null, child, null, 0.0, "CNC", "EQ-01", 4, 30.0, 2.0, 15.0, null, null);
         when(bomRepository.findFirstByParentCode(child)).thenReturn(Optional.of(childBomInfo));
         when(bomRepository.findFirstByParentCode(parent)).thenReturn(Optional.empty());
 
-        Bom bomRel = new Bom(null, parent, child, 1.0, null, null, null, null, null, null);
+        Bom bomRel = new Bom(null, parent, child, 1.0, null, null, null, null, null, null, null, null);
         when(bomRepository.findByParentCode(parent)).thenReturn(List.of(bomRel));
 
         service.calculate();
@@ -387,7 +387,7 @@ class PlanCalculationServiceTest {
         when(forecastRepository.findFirstByItemCodeAndYearMonth(item1, period))
                 .thenReturn(Optional.of(new Forecast(null, item1, period, 100.0, null)));
         when(operatingDaysRepository.findByYearMonth(period))
-                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0)));
+                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0, 22.0, 0.0, 0.0)));
 
         for (String code : List.of(item1, item2)) {
             when(scrapRateRepository.findByItemCode(code)).thenReturn(Optional.empty());
@@ -397,8 +397,8 @@ class PlanCalculationServiceTest {
             when(bomRepository.findFirstByParentCode(code)).thenReturn(Optional.empty());
         }
 
-        Bom bom1 = new Bom(null, item1, item2, 1.0, null, null, null, null, null, null);
-        Bom bom2 = new Bom(null, item2, item1, 1.0, null, null, null, null, null, null);
+        Bom bom1 = new Bom(null, item1, item2, 1.0, null, null, null, null, null, null, null, null);
+        Bom bom2 = new Bom(null, item2, item1, 1.0, null, null, null, null, null, null, null, null);
         when(bomRepository.findByParentCode(item1)).thenReturn(List.of(bom1));
         when(bomRepository.findByParentCode(item2)).thenReturn(List.of(bom2));
 

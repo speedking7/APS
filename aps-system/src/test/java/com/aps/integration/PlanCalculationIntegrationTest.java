@@ -53,7 +53,7 @@ class PlanCalculationIntegrationTest {
         forecastRepository.save(new Forecast(null, "P001", 202601, 100.0, null));
         scrapRateRepository.save(new ScrapRate(null, "P001", 0.1));
         inventoryDaysRepository.save(new InventoryDays(null, "P001", 7.0, 30.0));
-        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0));
+        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0));
         inventoryCountRepository.save(new InventoryCount(null, "P001", 202512, 0.0, null));
 
         // 触发计算
@@ -87,7 +87,7 @@ class PlanCalculationIntegrationTest {
         forecastRepository.save(new Forecast(null, "P002", 202601, 10.0, null));
         scrapRateRepository.save(new ScrapRate(null, "P002", 0.0));
         inventoryDaysRepository.save(new InventoryDays(null, "P002", 0.0, null));
-        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0));
+        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0));
         inventoryCountRepository.save(new InventoryCount(null, "P002", 202512, 100.0, null));
 
         planCalculationService.calculate();
@@ -108,8 +108,8 @@ class PlanCalculationIntegrationTest {
         forecastRepository.save(new Forecast(null, "P003", 202602, 120.0, null));
         scrapRateRepository.save(new ScrapRate(null, "P003", 0.1));
         inventoryDaysRepository.save(new InventoryDays(null, "P003", 7.0, null));
-        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0));
-        operatingDaysRepository.save(new OperatingDays(null, 202602, 22.0));
+        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0));
+        operatingDaysRepository.save(new OperatingDays(null, 202602, 22.0, 22.0, 0.0, 0.0));
         inventoryCountRepository.save(new InventoryCount(null, "P003", 202512, 0.0, null));
 
         planCalculationService.calculate();
@@ -140,13 +140,13 @@ class PlanCalculationIntegrationTest {
         forecastRepository.save(new Forecast(null, "P004", 202601, 100.0, null));
         scrapRateRepository.save(new ScrapRate(null, "P004", 0.1));
         inventoryDaysRepository.save(new InventoryDays(null, "P004", 7.0, null));
-        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0));
+        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0));
         inventoryCountRepository.save(new InventoryCount(null, "P004", 202512, 0.0, null));
         inventoryCountRepository.save(new InventoryCount(null, "C004", 202512, 0.0, null));
         // P004→C004 的用量关系（工序信息不放在此行）
-        bomRepository.save(new Bom(null, "P004", "C004", 2.0, null, null, null, null, null, null));
+        bomRepository.save(new Bom(null, "P004", "C004", 2.0, null, null, null, null, null, null, null, null));
         // C004 作为"父零件"的叶节点行（childCode=null）：存储 C004 自身的工序信息
-        bomRepository.save(new Bom(null, "C004", null, 0.0, "PROC-A", "EQ-A", 2, 20.0, 1.0, 10.0));
+        bomRepository.save(new Bom(null, "C004", null, 0.0, "PROC-A", "EQ-A", 2, 20.0, 1.0, 10.0, null, null));
 
         planCalculationService.calculate();
 
@@ -179,8 +179,8 @@ class PlanCalculationIntegrationTest {
     void queryByPeriod_returnsOnlyMatchingPeriod() {
         forecastRepository.save(new Forecast(null, "P005", 202601, 100.0, null));
         forecastRepository.save(new Forecast(null, "P005", 202602, 80.0, null));
-        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0));
-        operatingDaysRepository.save(new OperatingDays(null, 202602, 20.0));
+        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0));
+        operatingDaysRepository.save(new OperatingDays(null, 202602, 20.0, 20.0, 0.0, 0.0));
         inventoryCountRepository.save(new InventoryCount(null, "P005", 202512, 0.0, null));
 
         planCalculationService.calculate();

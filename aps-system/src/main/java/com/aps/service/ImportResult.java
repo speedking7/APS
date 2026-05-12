@@ -5,10 +5,9 @@ import lombok.Data;
 /** Excel 全量导入结果统计 */
 @Data
 public class ImportResult {
-    private int forecastCount;
-    private int scrapRateCount;
-    private int inventoryDaysCount;
-    private int operatingDaysCount;
+    private int demandCount;
     private int bomCount;
+    private int safetyStockCount;
+    private int operatingDaysCount;
     private int inventoryCountCount;
 }
