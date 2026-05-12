@@ -20,7 +20,7 @@ APS（高级计划排程系统）用于汽车零部件工厂的月度生产计�
 
 | 域 | 说明 |
 |----|------|
-| **基础数据域（MD）** | 管理预测、BOM、报废率、库存天数、稼动天数、盘点数 |
+| **基础数据域（MD）** | 管理需求（完成品入库需求数）、BOM（含报废率）、半成品安全库存、稼动天数、半成品盘点数 |
 | **生产计划域（PP）** | 多期多层 BOM 展开，自动计算每个物料每期的计划数量 |
 | **能力人时域（CW）** | 基于计划数量和持台人数，测算一线人员需求 |
 | **设备负荷域（EL）** | 基于计划数量和单件节拍，测算关键设备利用率 |
@@ -173,52 +173,101 @@ tail -f aps.log
 
 ## 5. 数据录入：使用 Excel 模板导入
 
-项目根目录提供了 `APS模板.xlsx`，包含 6 张输入表。
+数据通过 **5 个独立 Excel 文件**分主题导入，每个文件对应一类业务数据，放置在项目根目录下。
 
-### Excel 各 Sheet 对应关系
+### 5.1 文件清单与 Sheet 说明
 
-| Sheet 名称 | 对应数据 | 必填列 |
-|-----------|---------|--------|
-| `预测（仅完成品）` | 完成品月度预测量 | 存货编码、年月(YYYYMM)、数量 |
-| `报废率` | 各物料报废率 | 存货编码、报废率(0~1) |
-| `库存天数` | 安全库存天数 | 存货编码、安全天数、最大天数 |
-| `稼动天数` | 各月实际工作天数 | 年月(YYYYMM)、天数 |
-| `BOM` | 物料清单及工艺参数 | 父零件、子零件、用量、工序、设备、模腔数、制造周期、持台人数、单件节拍 |
-| `盘点数` | 期初可用库存 | 存货编码、年月（底）(YYYYMM)、可用量 |
+#### APS_demand.xlsx — 完成品入库需求数
 
-### 填写规范
+| Sheet 名称 | 必填列 |
+|-----------|--------|
+| `完成品入库需求数` | 客户、存货编码、年月（YYYYMM）、需求数量、期末库存、最小安全库存、完成品入库需求数、版本号 |
+
+- **计划依据**：系统以 `完成品入库需求数` 列作为完成品的计划计算输入，该字段已综合考虑期末库存与最小安全库存；
+- **导入规则**：按 **版本号 + 客户** 全删全导，同一版本号下的数据会先清空再写入；
+- 完成品安全库存在本表 `最小安全库存` 列维护，不在半成品安全库存表中维护。
+
+#### APS_bom.xlsx — BOM 物料清单
+
+| Sheet 名称 | 必填列 |
+|-----------|--------|
+| `BOM` | 父零件、子零件、用量、工序、设备、模腔数/取数（pcs）、制造周期（S）、持台人数（人）、单件节拍（S）、报废率、版本号 |
+
+- **报废率**：每行 BOM 独立维护该制造工步的报废率（0~1 小数），已从原独立报废率表合并入此；
+- **导入规则**：按 **版本号** 全删全导。
+
+#### APS_inventory.xlsx — 半成品期末盘点数
+
+| Sheet 名称 | 必填列 |
+|-----------|--------|
+| `半成品期末盘点数` | 存货编码、年月（底）（YYYYMM）、可用量、版本号 |
+
+- 仅维护半成品期末库存；完成品期末库存在 `APS_demand.xlsx` 中维护；
+- **导入规则**：按 **版本号** 全删全导。
+
+#### APS_safetystock.xlsx — 半成品安全库存
+
+| Sheet 名称 | 必填列 |
+|-----------|--------|
+| `半成品安全库存` | 存货编码、每日当量、安全天数、最大天数、版本号 |
+
+- 仅维护半成品安全库存；完成品安全库存在 `APS_demand.xlsx` 中维护；
+- **导入规则**：按 **版本号** 全删全导。
+
+#### APS_workingdays.xlsx — 稼动天数
+
+| Sheet 名称 | 必填列 |
+|-----------|--------|
+| `稼动天数` | 年月（YYYYMM）、总出勤天数、工作日、双休日、国定节假日 |
+
+- 计划计算使用 `工作日` 字段（总出勤天数的子集，剔除双休日和国定节假日）；
+- **导入规则**：按 **年月** 新增或更新（upsert），不会清空其他期间数据。
+
+### 5.2 填写规范
 
 - **年月格式**：6 位整数，如 `202604` 表示 2026 年 4 月
 - **BOM 叶节点**：子零件列可为空，代表该物料为最底层物料
 - **报废率**：填写小数，如 `0.01` 表示 1%
-- **删除重写标记**：可随意填写分类标签，不影响计算
+- **版本号**：相同版本号数据会被全量替换，建议以日期或迭代号命名（如 `2026050101`）
 
-### 导入操作
+### 5.3 导入操作
 
-填写好 Excel 后，使用以下命令一键导入（**覆盖模式，会清空现有数据**）：
+每个文件通过同一接口上传，以 `file` 参数指定对应文件。系统根据文件内 Sheet 名称自动识别数据类型：
 
 ```bash
+# 导入需求数据
 curl -X POST http://localhost:8080/api/excel/import \
-  -F "file=@/path/to/APS模板.xlsx"
+  -F "file=@/path/to/APS_demand.xlsx"
+
+# 导入 BOM 数据
+curl -X POST http://localhost:8080/api/excel/import \
+  -F "file=@/path/to/APS_bom.xlsx"
+
+# 导入半成品期末盘点数
+curl -X POST http://localhost:8080/api/excel/import \
+  -F "file=@/path/to/APS_inventory.xlsx"
+
+# 导入半成品安全库存
+curl -X POST http://localhost:8080/api/excel/import \
+  -F "file=@/path/to/APS_safetystock.xlsx"
+
+# 导入稼动天数
+curl -X POST http://localhost:8080/api/excel/import \
+  -F "file=@/path/to/APS_workingdays.xlsx"
 ```
 
-成功响应示例：
+也可用任意 HTTP 客户端（Postman、Apifox 等）发送 `multipart/form-data` 请求，参数名为 `file`。
+
+成功响应示例（以 BOM 导入为例）：
 ```json
 {
   "code": 200,
   "message": "success",
   "data": {
-    "forecastCount": 6,
-    "scrapRateCount": 6,
-    "inventoryDaysCount": 6,
-    "operatingDaysCount": 3,
-    "bomCount": 6,
-    "inventoryCountCount": 6
+    "bomCount": 12
   }
 }
 ```
-
-也可用任意 HTTP 客户端（Postman、Apifox 等）发送 `multipart/form-data` 请求，参数名为 `file`。
 
 ---
 
@@ -241,9 +290,14 @@ curl -X POST http://localhost:8080/api/excel/import \
 
 ### 步骤 1：导入数据
 
+依次导入 5 个 Excel 文件（顺序不限）：
+
 ```bash
-curl -X POST http://localhost:8080/api/excel/import \
-  -F "file=@APS模板.xlsx"
+curl -X POST http://localhost:8080/api/excel/import -F "file=@APS_demand.xlsx"
+curl -X POST http://localhost:8080/api/excel/import -F "file=@APS_bom.xlsx"
+curl -X POST http://localhost:8080/api/excel/import -F "file=@APS_inventory.xlsx"
+curl -X POST http://localhost:8080/api/excel/import -F "file=@APS_safetystock.xlsx"
+curl -X POST http://localhost:8080/api/excel/import -F "file=@APS_workingdays.xlsx"
 ```
 
 ### 步骤 2：触发计划计算
@@ -348,9 +402,9 @@ curl "http://localhost:8080/api/equipment-load?periods=202604"
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/api/excel/import` | 上传 Excel 文件，全量覆盖导入 6 张数据表 |
+| POST | `/api/excel/import` | 上传单个 Excel 文件，系统按 Sheet 名称自动识别数据类型并按对应导入规则处理 |
 
-请求：`multipart/form-data`，参数名 `file`
+请求：`multipart/form-data`，参数名 `file`。5 个文件分别上传，每次调用处理一个文件。
 
 ### 7.2 基础数据 CRUD
 
@@ -358,12 +412,11 @@ curl "http://localhost:8080/api/equipment-load?periods=202604"
 
 | 资源路径 | 数据内容 |
 |---------|---------|
-| `forecast` | 完成品预测 |
-| `scrap-rate` | 报废率 |
-| `inventory-days` | 库存天数 |
-| `operating-days` | 稼动天数 |
-| `bom` | BOM 物料清单 |
-| `inventory-count` | 期初盘点数 |
+| `demand` | 完成品入库需求数（含客户、需求数量、期末库存、最小安全库存、版本号） |
+| `safety-stock` | 半成品安全库存（含每日当量、安全天数、最大天数、版本号） |
+| `operating-days` | 稼动天数（含总出勤天数、工作日、双休日、国定节假日） |
+| `bom` | BOM 物料清单（含报废率、版本号，报废率为每制造工步独立字段） |
+| `inventory-count` | 半成品期末盘点数（含版本号） |
 
 ```
 GET    /api/{resource}           查询所有
@@ -420,6 +473,8 @@ POST   /api/{resource}/batch     批量新增（JSON 数组）
 planQty = (需求 / 稼动天数 × 安全天数 + 需求 - 当期库存) / (1 - 报废率)
 ```
 
+- **需求来源**：完成品取 `APS_demand.xlsx` 中的 `完成品入库需求数` 列（已包含完成品安全库存逻辑）；子件需求由父件计划数量通过 BOM 用量推导；
+- **报废率来源**：从对应 BOM 行取报废率（每制造工步独立，不再使用独立的报废率表）；
 - 结果 < 0 时取 0
 - 结果向上圆整为整数（`Math.ceil`）
 - 报废率 = 100% 时强制 planQty = 0（避免除零）
@@ -450,7 +505,9 @@ workforceDemand = Σ (planQty × staffCount)
 taskTimeHours = Σ (planQty × taktTime秒 / 3600)
                 按 (设备, 期间) 分组聚合
 
-availableTimeHours = 稼动天数 × 10.5小时/天
+availableTimeHours = 工作日 × 10.5小时/天
+                  （工作日取 APS_workingdays.xlsx 中的 `工作日` 字段，
+                    为总出勤天数中剔除双休日和国定节假日后的天数）
 
 utilizationRate = taskTimeHours / availableTimeHours
 ```
@@ -469,7 +526,12 @@ A：检查以下几项：
 3. 期初盘点数是否远大于预测量（库存充足则不需生产）
 
 **Q：Excel 导入提示 Sheet 找不到？**  
-A：确保 Sheet 名称与模板完全一致，包括括号和空格：`预测（仅完成品）`、`BOM`（大写）等。
+A：确保每个文件内的 Sheet 名称与规定完全一致（含全角括号和空格）：
+- `APS_demand.xlsx` → Sheet `完成品入库需求数`
+- `APS_bom.xlsx` → Sheet `BOM`（大写）
+- `APS_inventory.xlsx` → Sheet `半成品期末盘点数`
+- `APS_safetystock.xlsx` → Sheet `半成品安全库存`
+- `APS_workingdays.xlsx` → Sheet `稼动天数`
 
 **Q：BOM 展开结果中有循环引用警告？**  
 A：系统会自动检测并跳过循环引用，在日志中输出 `Circular BOM detected` 警告，不影响其他物料计算。检查 BOM 数据中是否存在 A→B→A 的环形关系。
@@ -497,8 +559,12 @@ static final double DEFAULT_HOURS_PER_DAY = 10.5;  // 修改此值
 ```bash
 BASE=http://localhost:8080
 
-# 1. 导入 Excel
-curl -X POST $BASE/api/excel/import -F "file=@APS模板.xlsx"
+# 1. 导入 Excel（5 个文件分别上传）
+curl -X POST $BASE/api/excel/import -F "file=@APS_demand.xlsx"
+curl -X POST $BASE/api/excel/import -F "file=@APS_bom.xlsx"
+curl -X POST $BASE/api/excel/import -F "file=@APS_inventory.xlsx"
+curl -X POST $BASE/api/excel/import -F "file=@APS_safetystock.xlsx"
+curl -X POST $BASE/api/excel/import -F "file=@APS_workingdays.xlsx"
 
 # 2. 触发计划计算
 curl -X POST $BASE/api/production-plan/calculate
