@@ -143,15 +143,18 @@ public class ExcelImportService {
             if (row == null || isBlankRow(row)) continue;
 
             String parentCode = str(row, 0);
-            String childCode  = str(row, 1);
+            String childCode  = str(row, 1);   // 叶节点工艺行允许为空
             Double usageQty   = numOrNull(row, 2);
             Double scrapRate  = numOrNull(row, 9);
             String version    = str(row, 10);
 
             String err = null;
             if (!isValidCode(parentCode))      err = "父零件编码无效: " + parentCode;
-            else if (!isValidCode(childCode))   err = "子零件编码无效: " + childCode;
-            else if (usageQty == null || usageQty <= 0) err = "用量必须大于0: " + usageQty;
+            // 有子零件时才校验子零件编码和用量；无子零件表示叶节点工艺行
+            else if (childCode != null && !isValidCode(childCode))
+                                                err = "子零件编码无效: " + childCode;
+            else if (childCode != null && (usageQty == null || usageQty <= 0))
+                                                err = "有子零件时用量必须大于0: " + usageQty;
             else if (scrapRate != null && (scrapRate < 0 || scrapRate >= 1))
                                                 err = "报废率必须在[0,1)范围内: " + scrapRate;
             else if (!isValidVersion(version))  err = "版本号不能为空";
