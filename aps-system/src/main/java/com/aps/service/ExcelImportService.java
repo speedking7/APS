@@ -17,11 +17,13 @@ import java.util.List;
  * Excel 导入服务
  *
  * 每次调用处理一个文件，通过 Sheet 名称自动识别数据类型：
- *   完成品入库需求数  → t_demand         （按版本号+客户全删全导）
- *   BOM              → t_bom             （按版本号全删全导）
- *   半成品期末盘点数  → t_inventory_count（按版本号全删全导）
- *   半成品安全库存    → t_safety_stock    （按版本号全删全导）
+ *   完成品入库需求数  → t_demand         （全删全导）
+ *   BOM              → t_bom             （全删全导）
+ *   半成品期末盘点数  → t_inventory_count（全删全导）
+ *   半成品安全库存    → t_safety_stock    （全删全导）
  *   稼动天数          → t_operating_days  （按年月 upsert）
+ *
+ * 每行数据在写入前均做基本校验，不合法行记录到 ImportResult.errors 并跳过。
  */
 @Service
 @Transactional
@@ -36,7 +38,7 @@ public class ExcelImportService {
     public ImportResult importFromExcel(InputStream inputStream) throws IOException {
         ImportResult result = new ImportResult();
         try (Workbook wb = new XSSFWorkbook(inputStream)) {
-            // 按 sheet 名称路由
+
             Sheet demandSheet    = wb.getSheet("完成品入库需求数");
             Sheet bomSheet       = wb.getSheet("BOM");
             Sheet inventorySheet = wb.getSheet("半成品期末盘点数");
@@ -44,7 +46,7 @@ public class ExcelImportService {
             Sheet opDaysSheet    = wb.getSheet("稼动天数");
 
             if (demandSheet != null) {
-                List<Demand> list = parseDemands(demandSheet);
+                List<Demand> list = parseDemands(demandSheet, result);
                 if (!list.isEmpty()) {
                     demandRepository.deleteAllInBatch();
                     demandRepository.saveAll(list);
@@ -53,7 +55,7 @@ public class ExcelImportService {
             }
 
             if (bomSheet != null) {
-                List<Bom> list = parseBoms(bomSheet);
+                List<Bom> list = parseBoms(bomSheet, result);
                 if (!list.isEmpty()) {
                     bomRepository.deleteAllInBatch();
                     bomRepository.saveAll(list);
@@ -62,7 +64,7 @@ public class ExcelImportService {
             }
 
             if (inventorySheet != null) {
-                List<InventoryCount> list = parseInventoryCounts(inventorySheet);
+                List<InventoryCount> list = parseInventoryCounts(inventorySheet, result);
                 if (!list.isEmpty()) {
                     inventoryCountRepository.deleteAllInBatch();
                     inventoryCountRepository.saveAll(list);
@@ -71,7 +73,7 @@ public class ExcelImportService {
             }
 
             if (safetySheet != null) {
-                List<SafetyStock> list = parseSafetyStocks(safetySheet);
+                List<SafetyStock> list = parseSafetyStocks(safetySheet, result);
                 if (!list.isEmpty()) {
                     safetyStockRepository.deleteAllInBatch();
                     safetyStockRepository.saveAll(list);
@@ -80,7 +82,7 @@ public class ExcelImportService {
             }
 
             if (opDaysSheet != null) {
-                List<OperatingDays> list = parseOperatingDays(opDaysSheet);
+                List<OperatingDays> list = parseOperatingDays(opDaysSheet, result);
                 for (OperatingDays od : list) {
                     operatingDaysRepository.findByYearMonth(od.getYearMonth())
                         .ifPresentOrElse(existing -> {
@@ -99,38 +101,67 @@ public class ExcelImportService {
 
     // ── 解析器 ─────────────────────────────────────────────────────────────────
 
-    private List<Demand> parseDemands(Sheet sheet) {
+    private List<Demand> parseDemands(Sheet sheet, ImportResult result) {
+        final String SN = "完成品入库需求数";
         List<Demand> list = new ArrayList<>();
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-            if (row == null) continue;
-            String itemCode = str(row, 1);
-            if (itemCode == null) continue;
+            if (row == null || isBlankRow(row)) continue;
+
+            String customer  = str(row, 0);
+            String itemCode  = str(row, 1);
+            Double ymRaw     = numOrNull(row, 2);
+            String version   = str(row, 7);
+
+            String err = null;
+            if (!isValidCode(itemCode))       err = "存货编码无效: " + itemCode;
+            else if (ymRaw == null)            err = "年月不能为空";
+            else if (!isValidYearMonth(ymRaw)) err = "年月格式无效(需YYYYMM): " + ymRaw.intValue();
+            else if (!isValidVersion(version)) err = "版本号不能为空";
+
+            if (err != null) { result.addError(SN, i + 1, err); continue; }
+
             Demand d = new Demand();
-            d.setCustomer(str(row, 0));
+            d.setCustomer(customer);
             d.setItemCode(itemCode);
-            d.setYearMonth((int) num(row, 2));
+            d.setYearMonth(ymRaw.intValue());
             d.setDemandQty(numOrNull(row, 3));
             d.setEndingInventory(numOrNull(row, 4));
             d.setMinSafetyStock(numOrNull(row, 5));
             d.setNetDemand(numOrNull(row, 6));
-            d.setVersion(str(row, 7));
+            d.setVersion(version);
             list.add(d);
         }
         return list;
     }
 
-    private List<Bom> parseBoms(Sheet sheet) {
+    private List<Bom> parseBoms(Sheet sheet, ImportResult result) {
+        final String SN = "BOM";
         List<Bom> list = new ArrayList<>();
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-            if (row == null) continue;
+            if (row == null || isBlankRow(row)) continue;
+
             String parentCode = str(row, 0);
-            if (parentCode == null) continue;
+            String childCode  = str(row, 1);
+            Double usageQty   = numOrNull(row, 2);
+            Double scrapRate  = numOrNull(row, 9);
+            String version    = str(row, 10);
+
+            String err = null;
+            if (!isValidCode(parentCode))      err = "父零件编码无效: " + parentCode;
+            else if (!isValidCode(childCode))   err = "子零件编码无效: " + childCode;
+            else if (usageQty == null || usageQty <= 0) err = "用量必须大于0: " + usageQty;
+            else if (scrapRate != null && (scrapRate < 0 || scrapRate >= 1))
+                                                err = "报废率必须在[0,1)范围内: " + scrapRate;
+            else if (!isValidVersion(version))  err = "版本号不能为空";
+
+            if (err != null) { result.addError(SN, i + 1, err); continue; }
+
             Bom b = new Bom();
             b.setParentCode(parentCode);
-            b.setChildCode(str(row, 1));
-            b.setUsageQty(numOrNull(row, 2));
+            b.setChildCode(childCode);
+            b.setUsageQty(usageQty);
             b.setProcess(str(row, 3));
             b.setEquipment(str(row, 4));
             Double moldRaw = numOrNull(row, 5);
@@ -138,64 +169,141 @@ public class ExcelImportService {
             b.setCycleTime(numOrNull(row, 6));
             b.setStaffCount(numOrNull(row, 7));
             b.setTaktTime(numOrNull(row, 8));
-            b.setScrapRate(numOrNull(row, 9));
-            b.setVersion(str(row, 10));
+            b.setScrapRate(scrapRate);
+            b.setVersion(version);
             list.add(b);
         }
         return list;
     }
 
-    private List<InventoryCount> parseInventoryCounts(Sheet sheet) {
+    private List<InventoryCount> parseInventoryCounts(Sheet sheet, ImportResult result) {
+        final String SN = "半成品期末盘点数";
         List<InventoryCount> list = new ArrayList<>();
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-            if (row == null) continue;
+            if (row == null || isBlankRow(row)) continue;
+
             String itemCode = str(row, 0);
-            if (itemCode == null) continue;
+            Double ymRaw    = numOrNull(row, 1);
+            String version  = str(row, 3);
+
+            String err = null;
+            if (!isValidCode(itemCode))        err = "存货编码无效: " + itemCode;
+            else if (ymRaw == null)             err = "年月不能为空";
+            else if (!isValidYearMonth(ymRaw))  err = "年月格式无效(需YYYYMM): " + ymRaw.intValue();
+            else if (!isValidVersion(version))  err = "版本号不能为空";
+
+            if (err != null) { result.addError(SN, i + 1, err); continue; }
+
             InventoryCount ic = new InventoryCount();
             ic.setItemCode(itemCode);
-            ic.setYearMonth((int) num(row, 1));
+            ic.setYearMonth(ymRaw.intValue());
             ic.setAvailableQty(num(row, 2));
-            ic.setVersion(str(row, 3));
+            ic.setVersion(version);
             list.add(ic);
         }
         return list;
     }
 
-    private List<SafetyStock> parseSafetyStocks(Sheet sheet) {
+    private List<SafetyStock> parseSafetyStocks(Sheet sheet, ImportResult result) {
+        final String SN = "半成品安全库存";
         List<SafetyStock> list = new ArrayList<>();
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-            if (row == null) continue;
-            String itemCode = str(row, 0);
-            if (itemCode == null) continue;
+            if (row == null || isBlankRow(row)) continue;
+
+            String itemCode  = str(row, 0);
+            Double safetyDays = numOrNull(row, 2);
+            String version   = str(row, 4);
+
+            String err = null;
+            if (!isValidCode(itemCode))       err = "存货编码无效: " + itemCode;
+            else if (safetyDays == null)       err = "安全天数不能为空";
+            else if (safetyDays < 0)           err = "安全天数不能为负数: " + safetyDays;
+            else if (!isValidVersion(version)) err = "版本号不能为空";
+
+            if (err != null) { result.addError(SN, i + 1, err); continue; }
+
             SafetyStock s = new SafetyStock();
             s.setItemCode(itemCode);
             s.setDailyEquivalent(numOrNull(row, 1));
-            s.setSafetyDays(num(row, 2));
+            s.setSafetyDays(safetyDays);
             s.setMaxDays(numOrNull(row, 3));
-            s.setVersion(str(row, 4));
+            s.setVersion(version);
             list.add(s);
         }
         return list;
     }
 
-    private List<OperatingDays> parseOperatingDays(Sheet sheet) {
+    private List<OperatingDays> parseOperatingDays(Sheet sheet, ImportResult result) {
+        final String SN = "稼动天数";
         List<OperatingDays> list = new ArrayList<>();
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-            if (row == null) continue;
-            Cell c = row.getCell(0);
-            if (c == null || c.getCellType() == CellType.BLANK) continue;
+            if (row == null || isBlankRow(row)) continue;
+
+            Double ymRaw   = numOrNull(row, 0);
+            Double workDays = numOrNull(row, 2);
+
+            String err = null;
+            if (ymRaw == null)              err = "年月不能为空";
+            else if (!isValidYearMonth(ymRaw)) err = "年月格式无效(需YYYYMM): " + ymRaw.intValue();
+            else if (workDays == null)       err = "工作日不能为空";
+            else if (workDays < 0)           err = "工作日不能为负数: " + workDays;
+
+            if (err != null) { result.addError(SN, i + 1, err); continue; }
+
             OperatingDays o = new OperatingDays();
-            o.setYearMonth((int) num(row, 0));
+            o.setYearMonth(ymRaw.intValue());
             o.setTotalDays(numOrNull(row, 1));
-            o.setWorkDays(num(row, 2));
+            o.setWorkDays(workDays);
             o.setWeekendDays(numOrNull(row, 3));
             o.setHolidayDays(numOrNull(row, 4));
             list.add(o);
         }
         return list;
+    }
+
+    // ── 校验辅助 ──────────────────────────────────────────────────────────────
+
+    /**
+     * 合法的 YYYYMM：6位整数，年份 2000-2099，月份 01-12
+     */
+    private boolean isValidYearMonth(double raw) {
+        int ym = (int) raw;
+        if (ym != raw) return false;       // 不是整数
+        int year  = ym / 100;
+        int month = ym % 100;
+        return year >= 2000 && year <= 2099 && month >= 1 && month <= 12;
+    }
+
+    /**
+     * 合法编码：非空、不以中文字符开头（排除说明行/列头）
+     */
+    private boolean isValidCode(String code) {
+        if (code == null || code.isBlank()) return false;
+        // 若首字符是中文则认为是说明行
+        return !Character.UnicodeScript.of(code.charAt(0)).equals(Character.UnicodeScript.HAN);
+    }
+
+    /**
+     * 版本号：非空非空白
+     */
+    private boolean isValidVersion(String version) {
+        return version != null && !version.isBlank();
+    }
+
+    /**
+     * 整行是否全部为空
+     */
+    private boolean isBlankRow(Row row) {
+        for (Cell cell : row) {
+            if (cell != null && cell.getCellType() != CellType.BLANK) {
+                if (cell.getCellType() == CellType.STRING && cell.getStringCellValue().isBlank()) continue;
+                return false;
+            }
+        }
+        return true;
     }
 
     // ── Cell helpers ──────────────────────────────────────────────────────────
