@@ -11,7 +11,7 @@
   --color-primary:#0057b8;--color-secondary:#FF6B35;--color-accent:#00875A;
   --color-neutral-050:#f1f2f3;--color-neutral-100:#fafbfc;--color-neutral-200:#c1c6c8;
   --color-neutral-400:#8A96A8;--color-neutral-600:#5A6B7D;--color-neutral-800:#3d3f40;
-  --color-success:#4caf50;--color-warning:#fbc02d;--color-error:#f44339;--color-info:#03a9f4;
+  --color-success:#4caf50;--color-warning:#fbc02d;--color-error:#f44339;
   --font-display:'Satoshi',-apple-system,sans-serif;
   --font-body:'Instrument Sans',-apple-system,sans-serif;
   --font-data:'Geist',-apple-system,sans-serif;
@@ -19,7 +19,6 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(--color-neutral-800);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
-
 .sidebar{width:240px;flex-shrink:0;background:var(--bg-sidebar);color:#c8d0da;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);position:fixed;left:0;top:0;bottom:0;overflow-y:auto;z-index:100}
 .sidebar-logo{height:64px;display:flex;align-items:center;padding:0 18px;gap:11px;border-bottom:1px solid rgba(255,255,255,.07)}
 .logo-mark{width:34px;height:34px;border-radius:8px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:900;color:#fff;box-shadow:0 4px 12px rgba(0,87,184,.4)}
@@ -33,43 +32,35 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--color-primary)}
 .nav-item .ni{width:16px;flex-shrink:0;text-align:center;font-size:13px;opacity:.75}
 .nav-item.active .ni{opacity:1}
-
 .main{flex:1;margin-left:240px;display:flex;flex-direction:column;min-height:100vh}
 .topbar{height:52px;background:#fff;border-bottom:1px solid var(--color-neutral-200);display:flex;align-items:center;padding:0 28px;gap:14px;flex-shrink:0}
 .crumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-400)}
 .crumb a{color:var(--color-primary);text-decoration:none}
-.crumb a:hover{text-decoration:underline}
 .crumb .sep{opacity:.4}
 .crumb .now{color:var(--color-neutral-800);font-weight:600}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
-.version-pill{font-size:11px;font-family:var(--font-data);padding:3px 9px;border-radius:99px;background:rgba(0,135,90,.1);color:var(--color-accent);font-weight:600;letter-spacing:.04em}
-.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;font-family:var(--font-display)}
-
+.version-pill{font-size:11px;font-family:var(--font-data);padding:3px 9px;border-radius:99px;background:rgba(0,135,90,.1);color:var(--color-accent);font-weight:600}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
 .content{padding:32px 36px;flex:1}
 .page-head{margin-bottom:24px}
 .page-title{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--color-neutral-800);letter-spacing:-.4px}
 .page-sub{font-size:13px;color:var(--color-neutral-400);margin-top:4px}
-
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
 .stat-card{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center}
 .stat-info .stat-label{font-size:12px;color:var(--color-neutral-400)}
 .stat-info .stat-value{font-family:var(--font-data);font-size:24px;font-weight:700;color:var(--color-neutral-800);font-feature-settings:'tnum';margin-top:3px}
-.stat-info .stat-unit{font-size:13px;color:var(--color-neutral-400);margin-left:4px;font-weight:500}
+.stat-info .stat-unit{font-size:13px;color:var(--color-neutral-400);margin-left:4px}
 .stat-icon{width:38px;height:38px;border-radius:8px;background:rgba(0,135,90,.1);display:flex;align-items:center;justify-content:center;color:var(--color-accent);font-size:18px}
-
-/* tabs */
 .tabs{display:flex;gap:4px;background:var(--color-neutral-100);border:1px solid var(--color-neutral-200);border-radius:8px;padding:4px;width:fit-content;margin-bottom:18px}
 .tab{padding:8px 16px;font-size:13px;color:var(--color-neutral-600);cursor:pointer;border-radius:5px;font-weight:500;transition:all .15s}
 .tab:hover{color:var(--color-neutral-800)}
 .tab.active{background:#fff;color:var(--color-primary);box-shadow:0 1px 3px rgba(0,0,0,.06)}
-
 .filter-bar{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:14px 18px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
 .filter-group{display:flex;flex-direction:column;gap:5px}
 .filter-label{font-size:11px;color:var(--color-neutral-400);letter-spacing:.04em}
-.filter-input,.filter-select{padding:7px 10px;border:1px solid var(--color-neutral-200);border-radius:6px;font-size:13px;font-family:var(--font-body);min-width:140px;background:#fff}
+.filter-input,.filter-select{padding:7px 10px;border:1px solid var(--color-neutral-200);border-radius:6px;font-size:13px;font-family:var(--font-body);min-width:130px;background:#fff}
 .filter-input:focus,.filter-select:focus{outline:none;border-color:var(--color-primary)}
 .filter-actions{margin-left:auto;display:flex;gap:8px}
-
 .btn{padding:8px 14px;border-radius:6px;font-size:13px;font-family:var(--font-body);font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
 .btn-primary{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
 .btn-primary:hover{background:#004a9e}
@@ -77,41 +68,26 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .btn-secondary:hover{background:rgba(0,87,184,.05)}
 .btn-ghost{background:transparent;color:var(--color-neutral-600);border-color:var(--color-neutral-200)}
 .btn-ghost:hover{border-color:var(--color-neutral-400);color:var(--color-neutral-800)}
-
 .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .toolbar-left{font-size:13px;color:var(--color-neutral-600)}
 .toolbar-right{display:flex;gap:8px}
-
 .data-panel{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow:hidden}
 .data-table{width:100%;border-collapse:collapse}
 .data-table th{background:var(--color-neutral-100);padding:11px 14px;font-size:11px;font-weight:600;color:var(--color-neutral-400);text-align:left;border-bottom:1px solid var(--color-neutral-200);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
 .data-table th.num{text-align:right}
-.data-table td{padding:11px 14px;font-size:13px;color:var(--color-neutral-800);border-bottom:1px solid var(--color-neutral-050);white-space:nowrap}
+.data-table td{padding:10px 14px;font-size:13px;color:var(--color-neutral-800);border-bottom:1px solid var(--color-neutral-050);white-space:nowrap}
 .data-table td.num{text-align:right;font-family:var(--font-data);font-feature-settings:'tnum';font-weight:500}
 .data-table td.code{font-family:var(--font-data);font-size:12.5px;color:var(--color-neutral-600)}
 .data-table tr:hover td{background:var(--color-neutral-100)}
-
-.proc-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:10.5px;font-weight:700;font-family:var(--font-data);letter-spacing:.04em}
-.proc-INJ{background:rgba(3,169,244,.12);color:#0277bd}
-.proc-STM{background:rgba(255,107,53,.12);color:#d35a26}
-.proc-MCH{background:rgba(0,135,90,.12);color:var(--color-accent)}
-.proc-ASM{background:rgba(123,31,162,.12);color:#6a1b9a}
-.proc-QC{background:rgba(244,67,57,.12);color:#c62828}
-
+.data-table tr:last-child td{border-bottom:none}
+.proc-tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:5px;font-size:10.5px;font-weight:700;font-family:var(--font-data)}
 .action-link{color:var(--color-primary);font-size:12.5px;cursor:pointer;text-decoration:none}
 .action-link:hover{text-decoration:underline}
 .action-link.danger{color:var(--color-error)}
 .act-sep{color:var(--color-neutral-200);margin:0 6px}
-
-/* tree view */
 .tree-panel{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:24px}
 .tree-node{margin:0}
-.tree-row{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 12px;border-radius:6px;
-  transition:background .12s;cursor:pointer;
-  position:relative;
-}
+.tree-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;transition:background .12s;cursor:pointer;position:relative}
 .tree-row:hover{background:var(--color-neutral-100)}
 .tree-toggle{width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:var(--color-neutral-400);font-size:11px;flex-shrink:0;cursor:pointer;transition:transform .15s}
 .tree-toggle.expanded{transform:rotate(90deg);color:var(--color-accent)}
@@ -120,33 +96,42 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .tree-icon.lvl-1{background:var(--color-primary);color:#fff;font-weight:700}
 .tree-icon.lvl-2{background:rgba(0,135,90,.15);color:var(--color-accent);font-weight:700}
 .tree-icon.lvl-3{background:var(--color-neutral-100);color:var(--color-neutral-600);border:1px solid var(--color-neutral-200);font-weight:600}
-.tree-code{font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--color-neutral-800);min-width:110px}
-.tree-name{font-size:13px;color:var(--color-neutral-800);min-width:130px}
+.tree-code{font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--color-neutral-800);min-width:130px}
 .tree-meta{display:flex;gap:14px;margin-left:auto;font-size:11.5px;color:var(--color-neutral-400);font-family:var(--font-data)}
 .tree-meta b{color:var(--color-neutral-800);font-weight:600}
 .tree-children{padding-left:36px;border-left:1px dashed var(--color-neutral-200);margin-left:21px}
 .tree-children[hidden]{display:none}
-/* modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:500;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
-.modal-box{background:#fff;border-radius:12px;padding:28px 32px;width:480px;box-shadow:0 12px 40px rgba(0,0,0,.18);max-height:90vh;overflow-y:auto}
+.modal-box{background:#fff;border-radius:12px;padding:28px 32px;width:560px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.18);max-height:90vh;overflow-y:auto}
+.modal-box.wide{width:640px}
 .modal-title{font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:20px;color:var(--color-neutral-800);display:flex;justify-content:space-between;align-items:center}
 .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--color-neutral-400)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .form-group{display:flex;flex-direction:column;gap:5px}
 .form-group.full{grid-column:1/-1}
+.form-group.tri{grid-column:span 1}
 .form-label{font-size:11px;color:var(--color-neutral-400);font-weight:600;letter-spacing:.04em}
+.form-label .req{color:var(--color-error);margin-left:2px}
 .form-input,.form-select{padding:8px 10px;border:1px solid var(--color-neutral-200);border-radius:6px;font-size:13px;font-family:var(--font-body);background:#fff}
 .form-input:focus,.form-select:focus{outline:none;border-color:var(--color-primary)}
 .form-input:disabled{background:var(--color-neutral-050);color:var(--color-neutral-400)}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
-/* toast */
+.upload-zone{border:2px dashed var(--color-neutral-200);border-radius:8px;padding:28px 20px;text-align:center;background:var(--color-neutral-100);transition:all .18s;cursor:pointer}
+.upload-zone:hover{border-color:var(--color-primary);background:rgba(0,87,184,.04)}
+.upload-icon{font-size:28px;color:var(--color-primary);margin-bottom:8px}
+.upload-text{font-size:13px;color:var(--color-neutral-600);margin-bottom:4px}
+.upload-meta{font-size:11px;color:var(--color-neutral-400);font-family:var(--font-data)}
+.tpl-row{margin-bottom:14px;padding:10px 14px;background:rgba(0,135,90,.07);border:1px solid rgba(0,135,90,.2);border-radius:8px;font-size:12.5px;color:var(--color-neutral-600)}
+.tpl-row b{color:var(--color-accent)}
+.import-result{margin-top:12px;padding:10px 14px;background:rgba(0,87,184,.06);border:1px solid rgba(0,87,184,.2);border-radius:6px;font-size:12.5px;color:var(--color-neutral-700);display:none}
+.import-result.show{display:block}
+.error-list{margin-top:8px;max-height:120px;overflow-y:auto;font-size:12px;color:var(--color-error);line-height:1.7}
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1c2333;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 </style>
 </head>
 <body>
-
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="logo-mark">APS</div>
@@ -156,9 +141,9 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   <div class="nav-group"><div class="nav-group-label">工作台</div><a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a></div>
   <div class="nav-group">
     <div class="nav-group-label">基础数据</div>
-    <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>预测管理</a>
+    <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
     <a href="03-bom-list.html" class="nav-item active"><span class="ni">▣</span>BOM 管理</a>
-    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>物料参数</a>
+    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
     <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
     <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
   </div>
@@ -187,20 +172,20 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   <div class="content">
     <div class="page-head">
       <div class="page-title">BOM 管理</div>
-      <div class="page-sub">物料清单维护，支持列表与树形结构两种视图</div>
+      <div class="page-sub">物料清单与工艺参数维护，支持列表与树形视图</div>
     </div>
 
     <div class="stat-row">
       <div class="stat-card">
-        <div class="stat-info"><div class="stat-label">父零件数</div><div><span class="stat-value">6</span><span class="stat-unit">条</span></div></div>
+        <div class="stat-info"><div class="stat-label">父零件数</div><div><span class="stat-value" id="statParents">—</span><span class="stat-unit">条</span></div></div>
         <div class="stat-icon">▣</div>
       </div>
       <div class="stat-card">
-        <div class="stat-info"><div class="stat-label">BOM 层级最深</div><div><span class="stat-value">3</span><span class="stat-unit">层</span></div></div>
+        <div class="stat-info"><div class="stat-label">BOM 行数</div><div><span class="stat-value" id="statTotal">—</span><span class="stat-unit">行</span></div></div>
         <div class="stat-icon">⊞</div>
       </div>
       <div class="stat-card">
-        <div class="stat-info"><div class="stat-label">最近更新</div><div><span class="stat-value">2026-05-01</span></div></div>
+        <div class="stat-info"><div class="stat-label">当前版本</div><div><span class="stat-value" id="statVersion" style="font-size:16px">—</span></div></div>
         <div class="stat-icon">◷</div>
       </div>
     </div>
@@ -215,53 +200,44 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <div class="filter-bar">
         <div class="filter-group">
           <label class="filter-label">父零件编码</label>
-          <input class="filter-input" placeholder="如 11201A012">
+          <input class="filter-input" id="filterParent" placeholder="如 11201A012">
         </div>
         <div class="filter-group">
           <label class="filter-label">子零件编码</label>
-          <input class="filter-input" placeholder="如 21201A012">
+          <input class="filter-input" id="filterChild" placeholder="如 21201A012">
         </div>
         <div class="filter-group">
           <label class="filter-label">工序</label>
-          <select class="filter-select">
-            <option>全部</option><option>注塑(INJ)</option><option>冲压(STM)</option>
-            <option>机加(MCH)</option><option>装配(ASM)</option><option>检测(QC)</option>
-          </select>
+          <input class="filter-input" id="filterProcess" placeholder="如 aa">
         </div>
         <div class="filter-group">
-          <label class="filter-label">设备</label>
-          <select class="filter-select">
-            <option>全部</option><option>INJ-01</option><option>INJ-02</option>
-            <option>STM-A</option><option>MCH-01</option>
-          </select>
+          <label class="filter-label">版本号</label>
+          <input class="filter-input" id="filterVersion" placeholder="如 20260331-1">
         </div>
         <div class="filter-actions">
-          <button class="btn btn-secondary">重置</button>
-          <button class="btn btn-primary">查询</button>
+          <button class="btn btn-ghost" onclick="resetFilter()">重置</button>
+          <button class="btn btn-primary" onclick="applyFilter()">查询</button>
         </div>
       </div>
-
       <div class="toolbar">
-        <div class="toolbar-left">共 <b style="font-family:var(--font-data);color:var(--color-neutral-800)">6</b> 条 BOM 记录</div>
+        <div class="toolbar-left">共 <b id="totalCount" style="font-family:var(--font-data);color:var(--color-neutral-800)">0</b> 条 BOM 记录</div>
         <div class="toolbar-right">
+          <button class="btn btn-primary" onclick="openImportModal()">⇪ 批量导入</button>
           <button class="btn btn-secondary" onclick="openBomModal(null)">+ 新增</button>
-          <button class="btn btn-ghost">⇩ 导出</button>
         </div>
       </div>
-
       <div class="data-panel">
         <table class="data-table">
           <thead>
             <tr>
-              <th>父零件</th><th>父零件名称</th><th>子零件</th><th>子零件名称</th>
-              <th class="num">用量</th><th>工序</th><th>设备</th>
-              <th class="num">模腔数</th><th class="num">制造周期(s)</th>
-              <th class="num">持台人数</th><th class="num">单件节拍(s)</th>
-              <th>操作</th>
+              <th>父零件</th><th>子零件</th><th class="num">用量</th>
+              <th>工序</th><th>设备</th><th class="num">模腔数</th>
+              <th class="num">制造周期(s)</th><th class="num">持台人数</th>
+              <th class="num">节拍(s)</th><th class="num">报废率</th>
+              <th>版本号</th><th>操作</th>
             </tr>
           </thead>
-          <tbody id="dataTbody">
-          </tbody>
+          <tbody id="dataTbody"></tbody>
         </table>
       </div>
     </div>
@@ -270,143 +246,6 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <div id="view-tree" hidden>
       <div class="tree-panel" id="treeContainer">
         <div style="padding:32px;color:var(--color-neutral-400);font-size:13px">加载中…</div>
-        <!-- node 1 -->
-        <div class="tree-node">
-          <div class="tree-row" onclick="toggleNode(this)">
-            <div class="tree-toggle expanded">▶</div>
-            <div class="tree-icon lvl-1">L1</div>
-            <div class="tree-code">11201A012</div>
-            <div class="tree-name">转向节总成</div>
-            <div class="tree-meta">
-              <span>层级深度 <b>3</b></span>
-              <span>子件数 <b>2</b></span>
-            </div>
-          </div>
-          <div class="tree-children">
-            <div class="tree-node">
-              <div class="tree-row" onclick="toggleNode(this)">
-                <div class="tree-toggle expanded">▶</div>
-                <div class="tree-icon lvl-2">L2</div>
-                <div class="tree-code">21201A012</div>
-                <div class="tree-name">转向节本体</div>
-                <div class="tree-meta">
-                  <span>用量 <b>1</b></span>
-                  <span>工序 <b>MCH</b></span>
-                  <span>设备 <b>MCH-01</b></span>
-                  <span>节拍 <b>60s</b></span>
-                </div>
-              </div>
-              <div class="tree-children">
-                <div class="tree-node">
-                  <div class="tree-row">
-                    <div class="tree-toggle leaf">·</div>
-                    <div class="tree-icon lvl-3">L3</div>
-                    <div class="tree-code">31201A012</div>
-                    <div class="tree-name">转向节毛坯</div>
-                    <div class="tree-meta">
-                      <span>用量 <b>1</b></span>
-                      <span>工序 <b>STM</b></span>
-                      <span>设备 <b>STM-A</b></span>
-                      <span>节拍 <b>45s</b></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- node 2 -->
-        <div class="tree-node" style="margin-top:6px">
-          <div class="tree-row" onclick="toggleNode(this)">
-            <div class="tree-toggle expanded">▶</div>
-            <div class="tree-icon lvl-1">L1</div>
-            <div class="tree-code">11201A022</div>
-            <div class="tree-name">制动盘总成</div>
-            <div class="tree-meta">
-              <span>层级深度 <b>3</b></span>
-              <span>子件数 <b>2</b></span>
-            </div>
-          </div>
-          <div class="tree-children">
-            <div class="tree-node">
-              <div class="tree-row" onclick="toggleNode(this)">
-                <div class="tree-toggle expanded">▶</div>
-                <div class="tree-icon lvl-2">L2</div>
-                <div class="tree-code">21201A022</div>
-                <div class="tree-name">制动盘本体</div>
-                <div class="tree-meta">
-                  <span>用量 <b>1</b></span>
-                  <span>工序 <b>MCH</b></span>
-                  <span>设备 <b>MCH-01</b></span>
-                  <span>节拍 <b>55s</b></span>
-                </div>
-              </div>
-              <div class="tree-children">
-                <div class="tree-node">
-                  <div class="tree-row">
-                    <div class="tree-toggle leaf">·</div>
-                    <div class="tree-icon lvl-3">L3</div>
-                    <div class="tree-code">31201A022</div>
-                    <div class="tree-name">制动盘毛坯</div>
-                    <div class="tree-meta">
-                      <span>用量 <b>1</b></span>
-                      <span>工序 <b>INJ</b></span>
-                      <span>设备 <b>INJ-02</b></span>
-                      <span>节拍 <b>40s</b></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- node 3 -->
-        <div class="tree-node" style="margin-top:6px">
-          <div class="tree-row" onclick="toggleNode(this)">
-            <div class="tree-toggle expanded">▶</div>
-            <div class="tree-icon lvl-1">L1</div>
-            <div class="tree-code">11201A033</div>
-            <div class="tree-name">悬架支架</div>
-            <div class="tree-meta">
-              <span>层级深度 <b>3</b></span>
-              <span>子件数 <b>2</b></span>
-            </div>
-          </div>
-          <div class="tree-children">
-            <div class="tree-node">
-              <div class="tree-row" onclick="toggleNode(this)">
-                <div class="tree-toggle expanded">▶</div>
-                <div class="tree-icon lvl-2">L2</div>
-                <div class="tree-code">21201A033</div>
-                <div class="tree-name">支架本体</div>
-                <div class="tree-meta">
-                  <span>用量 <b>2</b></span>
-                  <span>工序 <b>ASM</b></span>
-                  <span>设备 <b>ASM-L1</b></span>
-                  <span>节拍 <b>50s</b></span>
-                </div>
-              </div>
-              <div class="tree-children">
-                <div class="tree-node">
-                  <div class="tree-row">
-                    <div class="tree-toggle leaf">·</div>
-                    <div class="tree-icon lvl-3">L3</div>
-                    <div class="tree-code">31201A033</div>
-                    <div class="tree-name">支架毛坯</div>
-                    <div class="tree-meta">
-                      <span>用量 <b>1</b></span>
-                      <span>工序 <b>STM</b></span>
-                      <span>设备 <b>STM-A</b></span>
-                      <span>节拍 <b>35s</b></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -422,27 +261,24 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <input type="hidden" id="bomId">
     <div class="form-grid">
       <div class="form-group">
-        <label class="form-label">父零件编码 *</label>
+        <label class="form-label">父零件编码<span class="req">*</span></label>
         <input class="form-input" id="bomParent" placeholder="如 11201A012">
       </div>
       <div class="form-group">
-        <label class="form-label">子零件编码</label>
+        <label class="form-label">子零件编码 <span style="color:var(--color-neutral-400);font-weight:400">（叶节点可留空）</span></label>
         <input class="form-input" id="bomChild" placeholder="如 21201A012">
       </div>
       <div class="form-group">
-        <label class="form-label">用量</label>
+        <label class="form-label">用量 <span style="color:var(--color-neutral-400);font-weight:400">（有子件时必填）</span></label>
         <input class="form-input" id="bomUsageQty" type="number" min="0" step="0.01" placeholder="1">
       </div>
       <div class="form-group">
         <label class="form-label">工序</label>
-        <select class="form-select" id="bomProcess">
-          <option value="">— 选择 —</option>
-          <option>INJ</option><option>STM</option><option>MCH</option><option>ASM</option><option>QC</option>
-        </select>
+        <input class="form-input" id="bomProcess" placeholder="如 aa">
       </div>
       <div class="form-group">
         <label class="form-label">设备</label>
-        <input class="form-input" id="bomEquipment" placeholder="如 MCH-01">
+        <input class="form-input" id="bomEquipment" placeholder="如 aa001">
       </div>
       <div class="form-group">
         <label class="form-label">模腔数</label>
@@ -450,7 +286,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       </div>
       <div class="form-group">
         <label class="form-label">制造周期(s)</label>
-        <input class="form-input" id="bomCycleTime" type="number" min="0" step="0.1" placeholder="60">
+        <input class="form-input" id="bomCycleTime" type="number" min="0" step="0.1" placeholder="30">
       </div>
       <div class="form-group">
         <label class="form-label">持台人数</label>
@@ -458,7 +294,15 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       </div>
       <div class="form-group">
         <label class="form-label">单件节拍(s)</label>
-        <input class="form-input" id="bomTaktTime" type="number" min="0" step="0.1" placeholder="60">
+        <input class="form-input" id="bomTaktTime" type="number" min="0" step="0.1" placeholder="30">
+      </div>
+      <div class="form-group">
+        <label class="form-label">报废率 <span style="color:var(--color-neutral-400);font-weight:400">（0~1，如 0.01）</span></label>
+        <input class="form-input" id="bomScrapRate" type="number" min="0" max="0.9999" step="0.0001" placeholder="0.01">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">版本号<span class="req">*</span></label>
+        <input class="form-input" id="bomVersion" placeholder="如 20260331-1">
       </div>
     </div>
     <div class="modal-footer">
@@ -467,175 +311,226 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     </div>
   </div>
 </div>
-<!-- Toast -->
+
+<!-- 批量导入弹窗 -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal-box wide">
+    <div class="modal-title">
+      <span>批量导入 BOM</span>
+      <button class="modal-close" onclick="closeImportModal()">×</button>
+    </div>
+    <div class="tpl-row">Sheet 名称：<b>BOM</b>，列顺序：父零件/子零件/用量/工序/设备/模腔数/制造周期/持台人数/节拍/报废率/版本号</div>
+    <div class="upload-zone" onclick="document.getElementById('importFile').click()">
+      <div class="upload-icon">⇪</div>
+      <div class="upload-text" id="importFileName">点击或拖拽文件到此处上传</div>
+      <div class="upload-meta">支持 .xlsx · 单次上传不超过 5MB</div>
+      <input type="file" id="importFile" hidden accept=".xlsx" onchange="onFileSelected(this)">
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--color-neutral-400);line-height:1.7">
+      · 导入将清空当前全部 BOM 后重新写入<br>
+      · 叶节点工艺行（有父零件无子零件）为合法行<br>
+      · 说明行及非法数据将被跳过并在结果中列出
+    </div>
+    <div class="import-result" id="importResult"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeImportModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmImport()">确认导入</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 
 function switchTab(view){
-  document.getElementById('tab-list').classList.toggle('active', view==='list');
-  document.getElementById('tab-tree').classList.toggle('active', view==='tree');
-  document.getElementById('view-list').hidden = view!=='list';
-  document.getElementById('view-tree').hidden = view!=='tree';
+  document.getElementById('tab-list').classList.toggle('active',view==='list');
+  document.getElementById('tab-tree').classList.toggle('active',view==='tree');
+  document.getElementById('view-list').hidden=view!=='list';
+  document.getElementById('view-tree').hidden=view!=='tree';
 }
 
 function toggleNode(rowEl){
-  const toggle = rowEl.querySelector('.tree-toggle');
-  if(!toggle || toggle.classList.contains('leaf')) return;
-  const node = rowEl.parentElement;
-  const children = node.querySelector(':scope > .tree-children');
-  if(!children) return;
-  const expanded = toggle.classList.toggle('expanded');
-  children.hidden = !expanded;
+  const toggle=rowEl.querySelector('.tree-toggle');
+  if(!toggle||toggle.classList.contains('leaf'))return;
+  const node=rowEl.parentElement;
+  const children=node.querySelector(':scope > .tree-children');
+  if(!children)return;
+  const expanded=toggle.classList.toggle('expanded');
+  children.hidden=!expanded;
 }
 
 // ── Modal ──────────────────────────────────────────────
-function openBomModal(d) {
-  document.getElementById('bomModalTitle').textContent = d ? '编辑 BOM' : '新增 BOM';
-  document.getElementById('bomId').value        = d ? d.id : '';
-  document.getElementById('bomParent').value    = d ? d.parentCode : '';
-  document.getElementById('bomChild').value     = d ? (d.childCode || '') : '';
-  document.getElementById('bomUsageQty').value  = d ? (d.usageQty ?? '') : '';
-  document.getElementById('bomProcess').value   = d ? (d.process || '') : '';
-  document.getElementById('bomEquipment').value = d ? (d.equipment || '') : '';
-  document.getElementById('bomMoldCavity').value= d ? (d.moldCavity ?? '') : '';
-  document.getElementById('bomCycleTime').value = d ? (d.cycleTime ?? '') : '';
-  document.getElementById('bomStaffCount').value= d ? (d.staffCount ?? '') : '';
-  document.getElementById('bomTaktTime').value  = d ? (d.taktTime ?? '') : '';
-  document.getElementById('bomParent').disabled = !!d;
+function openBomModal(d){
+  document.getElementById('bomModalTitle').textContent=d?'编辑 BOM':'新增 BOM';
+  document.getElementById('bomId').value        =d?d.id:'';
+  document.getElementById('bomParent').value    =d?d.parentCode:'';
+  document.getElementById('bomParent').disabled =!!d;
+  document.getElementById('bomChild').value     =d?(d.childCode||''):'';
+  document.getElementById('bomUsageQty').value  =d?(d.usageQty??''):'';
+  document.getElementById('bomProcess').value   =d?(d.process||''):'';
+  document.getElementById('bomEquipment').value =d?(d.equipment||''):'';
+  document.getElementById('bomMoldCavity').value=d?(d.moldCavity??''):'';
+  document.getElementById('bomCycleTime').value =d?(d.cycleTime??''):'';
+  document.getElementById('bomStaffCount').value=d?(d.staffCount??''):'';
+  document.getElementById('bomTaktTime').value  =d?(d.taktTime??''):'';
+  document.getElementById('bomScrapRate').value =d?(d.scrapRate??''):'';
+  document.getElementById('bomVersion').value   =d?(d.version||''):'';
   document.getElementById('bomModal').classList.add('show');
-  setTimeout(() => document.getElementById(d ? 'bomUsageQty' : 'bomParent').focus(), 50);
+  setTimeout(()=>document.getElementById(d?'bomUsageQty':'bomParent').focus(),50);
 }
+function closeBomModal(){document.getElementById('bomModal').classList.remove('show')}
 
-function closeBomModal() {
-  document.getElementById('bomModal').classList.remove('show');
-}
-
-async function saveBom() {
-  const id         = document.getElementById('bomId').value;
-  const parentCode = document.getElementById('bomParent').value.trim();
-  if (!parentCode) { showToast('父零件编码不能为空'); return; }
-  const body = {
-    parentCode,
-    childCode:   document.getElementById('bomChild').value.trim() || null,
-    usageQty:    parseFloat(document.getElementById('bomUsageQty').value) || null,
-    process:     document.getElementById('bomProcess').value || null,
-    equipment:   document.getElementById('bomEquipment').value.trim() || null,
-    moldCavity:  parseInt(document.getElementById('bomMoldCavity').value) || null,
-    cycleTime:   parseFloat(document.getElementById('bomCycleTime').value) || null,
-    staffCount:  parseInt(document.getElementById('bomStaffCount').value) || null,
-    taktTime:    parseFloat(document.getElementById('bomTaktTime').value) || null,
+async function saveBom(){
+  const id=document.getElementById('bomId').value;
+  const parentCode=document.getElementById('bomParent').value.trim();
+  const version=document.getElementById('bomVersion').value.trim();
+  if(!parentCode){showToast('父零件编码不能为空');return;}
+  if(!version){showToast('版本号不能为空');return;}
+  const toNum=(vid)=>{const v=document.getElementById(vid).value;return v===''?null:parseFloat(v);};
+  const toInt=(vid)=>{const v=document.getElementById(vid).value;return v===''?null:parseInt(v);};
+  const childCode=document.getElementById('bomChild').value.trim()||null;
+  const usageQty=toNum('bomUsageQty');
+  if(childCode&&(usageQty===null||usageQty<=0)){showToast('有子零件时用量必须大于0');return;}
+  const body={parentCode,childCode,usageQty,version,
+    process:document.getElementById('bomProcess').value||null,
+    equipment:document.getElementById('bomEquipment').value.trim()||null,
+    moldCavity:toInt('bomMoldCavity'),
+    cycleTime:toNum('bomCycleTime'),
+    staffCount:toNum('bomStaffCount'),
+    taktTime:toNum('bomTaktTime'),
+    scrapRate:toNum('bomScrapRate'),
   };
-  const url    = id ? `${API}/api/bom/${id}` : `${API}/api/bom`;
-  const method = id ? 'PUT' : 'POST';
-  const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  const j = await r.json();
-  if (j.code === 200) {
-    showToast(id ? '修改成功' : '新增成功');
-    closeBomModal();
-    loadData();
-  } else {
-    showToast(j.message || '保存失败');
-  }
+  const url=id?`${API}/api/bom/${id}`:`${API}/api/bom`;
+  const method=id?'PUT':'POST';
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json();
+  if(j.code===200){showToast(id?'修改成功':'新增成功');closeBomModal();loadData();}
+  else showToast(j.message||'保存失败');
 }
 
-const API = 'http://localhost:8080';
-let allBoms = [];
+function openImportModal(){
+  document.getElementById('importResult').className='import-result';
+  document.getElementById('importResult').innerHTML='';
+  document.getElementById('importFileName').textContent='点击或拖拽文件到此处上传';
+  document.getElementById('importFile').value='';
+  document.getElementById('importModal').classList.add('show');
+}
+function closeImportModal(){document.getElementById('importModal').classList.remove('show')}
+function onFileSelected(input){
+  document.getElementById('importFileName').textContent=input.files[0]?input.files[0].name:'点击或拖拽文件到此处上传';
+}
+async function confirmImport(){
+  const file=document.getElementById('importFile').files[0];
+  if(!file){showToast('请先选择文件');return;}
+  const fd=new FormData();fd.append('file',file);
+  const r=await fetch(`${API}/api/excel/import`,{method:'POST',body:fd});
+  const j=await r.json();const d=j.data||{};
+  const el=document.getElementById('importResult');
+  el.className='import-result show';
+  let html=`导入成功：<b>${d.bomCount||0}</b> 条 BOM 记录`;
+  if(d.skippedCount>0) html+=`，跳过 <b style="color:var(--color-warning)">${d.skippedCount}</b> 行`;
+  if(d.errors&&d.errors.length>0) html+=`<div class="error-list">${d.errors.map(e=>`• ${e}`).join('<br>')}</div>`;
+  el.innerHTML=html;
+  loadData();
+}
 
-async function loadData() {
-  const r = await fetch(`${API}/api/bom`);
-  const j = await r.json();
-  allBoms = j.data || [];
-  renderListView(allBoms);
+// ── 数据 ───────────────────────────────────────────────
+const API='http://localhost:8080';
+let allBoms=[],filteredBoms=[];
+
+async function loadData(){
+  const r=await fetch(`${API}/api/bom`);
+  const j=await r.json();
+  allBoms=j.data||[];
+  applyFilter();
   renderTreeView(allBoms);
   updateStats(allBoms);
 }
 
-function renderListView(data) {
-  const tbody = document.getElementById('dataTbody');
-  if (!tbody) return;
-  if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
+function applyFilter(){
+  const parent=document.getElementById('filterParent').value.trim().toLowerCase();
+  const child=document.getElementById('filterChild').value.trim().toLowerCase();
+  const process=document.getElementById('filterProcess').value.trim().toLowerCase();
+  const version=document.getElementById('filterVersion').value.trim().toLowerCase();
+  filteredBoms=allBoms.filter(d=>
+    (!parent  ||d.parentCode.toLowerCase().includes(parent))&&
+    (!child   ||(d.childCode||'').toLowerCase().includes(child))&&
+    (!process ||(d.process||'').toLowerCase().includes(process))&&
+    (!version ||(d.version||'').toLowerCase().includes(version))
+  );
+  renderListView(filteredBoms);
+}
+
+function resetFilter(){
+  ['filterParent','filterChild','filterProcess','filterVersion'].forEach(id=>document.getElementById(id).value='');
+  applyFilter();
+}
+
+function renderListView(data){
+  const tbody=document.getElementById('dataTbody');
+  document.getElementById('totalCount').textContent=data.length;
+  if(data.length===0){
+    tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
     return;
   }
-  tbody.innerHTML = data.map((d, i) => `
+  tbody.innerHTML=data.map((d,i)=>`
     <tr>
       <td class="code">${d.parentCode}</td>
-      <td>${d.parentCode}</td>
-      <td class="code">${d.childCode || '—'}</td>
-      <td>${d.childCode || '—'}</td>
-      <td class="num">${d.usageQty ?? '—'}</td>
-      <td>${d.process ? '<span class="proc-tag proc-' + d.process + '">' + d.process + '</span>' : '—'}</td>
-      <td>${d.equipment || '—'}</td>
-      <td class="num">${d.moldCavity ?? '—'}</td>
-      <td class="num">${d.cycleTime ?? '—'}</td>
-      <td class="num">${d.staffCount ?? '—'}</td>
-      <td class="num">${d.taktTime ?? '—'}</td>
+      <td class="code">${d.childCode||'<span style="color:var(--color-neutral-400)">—</span>'}</td>
+      <td class="num">${d.usageQty??'—'}</td>
+      <td>${d.process?'<span class="proc-tag" style="background:rgba(0,87,184,.1);color:var(--color-primary)">'+d.process+'</span>':'—'}</td>
+      <td>${d.equipment||'—'}</td>
+      <td class="num">${d.moldCavity??'—'}</td>
+      <td class="num">${d.cycleTime??'—'}</td>
+      <td class="num">${d.staffCount??'—'}</td>
+      <td class="num">${d.taktTime??'—'}</td>
+      <td class="num">${d.scrapRate!=null?(d.scrapRate*100).toFixed(2)+'%':'—'}</td>
+      <td><span style="font-family:var(--font-data);font-size:11px;color:var(--color-neutral-400)">${d.version||'—'}</span></td>
       <td>
-        <a class="action-link" onclick="openBomModal(allBoms[${i}])">编辑</a>
+        <a class="action-link" onclick="openBomModal(filteredBoms[${i}])">编辑</a>
         <span class="act-sep">|</span>
         <a class="action-link danger" onclick="deleteBom(${d.id})">删除</a>
       </td>
     </tr>`).join('');
-  const tl = document.querySelector('.toolbar-left');
-  if (tl) tl.innerHTML = `共 <b style="color:var(--color-neutral-800);font-family:var(--font-data)">${data.length}</b> 条 BOM 记录`;
 }
 
-function renderTreeView(data) {
-  const container = document.getElementById('treeContainer');
-  if (!container) return;
-  if (data.length === 0) {
-    container.innerHTML = '<div style="padding:32px;color:var(--color-neutral-400);font-size:13px">暂无数据</div>';
-    return;
+function renderTreeView(data){
+  const container=document.getElementById('treeContainer');
+  if(!container)return;
+  if(data.length===0){container.innerHTML='<div style="padding:32px;color:var(--color-neutral-400);font-size:13px">暂无数据</div>';return;}
+  const childSet=new Set(data.map(d=>d.childCode).filter(Boolean));
+  const roots=[...new Set(data.map(d=>d.parentCode).filter(c=>!childSet.has(c)))];
+  function nodeHtml(code,level,entry){
+    const children=data.filter(d=>d.parentCode===code&&d.childCode);
+    const hasKids=children.length>0;
+    const lvlClass='lvl-'+Math.min(level,3);
+    const meta=entry
+      ?`<span>用量 <b>${entry.usageQty??'—'}</b></span><span>工序 <b>${entry.process||'—'}</b></span><span>设备 <b>${entry.equipment||'—'}</b></span>${entry.taktTime!=null?'<span>节拍 <b>'+entry.taktTime+'s</b></span>':''}`
+      :`<span>子件数 <b>${children.length}</b></span>`;
+    const childrenHtml=hasKids?`<div class="tree-children">${children.map(c=>nodeHtml(c.childCode,level+1,c)).join('')}</div>`:'';
+    return `<div class="tree-node"><div class="tree-row"${hasKids?' onclick="toggleNode(this)"':''}>
+      <div class="tree-toggle${hasKids?' expanded':' leaf'}">${hasKids?'▶':'·'}</div>
+      <div class="tree-icon ${lvlClass}">L${level}</div>
+      <div class="tree-code">${code}</div>
+      <div class="tree-meta">${meta}</div>
+    </div>${childrenHtml}</div>`;
   }
-  // Build parent→children map
-  const childSet = new Set(data.map(d => d.childCode).filter(Boolean));
-  const roots    = [...new Set(data.map(d => d.parentCode).filter(c => !childSet.has(c)))];
-
-  function nodeHtml(code, level, entry) {
-    const children = data.filter(d => d.parentCode === code && d.childCode);
-    const hasKids  = children.length > 0;
-    const lvlClass = `lvl-${Math.min(level, 3)}`;
-    const meta = entry
-      ? `<span>用量 <b>${entry.usageQty ?? '—'}</b></span>
-         <span>工序 <b>${entry.process || '—'}</b></span>
-         <span>设备 <b>${entry.equipment || '—'}</b></span>
-         ${entry.taktTime != null ? `<span>节拍 <b>${entry.taktTime}s</b></span>` : ''}`
-      : `<span>子件数 <b>${children.length}</b></span>`;
-    const childrenHtml = hasKids
-      ? `<div class="tree-children">${children.map(c => nodeHtml(c.childCode, level + 1, c)).join('')}</div>`
-      : '';
-    return `<div class="tree-node">
-      <div class="tree-row"${hasKids ? ' onclick="toggleNode(this)"' : ''}>
-        <div class="tree-toggle${hasKids ? ' expanded' : ' leaf'}">${hasKids ? '▶' : '·'}</div>
-        <div class="tree-icon ${lvlClass}">L${level}</div>
-        <div class="tree-code">${code}</div>
-        <div class="tree-name">${code}</div>
-        <div class="tree-meta">${meta}</div>
-      </div>
-      ${childrenHtml}
-    </div>`;
-  }
-
-  container.innerHTML = roots.map(r => nodeHtml(r, 1, null)).join('');
+  container.innerHTML=roots.map(r=>nodeHtml(r,1,null)).join('');
 }
 
-function updateStats(data) {
-  const parents = new Set(data.map(d => d.parentCode));
-  const statVals = document.querySelectorAll('.stat-value');
-  if (statVals[0]) statVals[0].textContent = parents.size;
+function updateStats(data){
+  document.getElementById('statParents').textContent=new Set(data.map(d=>d.parentCode)).size;
+  document.getElementById('statTotal').textContent=data.length;
+  const versions=[...new Set(data.map(d=>d.version).filter(Boolean))];
+  document.getElementById('statVersion').textContent=versions.length?versions[versions.length-1]:'—';
 }
 
-async function deleteBom(id) {
-  if (!confirm('确认删除？')) return;
-  await fetch(`${API}/api/bom/${id}`, {method:'DELETE'});
-  showToast('已删除');
-  loadData();
+async function deleteBom(id){
+  if(!confirm('确认删除？'))return;
+  await fetch(`${API}/api/bom/${id}`,{method:'DELETE'});
+  showToast('已删除');loadData();
 }
 
 loadData();

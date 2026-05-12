@@ -6,13 +6,13 @@
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=satoshi:400,500,700|instrument-sans:400,500,600|geist:400,500,600&display=swap" rel="stylesheet">
 <style>
-:root{--color-primary:#0057b8;--color-secondary:#FF6B35;--color-accent:#00875A;--color-neutral-050:#f1f2f3;--color-neutral-100:#fafbfc;--color-neutral-200:#c1c6c8;--color-neutral-300:#a4adb6;--color-neutral-400:#8A96A8;--color-neutral-500:#6C7A89;--color-neutral-600:#5A6B7D;--color-neutral-800:#3d3f40;--color-neutral-900:#1c2333;--color-success:#4caf50;--color-warning:#fbc02d;--color-error:#f44339;--color-info:#03a9f4;--font-display:'Satoshi',-apple-system,sans-serif;--font-body:'Instrument Sans',-apple-system,sans-serif;--font-data:'Geist',-apple-system,sans-serif;--bg-sidebar:#1c2333;--spacing-2xs:4px;--spacing-xs:8px;--spacing-sm:12px;--spacing-md:16px;--spacing-lg:24px;--spacing-xl:32px;--radius-sm:4px;--radius-md:8px;--radius-lg:12px}
+:root{--color-primary:#0057b8;--color-accent:#00875A;--color-neutral-050:#f1f2f3;--color-neutral-100:#fafbfc;--color-neutral-200:#c1c6c8;--color-neutral-300:#a4adb6;--color-neutral-400:#8A96A8;--color-neutral-500:#6C7A89;--color-neutral-600:#5A6B7D;--color-neutral-800:#3d3f40;--color-neutral-900:#1c2333;--color-warning:#fbc02d;--color-error:#f44339;--color-secondary:#FF6B35;--color-info:#03a9f4;--font-display:'Satoshi',-apple-system,sans-serif;--font-body:'Instrument Sans',-apple-system,sans-serif;--font-data:'Geist',-apple-system,sans-serif;--bg-sidebar:#1c2333}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(--color-neutral-800);font-size:14px;line-height:1.5}
 .sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--bg-sidebar);color:#fff;padding:20px 0;overflow-y:auto;z-index:100}
 .sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px}
-.logo-mark{width:36px;height:36px;background:var(--color-accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.5px}
-.logo-text{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.3px}
+.logo-mark{width:36px;height:36px;background:var(--color-accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:13px}
+.logo-text{font-family:var(--font-display);font-weight:700;font-size:14px}
 .logo-sub{font-size:9.5px;color:var(--color-neutral-400);letter-spacing:.8px;margin-top:2px}
 .nav-group{padding:8px 12px}
 .nav-group-label{font-size:10.5px;color:var(--color-neutral-400);text-transform:uppercase;letter-spacing:1.2px;padding:8px 10px 6px;font-weight:600}
@@ -28,7 +28,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 .breadcrumb .sep{color:var(--color-neutral-300)}
 .breadcrumb .cur{color:var(--color-neutral-800);font-weight:500}
 .topbar-right{display:flex;align-items:center;gap:14px}
-.version-pill{padding:3px 10px;background:rgba(0,135,90,.08);color:var(--color-accent);border-radius:10px;font-size:11px;font-weight:600;font-family:var(--font-data);letter-spacing:.3px}
+.version-pill{padding:3px 10px;background:rgba(0,135,90,.08);color:var(--color-accent);border-radius:10px;font-size:11px;font-weight:600;font-family:var(--font-data)}
 .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0057b8,#00875A);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
 .content{padding:24px 32px 40px}
 .page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
@@ -39,11 +39,13 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 .btn-primary:hover{background:#006c47}
 .btn-secondary{background:#fff;color:var(--color-neutral-800);border-color:#d4dbe2}
 .btn-secondary:hover{background:#f6f8fa;border-color:var(--color-accent);color:var(--color-accent)}
+.btn-import{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+.btn-import:hover{background:#004a9e}
 .banner{background:linear-gradient(90deg,rgba(3,169,244,.08),rgba(3,169,244,.02));border:1px solid rgba(3,169,244,.25);border-left:3px solid var(--color-info);border-radius:8px;padding:12px 16px;display:flex;gap:12px;align-items:flex-start;margin-bottom:20px}
 .banner-icon{width:24px;height:24px;border-radius:50%;background:rgba(3,169,244,.15);color:var(--color-info);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;margin-top:1px}
-.banner-text{font-size:13px;color:var(--color-neutral-700);line-height:1.55}
+.banner-text{font-size:13px;color:#4a5568;line-height:1.55}
 .banner-text strong{color:var(--color-neutral-900);font-weight:600}
-.filter-bar{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:18px;margin-bottom:20px}
+.filter-bar{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:18px;margin-bottom:20px;flex-wrap:wrap}
 .filter-item{display:flex;align-items:center;gap:8px}
 .filter-label{font-size:12px;color:var(--color-neutral-500);font-weight:500}
 .filter-select{padding:6px 28px 6px 10px;border:1px solid #d4dbe2;border-radius:5px;font-size:13px;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%236C7A89' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>") no-repeat right 8px center;appearance:none;font-family:var(--font-body);min-width:120px;cursor:pointer}
@@ -53,9 +55,10 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 .month-card.maintained{border-color:var(--color-accent);border-width:1.5px;background:linear-gradient(180deg,rgba(0,135,90,.03),#fff)}
 .month-card.unmaintained{border-style:dashed;border-color:var(--color-neutral-300)}
 .month-name{font-size:12px;color:var(--color-neutral-500);font-weight:500;letter-spacing:.3px;margin-bottom:8px;text-transform:uppercase;font-family:var(--font-display)}
-.month-days{font-family:var(--font-data);font-size:34px;font-weight:600;color:var(--color-neutral-900);line-height:1;letter-spacing:-1px;font-feature-settings:'tnum'}
-.month-days .unit{font-size:13px;color:var(--color-neutral-500);font-weight:500;margin-left:3px}
+.month-days{font-family:var(--font-data);font-size:32px;font-weight:600;color:var(--color-neutral-900);line-height:1;letter-spacing:-1px;font-feature-settings:'tnum'}
+.month-days .unit{font-size:12px;color:var(--color-neutral-500);font-weight:500;margin-left:3px}
 .month-days.empty{color:var(--color-neutral-300)}
+.month-sub{font-size:11px;color:var(--color-neutral-400);margin-top:5px;font-family:var(--font-data)}
 .month-meta{font-size:11.5px;color:var(--color-neutral-500);margin-top:8px;display:flex;align-items:center;gap:5px}
 .month-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--color-accent)}
 .month-card.unmaintained .month-meta .dot{background:var(--color-neutral-300)}
@@ -64,9 +67,9 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 .btn-mini:hover{border-color:var(--color-accent);color:var(--color-accent);background:rgba(0,135,90,.04)}
 .month-card.maintained .btn-mini.primary{border-color:var(--color-accent);color:var(--color-accent)}
 .warn-corner{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 28px 28px 0;border-color:transparent var(--color-secondary) transparent transparent}
-.warn-corner::before{content:'!';position:absolute;top:1px;right:-22px;color:#fff;font-size:11px;font-weight:700;font-family:var(--font-data)}
+.warn-corner::before{content:'!';position:absolute;top:1px;right:-22px;color:#fff;font-size:11px;font-weight:700}
 .section-head{display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px}
-.section-title{font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--color-neutral-800);letter-spacing:.3px}
+.section-title{font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--color-neutral-800)}
 .legend{display:flex;gap:18px;font-size:11.5px;color:var(--color-neutral-500)}
 .legend-item{display:flex;align-items:center;gap:6px}
 .legend-swatch{width:12px;height:12px;border-radius:3px}
@@ -80,20 +83,31 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 .sum-item:nth-child(2){border-left-color:var(--color-info)}
 .sum-item:nth-child(3){border-left-color:var(--color-warning)}
 .sum-item:nth-child(4){border-left-color:var(--color-secondary)}
-/* modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:500;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
-.modal-box{background:#fff;border-radius:12px;padding:28px 32px;width:400px;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.modal-box{background:#fff;border-radius:12px;padding:28px 32px;width:440px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.modal-box.wide{width:560px}
 .modal-title{font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:6px;color:var(--color-neutral-900)}
 .modal-sub{font-size:12px;color:var(--color-neutral-500);margin-bottom:20px}
 .modal-close{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--color-neutral-400);margin-top:-4px}
-.form-group{margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .form-label{font-size:12px;color:var(--color-neutral-500);margin-bottom:5px;display:block;font-weight:500}
+.form-label .req{color:var(--color-error);margin-left:2px}
 .form-input{width:100%;padding:9px 11px;border:1px solid #d4dbe2;border-radius:6px;font-size:13px;font-family:var(--font-body)}
 .form-input:focus{outline:none;border-color:var(--color-accent)}
 .form-input:disabled{background:var(--color-neutral-050);color:var(--color-neutral-500)}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
-/* toast */
+.upload-zone{border:2px dashed #d4dbe2;border-radius:8px;padding:24px 20px;text-align:center;background:var(--color-neutral-100);transition:all .18s;cursor:pointer}
+.upload-zone:hover{border-color:var(--color-primary);background:rgba(0,87,184,.04)}
+.upload-icon{font-size:26px;color:var(--color-primary);margin-bottom:8px}
+.upload-text{font-size:13px;color:var(--color-neutral-600);margin-bottom:4px}
+.upload-meta{font-size:11px;color:var(--color-neutral-400);font-family:var(--font-data)}
+.tpl-row{margin-bottom:14px;padding:10px 14px;background:rgba(0,135,90,.07);border:1px solid rgba(0,135,90,.2);border-radius:8px;font-size:12.5px;color:var(--color-neutral-600)}
+.tpl-row b{color:var(--color-accent)}
+.import-result{margin-top:12px;padding:10px 14px;background:rgba(0,87,184,.06);border:1px solid rgba(0,87,184,.2);border-radius:6px;font-size:12.5px;color:#4a5568;display:none}
+.import-result.show{display:block}
+.error-list{margin-top:8px;max-height:100px;overflow-y:auto;font-size:12px;color:var(--color-error);line-height:1.7}
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1c2333;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 </style>
@@ -104,11 +118,11 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 <div class="nav-group"><div class="nav-group-label">导航</div><a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a></div>
 <div class="nav-group"><div class="nav-group-label">工作台</div><a href="01-dashboard.html" class="nav-item"><span class="ni">▦</span>计划看板</a></div>
 <div class="nav-group"><div class="nav-group-label">基础数据</div>
-<a href="02-forecast-list.html" class="nav-item"><span class="ni">◷</span>预测管理</a>
+<a href="02-forecast-list.html" class="nav-item"><span class="ni">◷</span>入库需求数</a>
 <a href="03-bom-list.html" class="nav-item"><span class="ni">⊞</span>BOM 管理</a>
-<a href="04-material-params.html" class="nav-item"><span class="ni">◈</span>物料参数</a>
+<a href="04-material-params.html" class="nav-item"><span class="ni">◈</span>安全库存</a>
 <a href="05-operating-days.html" class="nav-item active"><span class="ni">▤</span>稼动天数</a>
-<a href="06-inventory-count.html" class="nav-item"><span class="ni">◰</span>库存盘点</a></div>
+<a href="06-inventory-count.html" class="nav-item"><span class="ni">◰</span>盘点数</a></div>
 <div class="nav-group"><div class="nav-group-label">生产计划</div>
 <a href="07-plan-calculate.html" class="nav-item"><span class="ni">▶</span>计划计算</a>
 <a href="08-plan-result.html" class="nav-item"><span class="ni">◇</span>计划结果</a></div>
@@ -124,20 +138,24 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 </div>
 <div class="content">
 <div class="page-head">
-<div><h1 class="page-title">稼动天数</h1><div class="page-sub">维护各月可用生产天数 · 直接影响日均需求与产能测算</div></div>
-<div style="display:flex;gap:8px"><button class="btn btn-secondary">复制上年</button><button class="btn btn-primary">+ 批量维护</button></div>
+<div><h1 class="page-title">稼动天数</h1><div class="page-sub">维护各月可用生产天数（工作日）· 直接影响日均需求与产能测算</div></div>
+<div style="display:flex;gap:8px">
+  <button class="btn btn-import" onclick="openImportModal()">⇪ 批量导入</button>
+  <button class="btn btn-secondary">复制上年</button>
+  <button class="btn btn-primary">+ 批量维护</button>
+</div>
 </div>
 <div class="banner">
 <div class="banner-icon">i</div>
-<div class="banner-text">稼动天数影响计划数量计算中的日均需求，<strong>请在每月计划计算前完成维护</strong>。系统将基于已配置工作日历自动建议默认值，您可手动调整以反映停产、检修等特殊安排。</div>
+<div class="banner-text">卡片显示<strong>工作日（稼动天数）</strong>，括号内为总出勤天数。计划计算使用工作日，<strong>请在每月计划计算前完成维护</strong>。</div>
 </div>
 <div class="filter-bar">
-<div class="filter-item"><span class="filter-label">年份</span><select class="filter-select"><option>2026</option><option>2025</option></select></div>
-<div class="filter-item"><span class="filter-label">维护状态</span><select class="filter-select"><option>全部</option><option>已维护</option><option>未维护</option></select></div>
-<div style="margin-left:auto;font-size:12px;color:var(--color-neutral-500)">最近更新 <span style="font-family:var(--font-data);color:var(--color-neutral-800);font-weight:500">2026-04-28 09:14</span></div>
+<div class="filter-item"><span class="filter-label">年份</span><select class="filter-select" id="yearSelect" onchange="loadOperatingDays()"><option>2026</option><option>2025</option></select></div>
+<div class="filter-item"><span class="filter-label">维护状态</span><select class="filter-select" id="statusFilter" onchange="renderGrid()"><option value="">全部</option><option value="maintained">已维护</option><option value="unmaintained">未维护</option></select></div>
+<div style="margin-left:auto;font-size:12px;color:var(--color-neutral-500)">最近更新 <span id="lastUpdate" style="font-family:var(--font-data);color:var(--color-neutral-800);font-weight:500">—</span></div>
 </div>
 <div class="section-head">
-<div class="section-title">2026 年度月度稼动</div>
+<div class="section-title" id="sectionTitle">2026 年度月度稼动</div>
 <div class="legend"><div class="legend-item"><span class="legend-swatch ok"></span>已维护</div><div class="legend-item"><span class="legend-swatch no"></span>未维护</div></div>
 </div>
 <div class="month-grid" id="monthGrid">
@@ -145,16 +163,17 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 </div>
 <div class="summary-strip">
 <div class="sum-item"><div class="sum-label">已维护月份</div><div class="sum-value" id="sumMaintained">—<span class="unit">/ 12</span></div></div>
-<div class="sum-item"><div class="sum-label">已维护合计</div><div class="sum-value" id="sumTotal">—<span class="unit">天</span></div></div>
-<div class="sum-item"><div class="sum-label">月均稼动</div><div class="sum-value" id="sumAvg">—<span class="unit">天</span></div></div>
+<div class="sum-item"><div class="sum-label">工作日合计</div><div class="sum-value" id="sumTotal">—<span class="unit">天</span></div></div>
+<div class="sum-item"><div class="sum-label">月均工作日</div><div class="sum-value" id="sumAvg">—<span class="unit">天</span></div></div>
 <div class="sum-item"><div class="sum-label">待维护月份</div><div class="sum-value" id="sumPending">—<span class="unit">个月</span></div></div>
 </div>
 </div>
 </main>
+
 <!-- 编辑/新增 弹窗 -->
 <div class="modal-overlay" id="editModal">
   <div class="modal-box">
-    <button class="modal-close" onclick="closeModal()">×</button>
+    <button class="modal-close" onclick="closeModal('editModal')">×</button>
     <div class="modal-title" id="modalTitle">维护稼动天数</div>
     <div class="modal-sub" id="modalSub"></div>
     <input type="hidden" id="editId">
@@ -163,109 +182,148 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
       <label class="form-label">年月</label>
       <input class="form-input" id="editYmDisplay" disabled>
     </div>
-    <div class="form-group">
-      <label class="form-label">稼动天数 *</label>
-      <input class="form-input" id="editDays" type="number" min="1" max="31" step="1" placeholder="如 26">
+    <div class="form-grid">
+      <div>
+        <label class="form-label">工作日<span class="req">*</span></label>
+        <input class="form-input" id="editWorkDays" type="number" min="0" max="31" step="1" placeholder="如 21">
+      </div>
+      <div>
+        <label class="form-label">总出勤天数</label>
+        <input class="form-input" id="editTotalDays" type="number" min="0" max="31" step="1" placeholder="如 26">
+      </div>
+      <div>
+        <label class="form-label">双休日</label>
+        <input class="form-input" id="editWeekendDays" type="number" min="0" max="31" step="1" placeholder="如 5">
+      </div>
+      <div>
+        <label class="form-label">国定节假日</label>
+        <input class="form-input" id="editHolidayDays" type="number" min="0" max="31" step="1" placeholder="如 0">
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-secondary" onclick="closeModal('editModal')">取消</button>
       <button class="btn btn-primary" onclick="saveDays()">保存</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
+<!-- 批量导入弹窗 -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal-box wide">
+    <button class="modal-close" onclick="closeModal('importModal')">×</button>
+    <div class="modal-title">批量导入稼动天数</div>
+    <div class="modal-sub">按年月 upsert，已存在记录将被更新</div>
+    <div class="tpl-row">Sheet 名称：<b>稼动天数</b>，列顺序：年月/总出勤天数/工作日/双休日/国定节假日</div>
+    <div class="upload-zone" onclick="document.getElementById('importFile').click()">
+      <div class="upload-icon">⇪</div>
+      <div class="upload-text" id="importFileName">点击或拖拽文件到此处上传</div>
+      <div class="upload-meta">支持 .xlsx · 单次上传不超过 5MB</div>
+      <input type="file" id="importFile" hidden accept=".xlsx" onchange="onFileSelected(this)">
+    </div>
+    <div class="import-result" id="importResult"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('importModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmImport()">确认导入</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const API = 'http://localhost:8080';
-const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const API='http://localhost:8080';
+const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let opMap={};
+let allData=[];
 
-// ── Toast ──────────────────────────────────────────────
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 
-// ── Modal ──────────────────────────────────────────────
-function closeModal() {
-  document.getElementById('editModal').classList.remove('show');
-}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
 
-function openModal(ym) {
-  const entry = opMap[ym] || null;
-  const year  = Math.floor(ym / 100);
-  const month = ym % 100;
-  const label = `${year} / ${MONTH_NAMES[month - 1]}`;
-  document.getElementById('modalTitle').textContent  = entry ? '编辑稼动天数' : '新增稼动天数';
-  document.getElementById('modalSub').textContent    = entry ? `当前值：${entry.days} 天` : '该月暂无记录';
-  document.getElementById('editId').value            = entry ? entry.id : '';
-  document.getElementById('editYm').value            = ym;
-  document.getElementById('editYmDisplay').value     = label;
-  document.getElementById('editDays').value          = entry ? entry.days : '';
+function openModal(ym){
+  const entry=opMap[ym]||null;
+  const year=Math.floor(ym/100),month=ym%100;
+  const label=`${year} / ${MONTH_NAMES[month-1]}`;
+  document.getElementById('modalTitle').textContent=entry?'编辑稼动天数':'新增稼动天数';
+  document.getElementById('modalSub').textContent=entry?`当前工作日：${entry.workDays} 天`:'该月暂无记录';
+  document.getElementById('editId').value=entry?entry.id:'';
+  document.getElementById('editYm').value=ym;
+  document.getElementById('editYmDisplay').value=label;
+  document.getElementById('editWorkDays').value=entry?(entry.workDays??''):'';
+  document.getElementById('editTotalDays').value=entry?(entry.totalDays??''):'';
+  document.getElementById('editWeekendDays').value=entry?(entry.weekendDays??''):'';
+  document.getElementById('editHolidayDays').value=entry?(entry.holidayDays??''):'';
   document.getElementById('editModal').classList.add('show');
-  setTimeout(() => document.getElementById('editDays').focus(), 50);
+  setTimeout(()=>document.getElementById('editWorkDays').focus(),50);
 }
 
-async function saveDays() {
-  const id   = document.getElementById('editId').value;
-  const ym   = parseInt(document.getElementById('editYm').value);
-  const days = parseFloat(document.getElementById('editDays').value);
-  if (isNaN(days) || days < 1 || days > 31) { showToast('天数须在 1~31 之间'); return; }
-  const body   = { yearMonth: ym, days };
-  const url    = id ? `${API}/api/operating-days/${id}` : `${API}/api/operating-days`;
-  const method = id ? 'PUT' : 'POST';
-  const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  const j = await r.json();
-  if (j.code === 200) {
-    showToast(id ? '修改成功' : '新增成功');
-    closeModal();
-    loadOperatingDays();
-  } else {
-    showToast(j.message || '保存失败');
-  }
+async function saveDays(){
+  const id=document.getElementById('editId').value;
+  const ym=parseInt(document.getElementById('editYm').value);
+  const workDays=parseFloat(document.getElementById('editWorkDays').value);
+  if(isNaN(workDays)||workDays<0||workDays>31){showToast('工作日须在 0~31 之间');return;}
+  const toNum=(vid)=>{const v=document.getElementById(vid).value;return v===''?null:parseFloat(v);};
+  const body={yearMonth:ym,workDays,totalDays:toNum('editTotalDays'),weekendDays:toNum('editWeekendDays'),holidayDays:toNum('editHolidayDays')};
+  const url=id?`${API}/api/operating-days/${id}`:`${API}/api/operating-days`;
+  const method=id?'PUT':'POST';
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json();
+  if(j.code===200){showToast(id?'修改成功':'新增成功');closeModal('editModal');loadOperatingDays();}
+  else showToast(j.message||'保存失败');
 }
 
-async function deleteDays(id, label) {
-  if (!confirm(`确认删除 ${label} 的稼动天数记录？`)) return;
-  await fetch(`${API}/api/operating-days/${id}`, { method: 'DELETE' });
-  showToast('已删除');
+async function deleteDays(id,label){
+  if(!confirm(`确认删除 ${label} 的稼动天数记录？`))return;
+  await fetch(`${API}/api/operating-days/${id}`,{method:'DELETE'});
+  showToast('已删除');loadOperatingDays();
+}
+
+function openImportModal(){
+  document.getElementById('importResult').className='import-result';
+  document.getElementById('importResult').innerHTML='';
+  document.getElementById('importFileName').textContent='点击或拖拽文件到此处上传';
+  document.getElementById('importFile').value='';
+  document.getElementById('importModal').classList.add('show');
+}
+function onFileSelected(input){document.getElementById('importFileName').textContent=input.files[0]?input.files[0].name:'点击或拖拽文件到此处上传';}
+async function confirmImport(){
+  const file=document.getElementById('importFile').files[0];
+  if(!file){showToast('请先选择文件');return;}
+  const fd=new FormData();fd.append('file',file);
+  const r=await fetch(`${API}/api/excel/import`,{method:'POST',body:fd});
+  const j=await r.json();const d=j.data||{};
+  const el=document.getElementById('importResult');el.className='import-result show';
+  let html=`导入成功：<b>${d.operatingDaysCount||0}</b> 条稼动天数记录`;
+  if(d.skippedCount>0) html+=`，跳过 <b style="color:#fbc02d">${d.skippedCount}</b> 行`;
+  if(d.errors&&d.errors.length>0) html+=`<div class="error-list">${d.errors.map(e=>`• ${e}`).join('<br>')}</div>`;
+  el.innerHTML=html;
   loadOperatingDays();
 }
 
-// ── 渲染 ───────────────────────────────────────────────
-let opMap = {};  // yearMonth → entry，供 openModal 直接查询
-
-async function loadOperatingDays() {
-  const r = await fetch(`${API}/api/operating-days`);
-  const j = await r.json();
-  const data = j.data || [];
-
-  opMap = {};
-  data.forEach(d => { opMap[d.yearMonth] = d; });
-
-  const year = data.length > 0
-    ? Math.floor(data[0].yearMonth / 100)
-    : new Date().getFullYear();
-
-  const grid = document.getElementById('monthGrid');
-  grid.innerHTML = Array.from({length: 12}, (_, i) => {
-    const month = i + 1;
-    const ym    = year * 100 + month;
-    const entry = opMap[ym];
-    const label = `${year} / ${MONTH_NAMES[i]}`;
-    if (entry && entry.days != null) {
+function renderGrid(){
+  const statusFilter=document.getElementById('statusFilter').value;
+  const year=parseInt(document.getElementById('yearSelect').value)||2026;
+  document.getElementById('sectionTitle').textContent=`${year} 年度月度稼动`;
+  const grid=document.getElementById('monthGrid');
+  grid.innerHTML=Array.from({length:12},(_,i)=>{
+    const month=i+1,ym=year*100+month,entry=opMap[ym];
+    const label=`${year} / ${MONTH_NAMES[i]}`;
+    const isMaintained=entry&&entry.workDays!=null;
+    if(statusFilter==='maintained'&&!isMaintained) return '';
+    if(statusFilter==='unmaintained'&&isMaintained) return '';
+    if(isMaintained){
+      const sub=entry.totalDays!=null?`总出勤 ${entry.totalDays} 天`:'';
       return `<div class="month-card maintained">
         <div class="month-name">${label}</div>
-        <div class="month-days">${entry.days}<span class="unit">天</span></div>
+        <div class="month-days">${entry.workDays}<span class="unit">天</span></div>
+        ${sub?`<div class="month-sub">${sub}</div>`:''}
         <div class="month-meta"><span class="dot"></span>已维护</div>
         <div class="month-actions">
           <button class="btn-mini primary" onclick="openModal(${ym})">编辑</button>
           <button class="btn-mini" style="color:var(--color-error);border-color:var(--color-error)" onclick="deleteDays(${entry.id},'${label}')">删除</button>
         </div>
       </div>`;
-    } else {
+    }else{
       return `<div class="month-card unmaintained">
         <div class="warn-corner"></div>
         <div class="month-name">${label}</div>
@@ -277,14 +335,25 @@ async function loadOperatingDays() {
       </div>`;
     }
   }).join('');
+  const maintained=allData.filter(d=>d.workDays!=null&&d.workDays>0);
+  const total=maintained.reduce((s,d)=>s+(d.workDays||0),0);
+  const avg=maintained.length?(total/maintained.length).toFixed(1):'0.0';
+  document.getElementById('sumMaintained').innerHTML=`${maintained.length}<span class="unit">/ 12</span>`;
+  document.getElementById('sumTotal').innerHTML=`${total}<span class="unit">天</span>`;
+  document.getElementById('sumAvg').innerHTML=`${avg}<span class="unit">天</span>`;
+  document.getElementById('sumPending').innerHTML=`${12-maintained.length}<span class="unit">个月</span>`;
+}
 
-  const maintained = data.filter(d => d.days != null && d.days > 0);
-  const total      = maintained.reduce((s, d) => s + d.days, 0);
-  const avg        = maintained.length ? (total / maintained.length).toFixed(2) : '0.00';
-  document.getElementById('sumMaintained').innerHTML = `${maintained.length}<span class="unit">/ 12</span>`;
-  document.getElementById('sumTotal').innerHTML      = `${total}<span class="unit">天</span>`;
-  document.getElementById('sumAvg').innerHTML        = `${avg}<span class="unit">天</span>`;
-  document.getElementById('sumPending').innerHTML    = `${12 - maintained.length}<span class="unit">个月</span>`;
+async function loadOperatingDays(){
+  const r=await fetch(`${API}/api/operating-days`);
+  const j=await r.json();
+  allData=j.data||[];
+  opMap={};allData.forEach(d=>{opMap[d.yearMonth]=d;});
+  if(allData.length>0){
+    const latest=allData.reduce((a,b)=>a.yearMonth>b.yearMonth?a:b);
+    document.getElementById('lastUpdate').textContent=`${latest.yearMonth}`;
+  }
+  renderGrid();
 }
 
 loadOperatingDays();
