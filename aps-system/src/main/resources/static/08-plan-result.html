@@ -436,39 +436,40 @@ function populateFilters(data) {
 
 window.showDetailFromData = function(d) {
   if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) { return; } }
-  const dailyDemand = d.operatingDays > 0 ? (d.forecast / d.operatingDays) : 0;
-  const safetyNeed = dailyDemand * (d.safetyDays || 0);
-  const netDemand = safetyNeed + d.forecast - (d.currentInventory || 0);
-  const endInv = (d.currentInventory||0) + d.planQty*(1-(d.scrapRate||0)) - d.forecast;
+  const isFP      = d.finishedProductCode === d.itemCode;
+  const gross     = d.forecast || 0;           // 毛需求（完成品即净需求）
+  const inv       = d.currentInventory || 0;   // 期初现存量
+  const safeStock = d.safetyDays || 0;         // 安全库存量
+  const scrap     = d.scrapRate || 0;
+  const netDemand = isFP ? gross : Math.max(0, gross - inv + safeStock);
+  const endInv    = Math.max(0, inv - gross) + d.planQty * (1 - scrap);
 
   const overlay = document.getElementById('detailModal');
   if (overlay) {
     const body = overlay.querySelector('.modal-body');
     if (body) {
+      const fpRow = isFP ? '' : `
+        <div class="calc-step">
+          毛需求 = <span class="ck">${fmt(gross,2)}</span>，现存量 = <span class="ck">${fmt(inv,2)}</span>，安全库存 = <span class="ck">${fmt(safeStock,2)}</span>
+        </div>
+        <div class="calc-step">
+          净需求 = 毛需求 − 现存量 + 安全库存 = <span class="ck">${fmt(gross,2)}</span> − <span class="ck">${fmt(inv,2)}</span> + <span class="ck">${fmt(safeStock,2)}</span> = <span class="res">${fmt(netDemand,2)}</span>
+        </div>`;
       body.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;margin-bottom:14px">
           <div><span style="color:var(--color-neutral-400)">完成品</span><br><b>${d.finishedProductCode}</b></div>
-          <div><span style="color:var(--color-neutral-400)">存货编码</span><br><b>${d.itemCode}</b></div>
+          <div><span style="color:var(--color-neutral-400)">${isFP?'层级':'存货编码'}</span><br><b>${isFP?'完成品':d.itemCode}</b></div>
           <div><span style="color:var(--color-neutral-400)">期间</span><br><b>${d.yearMonth}</b></div>
           <div><span style="color:var(--color-neutral-400)">工序/设备</span><br><b>${d.process||'—'} / ${d.equipment||'—'}</b></div>
         </div>
+        ${isFP ? `<div class="calc-step">净需求 = 入库需求数 = <span class="res">${fmt(gross,2)}</span>（已含库存与安全库存调整）</div>` : fpRow}
         <div class="calc-step">
-          日均需求 = 预测/需求 ÷ 稼动天数 = <span class="ck">${fmt(d.forecast,2)}</span> ÷ <span class="ck">${d.operatingDays}</span> = <span class="res">${fmt(dailyDemand,3)}</span>
-        </div>
-        <div class="calc-step">
-          含安全库存需求 = 日均需求 × 安全天数 = <span class="ck">${fmt(dailyDemand,3)}</span> × <span class="ck">${d.safetyDays||0}</span> = <span class="res">${fmt(safetyNeed,2)}</span>
-        </div>
-        <div class="calc-step">
-          净需求 = 安全需求 + 预测 − 当前库存 = <span class="ck">${fmt(safetyNeed,2)}</span> + <span class="ck">${fmt(d.forecast,2)}</span> − <span class="ck">${fmt(d.currentInventory,2)}</span> = <span class="res">${fmt(netDemand,2)}</span>
-        </div>
-        <div class="calc-step">
-          计划数量 = 净需求 ÷ (1 − 报废率) = <span class="ck">${fmt(netDemand,2)}</span> ÷ (1−<span class="ck">${((d.scrapRate||0)*100).toFixed(1)}%</span>) = <span class="res">${fmt(d.planQty,2)}</span>
+          计划数量 = ⌈净需求 ÷ (1 − 报废率)⌉ = ⌈<span class="ck">${fmt(netDemand,2)}</span> ÷ (1−<span class="ck">${(scrap*100).toFixed(1)}%</span>)⌉ = <span class="res">${fmt(d.planQty,0)}</span>
         </div>
         <div class="calc-formula">
-          // 库存递推（用于下一期）<br>
-          期末库存 = 当前库存(<span style="color:#ffcb70">${fmt(d.currentInventory,2)}</span>)<br>
-          &nbsp;&nbsp;+ 计划产出(<span style="color:#ffcb70">${fmt(d.planQty,2)}</span> × (1−<span style="color:#ffcb70">${((d.scrapRate||0)*100).toFixed(1)}%</span>))<br>
-          &nbsp;&nbsp;− 需求(<span style="color:#ffcb70">${fmt(d.forecast,2)}</span>)<br>
+          // 期末库存递推（供下月使用）<br>
+          期末库存 = max(0, 现存量−毛需求) + 计划产出<br>
+          &nbsp;&nbsp;= max(0, <span style="color:#ffcb70">${fmt(inv,2)}</span>−<span style="color:#ffcb70">${fmt(gross,2)}</span>) + <span style="color:#ffcb70">${fmt(d.planQty,0)}</span>×(1−<span style="color:#ffcb70">${(scrap*100).toFixed(1)}%</span>)<br>
           &nbsp;&nbsp;= <span style="color:#7be3a8;font-weight:700">${fmt(endInv,2)}</span>
         </div>`;
     }

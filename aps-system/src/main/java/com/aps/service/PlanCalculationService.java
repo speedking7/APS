@@ -170,7 +170,7 @@ public class PlanCalculationService {
         if (isFinishedProduct) {
             // 完成品层：直接用 netDemand 计算
             double oneMinusScrap = 1.0 - scrapRate;
-            planQty = oneMinusScrap > 0 ? grossDemand / oneMinusScrap : 0.0;
+            planQty = oneMinusScrap > 0 ? Math.ceil(grossDemand / oneMinusScrap) : 0.0;
         } else {
             // 半成品层：初始化期初库存
             if (!remainingInventory.containsKey(itemCode)) {
@@ -215,7 +215,7 @@ public class PlanCalculationService {
                 return;
             } else {
                 double oneMinusScrap = 1.0 - scrapRate;
-                planQty = oneMinusScrap > 0 ? netDemand / oneMinusScrap : 0.0;
+                planQty = oneMinusScrap > 0 ? Math.ceil(netDemand / oneMinusScrap) : 0.0;
                 remainingInventory.put(itemCode, 0.0);
             }
         }
