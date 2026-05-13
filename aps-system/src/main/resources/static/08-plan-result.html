@@ -202,25 +202,19 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 
     <!-- filters -->
     <div class="toolbar">
+      <div class="field"><label>版本</label>
+        <select id="filterVersion"><option value="">全部版本</option></select>
+      </div>
       <div class="field"><label>期间</label>
-        <select class="filter-select"><option>全部</option><option>202504</option><option>202505</option><option>202506</option></select>
+        <select id="filterPeriod"><option value="">全部期间</option></select>
       </div>
       <div class="field"><label>完成品</label>
-        <select class="filter-select"><option>全部</option><option>11201A012</option><option>11201A022</option><option>11201A033</option></select>
+        <select id="filterProduct"><option value="">全部完成品</option></select>
       </div>
-      <div class="field"><label>存货编码</label><input type="text" placeholder="搜索编码"></div>
-      <div class="field"><label>工序</label>
-        <select><option>全部</option><option>注塑 INJ</option><option>冲压 STM</option><option>机加 MCH</option><option>装配 ASM</option></select>
-      </div>
-      <div class="field"><label>设备</label>
-        <select><option>全部</option><option>INJ-01</option><option>INJ-02</option><option>STM-A</option><option>MCH-01</option></select>
-      </div>
-      <div class="field"><label>是否生产</label>
-        <select><option>全部</option><option>Y</option><option>N</option></select>
-      </div>
+      <div class="field"><label>存货编码</label><input type="text" id="filterItemCode" placeholder="搜索编码"></div>
       <div class="spacer"></div>
-      <button class="btn btn-ghost">重置</button>
-      <button class="btn btn-primary">查询</button>
+      <button class="btn btn-ghost" onclick="resetFilters()">重置</button>
+      <button class="btn btn-primary" onclick="applyFilters()">查询</button>
     </div>
 
     <!-- ops -->
@@ -238,17 +232,16 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
         <thead>
           <tr>
             <th>完成品</th>
-            <th>存货编码</th>
-            <th>物料名称</th>
+            <th>自制件编码</th>
             <th>年月</th>
             <th>工序</th>
             <th>设备</th>
-            <th class="num">当前库存</th>
-            <th class="num">预测/需求</th>
-            <th class="num">安全天数</th>
-            <th class="num">稼动</th>
-            <th class="num">报废率</th>
+            <th class="num">需求(毛)</th>
             <th class="num">计划数量</th>
+            <th class="num">报废率</th>
+            <th class="num">安全天数</th>
+            <th class="num">当前库存</th>
+            <th>版本</th>
             <th>是否生产</th>
           </tr>
         </thead>
@@ -342,6 +335,16 @@ let filteredData = [];
 
 async function loadData() {
   try {
+    // 加载版本列表
+    const vr = await fetch(`${API}/api/production-plan/versions`);
+    const vj = await vr.json();
+    const versions = vj.data || [];
+    const vSel = document.getElementById('filterVersion');
+    if (vSel) {
+      vSel.innerHTML = '<option value="">全部版本</option>' +
+        versions.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+
     const r = await fetch(`${API}/api/production-plan`);
     const j = await r.json();
     planData = j.data || [];
@@ -351,16 +354,43 @@ async function loadData() {
     populateFilters(planData);
   } catch(e) {
     const tbody = document.getElementById('dataTbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--color-error)">加载失败，请确认后端服务已启动</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--color-error)">加载失败，请确认后端服务已启动</td></tr>';
     console.error('loadData failed', e);
   }
+}
+
+function applyFilters() {
+  const version   = document.getElementById('filterVersion')?.value || '';
+  const period    = document.getElementById('filterPeriod')?.value || '';
+  const product   = document.getElementById('filterProduct')?.value || '';
+  const itemCode  = (document.getElementById('filterItemCode')?.value || '').trim().toLowerCase();
+  filteredData = planData.filter(d => {
+    if (version  && d.version !== version) return false;
+    if (period   && String(d.yearMonth) !== period) return false;
+    if (product  && d.finishedProductCode !== product) return false;
+    if (itemCode && !(d.itemCode||'').toLowerCase().includes(itemCode)) return false;
+    return true;
+  });
+  renderTable(filteredData);
+  updateStats(filteredData);
+}
+
+function resetFilters() {
+  const ids = ['filterVersion','filterPeriod','filterProduct','filterItemCode'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  filteredData = planData;
+  renderTable(filteredData);
+  updateStats(filteredData);
 }
 
 function renderTable(data) {
   const tbody = document.getElementById('dataTbody');
   if (!tbody) return;
   if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
     const tl = document.querySelector('.toolbar-left');
     if (tl) tl.innerHTML = '共 <b>0</b> 条计划记录';
     return;
@@ -369,16 +399,15 @@ function renderTable(data) {
     <tr style="cursor:pointer" onclick='showDetailFromData(${JSON.stringify(d).replace(/'/g,"&apos;")})'>
       <td class="code">${d.finishedProductCode||'—'}</td>
       <td class="code">${d.itemCode||'—'}</td>
-      <td>${d.itemCode||'—'}</td>
-      <td><span class="tag tag-month">${d.yearMonth||'—'}</span></td>
+      <td>${d.yearMonth||'—'}</td>
       <td>${d.process||'—'}</td>
       <td>${d.equipment||'—'}</td>
-      <td class="num">${fmt(d.currentInventory)}</td>
       <td class="num">${fmt(d.forecast)}</td>
-      <td class="num">${d.safetyDays??'—'}</td>
-      <td class="num">${d.operatingDays??'—'}</td>
-      <td class="num">${d.scrapRate!=null?(d.scrapRate*100).toFixed(1)+'%':'—'}</td>
       <td class="num" style="font-weight:600;color:var(--color-primary)">${fmt(d.planQty)}</td>
+      <td class="num">${d.scrapRate!=null?(d.scrapRate*100).toFixed(1)+'%':'—'}</td>
+      <td class="num">${d.safetyDays??'—'}</td>
+      <td class="num">${fmt(d.currentInventory)}</td>
+      <td style="font-size:11px;color:var(--color-neutral-400)">${d.version||'—'}</td>
       <td><span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;
           background:${d.isProduce==='Y'?'rgba(0,135,90,.12)':'rgba(244,67,57,.1)'};
           color:${d.isProduce==='Y'?'var(--color-accent)':'var(--color-error)'}">
@@ -397,15 +426,12 @@ function updateStats(data) {
 }
 
 function populateFilters(data) {
-  const periods = [...new Set(data.map(d=>d.yearMonth))].sort();
+  const periods  = [...new Set(data.map(d=>d.yearMonth))].sort();
   const products = [...new Set(data.map(d=>d.finishedProductCode))].sort();
-  const sels = document.querySelectorAll('.filter-select');
-  if (sels[0]) {
-    sels[0].innerHTML = '<option value="">全部期间</option>' + periods.map(p=>`<option>${p}</option>`).join('');
-  }
-  if (sels[1]) {
-    sels[1].innerHTML = '<option value="">全部完成品</option>' + products.map(p=>`<option>${p}</option>`).join('');
-  }
+  const pSel = document.getElementById('filterPeriod');
+  if (pSel) pSel.innerHTML = '<option value="">全部期间</option>' + periods.map(p=>`<option value="${p}">${p}</option>`).join('');
+  const fpSel = document.getElementById('filterProduct');
+  if (fpSel) fpSel.innerHTML = '<option value="">全部完成品</option>' + products.map(p=>`<option value="${p}">${p}</option>`).join('');
 }
 
 window.showDetailFromData = function(d) {

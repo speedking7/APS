@@ -4,12 +4,17 @@ import com.aps.entity.SafetyStock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface SafetyStockRepository extends JpaRepository<SafetyStock, Long> {
 
-    Optional<SafetyStock> findByItemCode(String itemCode);
+    List<SafetyStock> findByItemCode(String itemCode);
+
+    Optional<SafetyStock> findByItemCodeAndYearMonthAndVersion(String itemCode, Integer yearMonth, String version);
+
+    Optional<SafetyStock> findFirstByItemCodeAndVersion(String itemCode, String version);
 
     void deleteByVersion(String version);
 }

@@ -219,8 +219,30 @@ input[type=text]:focus,select:focus,textarea:focus{border-color:var(--color-prim
           </div>
 
           <div class="field-row">
-            <label>版本说明</label>
-            <input type="text" value="2026-05 正式版" placeholder="将作为本次计算结果的版本标签">
+            <label>版本参数</label>
+            <div class="dual" style="grid-template-columns:1fr 1fr;gap:10px">
+              <div class="dual-cell">
+                <label>需求版本</label>
+                <input type="text" id="demandVersion" placeholder="如 v1">
+              </div>
+              <div class="dual-cell">
+                <label>BOM 版本</label>
+                <input type="text" id="bomVersion" placeholder="如 v1">
+              </div>
+              <div class="dual-cell">
+                <label>安全库存版本</label>
+                <input type="text" id="safetyStockVersion" placeholder="如 v1">
+              </div>
+              <div class="dual-cell">
+                <label>盘点数版本</label>
+                <input type="text" id="inventoryVersion" placeholder="如 v1">
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label>结果版本（标识本次输出）</label>
+            <input type="text" id="resultVersion" value="2026-05 正式版" placeholder="将作为本次计算结果的版本标签">
           </div>
 
           <button class="exec-btn" id="execBtn" onclick="runCalc()">
@@ -378,7 +400,20 @@ window.runCalc = async function() {
   }
 
   try {
-    const resp = await fetch(`${API}/api/production-plan/calculate`, {method:'POST'});
+    const calcReq = {
+      demandVersion:      document.getElementById('demandVersion')?.value?.trim() || null,
+      bomVersion:         document.getElementById('bomVersion')?.value?.trim() || null,
+      safetyStockVersion: document.getElementById('safetyStockVersion')?.value?.trim() || null,
+      inventoryVersion:   document.getElementById('inventoryVersion')?.value?.trim() || null,
+      resultVersion:      document.getElementById('resultVersion')?.value?.trim() || null,
+    };
+    // 空字符串转 null
+    Object.keys(calcReq).forEach(k => { if (!calcReq[k]) calcReq[k] = null; });
+    const resp = await fetch(`${API}/api/production-plan/calculate`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(calcReq)
+    });
     const j = await resp.json();
 
     fill.style.width = '100%'; pct.textContent = '100%'; stage.textContent = '完成';

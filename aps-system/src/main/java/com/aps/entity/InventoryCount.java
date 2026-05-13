@@ -10,7 +10,7 @@ import javax.persistence.*;
  * 盘点数表 - 期初库存
  */
 @Entity
-@Table(name = "t_inventory_count", uniqueConstraints = @UniqueConstraint(columnNames = {"item_code", "year_month"}))
+@Table(name = "t_inventory_count")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

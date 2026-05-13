@@ -83,4 +83,8 @@ public class ProductionPlan {
     /** 计划数量 */
     @Column(name = "plan_qty")
     private Double planQty;
+
+    /** 计算版本号 */
+    @Column(name = "version", length = 50)
+    private String version;
 }

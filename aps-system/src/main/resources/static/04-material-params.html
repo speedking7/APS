@@ -180,6 +180,10 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
         <input class="filter-input" id="filterItemCode" placeholder="如 21201A012">
       </div>
       <div class="filter-group">
+        <label class="filter-label">年月</label>
+        <input class="filter-input" id="filterYearMonth" placeholder="如 202501">
+      </div>
+      <div class="filter-group">
         <label class="filter-label">版本号</label>
         <input class="filter-input" id="filterVersion" placeholder="如 20260331-1">
       </div>
@@ -203,6 +207,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
         <thead>
           <tr>
             <th>存货编码</th>
+            <th>年月</th>
             <th class="num">每日当量</th>
             <th class="num">安全天数</th>
             <th class="num">最大天数</th>
@@ -225,10 +230,14 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     </div>
     <div class="modal-body">
       <input type="hidden" id="editId">
-      <div class="form-row full">
+      <div class="form-row">
         <div class="form-field">
           <label>存货编码<span class="req">*</span></label>
           <input id="fItemCode" placeholder="如 21201A012">
+        </div>
+        <div class="form-field">
+          <label>年月<span class="req">*</span></label>
+          <input id="fYearMonth" type="number" placeholder="如 202501">
         </div>
       </div>
       <div class="form-row">
@@ -267,7 +276,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <button class="modal-close" onclick="closeModal('importModal')">×</button>
     </div>
     <div class="modal-body">
-      <div class="tpl-row">Sheet 名称：<b>半成品安全库存</b>，列顺序：存货编码/每日当量/安全天数/最大天数/版本号</div>
+      <div class="tpl-row">Sheet 名称：<b>半成品安全库存</b>，列顺序：存货编码/年月/日当量/安全天数/最大天数/版本号</div>
       <div class="upload-zone" onclick="document.getElementById('importFile').click()">
         <div class="upload-icon">⇪</div>
         <div class="upload-text" id="importFileName">点击或拖拽文件到此处上传</div>
@@ -314,17 +323,20 @@ async function loadData(){
 }
 
 function applyFilter(){
-  const itemCode = document.getElementById('filterItemCode').value.trim().toLowerCase();
-  const version  = document.getElementById('filterVersion').value.trim().toLowerCase();
+  const itemCode  = document.getElementById('filterItemCode').value.trim().toLowerCase();
+  const yearMonth = document.getElementById('filterYearMonth').value.trim();
+  const version   = document.getElementById('filterVersion').value.trim().toLowerCase();
   filteredData = allData.filter(d=>
-    (!itemCode || d.itemCode.toLowerCase().includes(itemCode)) &&
-    (!version  || (d.version||'').toLowerCase().includes(version))
+    (!itemCode  || d.itemCode.toLowerCase().includes(itemCode)) &&
+    (!yearMonth || String(d.yearMonth||'').includes(yearMonth)) &&
+    (!version   || (d.version||'').toLowerCase().includes(version))
   );
   renderTable();
 }
 
 function resetFilter(){
   document.getElementById('filterItemCode').value='';
+  document.getElementById('filterYearMonth').value='';
   document.getElementById('filterVersion').value='';
   applyFilter();
 }
@@ -333,12 +345,13 @@ function renderTable(){
   const tbody = document.getElementById('dataTbody');
   document.getElementById('totalCount').textContent = filteredData.length;
   if(filteredData.length===0){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
     return;
   }
   tbody.innerHTML = filteredData.map(d=>`
     <tr>
       <td class="code">${d.itemCode}</td>
+      <td class="code">${d.yearMonth||'—'}</td>
       <td class="num">${d.dailyEquivalent??'—'}</td>
       <td class="num"><span class="day-pill">${d.safetyDays} 天</span></td>
       <td class="num">${d.maxDays!=null?d.maxDays+' 天':'—'}</td>
@@ -364,6 +377,7 @@ function openEditModal(d){
   document.getElementById('editId').value            = d?d.id:'';
   document.getElementById('fItemCode').value         = d?d.itemCode:'';
   document.getElementById('fItemCode').disabled      = !!d;
+  document.getElementById('fYearMonth').value        = d?(d.yearMonth||''):'';
   document.getElementById('fDailyEquivalent').value  = d?(d.dailyEquivalent??''):'';
   document.getElementById('fSafetyDays').value       = d?(d.safetyDays??''):'';
   document.getElementById('fMaxDays').value          = d?(d.maxDays??''):'';
@@ -373,15 +387,19 @@ function openEditModal(d){
 }
 
 async function saveSafetyStock(){
-  const id       = document.getElementById('editId').value;
-  const itemCode = document.getElementById('fItemCode').value.trim();
-  const safetyDays=parseFloat(document.getElementById('fSafetyDays').value);
-  const version  = document.getElementById('fVersion').value.trim();
+  const id        = document.getElementById('editId').value;
+  const itemCode  = document.getElementById('fItemCode').value.trim();
+  const yearMonth = parseInt(document.getElementById('fYearMonth').value);
+  const safetyDays= parseFloat(document.getElementById('fSafetyDays').value);
+  const version   = document.getElementById('fVersion').value.trim();
   if(!itemCode){showToast('请填写存货编码');return;}
+  if(isNaN(yearMonth)){showToast('请填写年月');return;}
+  const ym=yearMonth,yr=Math.floor(ym/100),mo=ym%100;
+  if(yr<2000||yr>2099||mo<1||mo>12){showToast('年月格式无效，需 YYYYMM（如202501）');return;}
   if(isNaN(safetyDays)||safetyDays<0){showToast('安全天数须为非负数');return;}
   if(!version){showToast('请填写版本号');return;}
   const toNum=(vid)=>{const v=document.getElementById(vid).value;return v===''?null:parseFloat(v);};
-  const body={itemCode,dailyEquivalent:toNum('fDailyEquivalent'),safetyDays,maxDays:toNum('fMaxDays'),version};
+  const body={itemCode,yearMonth,dailyEquivalent:toNum('fDailyEquivalent'),safetyDays,maxDays:toNum('fMaxDays'),version};
   const url    = id?`${API}/api/safety-stock/${id}`:`${API}/api/safety-stock`;
   const method = id?'PUT':'POST';
   const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});

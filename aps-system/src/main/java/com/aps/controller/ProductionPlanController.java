@@ -1,6 +1,7 @@
 package com.aps.controller;
 
 import com.aps.common.ApiResponse;
+import com.aps.dto.CalculateRequest;
 import com.aps.entity.ProductionPlan;
 import com.aps.service.PlanCalculationService;
 import com.aps.service.ProductionPlanService;
@@ -20,16 +21,30 @@ public class ProductionPlanController {
     @Autowired
     private PlanCalculationService planCalculationService;
 
-    /** 触发计算（全量重算） */
+    /** 触发计算（带版本参数） */
     @PostMapping("/calculate")
-    public ApiResponse<String> calculate() {
-        planCalculationService.calculate();
+    public ApiResponse<String> calculate(@RequestBody(required = false) CalculateRequest req) {
+        if (req == null) {
+            planCalculationService.calculate();
+        } else {
+            planCalculationService.calculate(req);
+        }
         return ApiResponse.success("calculation completed");
+    }
+
+    @GetMapping("/versions")
+    public ApiResponse<List<String>> getVersions() {
+        return ApiResponse.success(service.findDistinctVersions());
     }
 
     @GetMapping
     public ApiResponse<List<ProductionPlan>> findAll() {
         return ApiResponse.success(service.findAll());
+    }
+
+    @GetMapping("/by-version/{version}")
+    public ApiResponse<List<ProductionPlan>> findByVersion(@PathVariable String version) {
+        return ApiResponse.success(service.findByVersion(version));
     }
 
     @GetMapping("/by-period/{yearMonth}")

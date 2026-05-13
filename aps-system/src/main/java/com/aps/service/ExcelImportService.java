@@ -48,7 +48,14 @@ public class ExcelImportService {
             if (demandSheet != null) {
                 List<Demand> list = parseDemands(demandSheet, result);
                 if (!list.isEmpty()) {
-                    demandRepository.deleteAllInBatch();
+                    // 按 客户+版本号 全删全导，不影响其他客户或版本的数据
+                    list.stream()
+                        .map(d -> d.getCustomer() + "\0" + d.getVersion())
+                        .distinct()
+                        .forEach(key -> {
+                            String[] parts = key.split("\0", 2);
+                            demandRepository.deleteByVersionAndCustomer(parts[1], parts[0]);
+                        });
                     demandRepository.saveAll(list);
                 }
                 result.setDemandCount(list.size());
@@ -57,7 +64,9 @@ public class ExcelImportService {
             if (bomSheet != null) {
                 List<Bom> list = parseBoms(bomSheet, result);
                 if (!list.isEmpty()) {
-                    bomRepository.deleteAllInBatch();
+                    // 按版本号全删全导，不影响其他版本的数据
+                    list.stream().map(Bom::getVersion).distinct()
+                        .forEach(bomRepository::deleteByVersion);
                     bomRepository.saveAll(list);
                 }
                 result.setBomCount(list.size());
@@ -66,7 +75,8 @@ public class ExcelImportService {
             if (inventorySheet != null) {
                 List<InventoryCount> list = parseInventoryCounts(inventorySheet, result);
                 if (!list.isEmpty()) {
-                    inventoryCountRepository.deleteAllInBatch();
+                    list.stream().map(InventoryCount::getVersion).distinct()
+                        .forEach(inventoryCountRepository::deleteByVersion);
                     inventoryCountRepository.saveAll(list);
                 }
                 result.setInventoryCountCount(list.size());
@@ -75,7 +85,8 @@ public class ExcelImportService {
             if (safetySheet != null) {
                 List<SafetyStock> list = parseSafetyStocks(safetySheet, result);
                 if (!list.isEmpty()) {
-                    safetyStockRepository.deleteAllInBatch();
+                    list.stream().map(SafetyStock::getVersion).distinct()
+                        .forEach(safetyStockRepository::deleteByVersion);
                     safetyStockRepository.saveAll(list);
                 }
                 result.setSafetyStockCount(list.size());
@@ -215,23 +226,27 @@ public class ExcelImportService {
             Row row = sheet.getRow(i);
             if (row == null || isBlankRow(row)) continue;
 
-            String itemCode  = str(row, 0);
-            Double safetyDays = numOrNull(row, 2);
-            String version   = str(row, 4);
+            String itemCode   = str(row, 0);
+            Double ymRaw      = numOrNull(row, 1);
+            Double safetyDays = numOrNull(row, 3);
+            String version    = str(row, 5);
 
             String err = null;
-            if (!isValidCode(itemCode))       err = "存货编码无效: " + itemCode;
-            else if (safetyDays == null)       err = "安全天数不能为空";
-            else if (safetyDays < 0)           err = "安全天数不能为负数: " + safetyDays;
-            else if (!isValidVersion(version)) err = "版本号不能为空";
+            if (!isValidCode(itemCode))        err = "存货编码无效: " + itemCode;
+            else if (ymRaw == null)             err = "年月不能为空";
+            else if (!isValidYearMonth(ymRaw))  err = "年月格式无效(需YYYYMM): " + ymRaw.intValue();
+            else if (safetyDays == null)        err = "安全天数不能为空";
+            else if (safetyDays < 0)            err = "安全天数不能为负数: " + safetyDays;
+            else if (!isValidVersion(version))  err = "版本号不能为空";
 
             if (err != null) { result.addError(SN, i + 1, err); continue; }
 
             SafetyStock s = new SafetyStock();
             s.setItemCode(itemCode);
-            s.setDailyEquivalent(numOrNull(row, 1));
+            s.setYearMonth(ymRaw.intValue());
+            s.setDailyEquivalent(numOrNull(row, 2));
             s.setSafetyDays(safetyDays);
-            s.setMaxDays(numOrNull(row, 3));
+            s.setMaxDays(numOrNull(row, 4));
             s.setVersion(version);
             list.add(s);
         }

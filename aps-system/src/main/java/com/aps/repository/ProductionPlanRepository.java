@@ -16,4 +16,8 @@ public interface ProductionPlanRepository extends JpaRepository<ProductionPlan, 
     List<ProductionPlan> findByFinishedProductCode(String finishedProductCode);
 
     List<ProductionPlan> findByYearMonthIn(List<Integer> yearMonths);
+
+    void deleteByVersion(String version);
+
+    List<ProductionPlan> findByVersion(String version);
 }

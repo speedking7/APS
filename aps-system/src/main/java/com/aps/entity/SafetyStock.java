@@ -20,8 +20,12 @@ public class SafetyStock {
     private Long id;
 
     /** 存货编码 */
-    @Column(name = "item_code", length = 50, nullable = false, unique = true)
+    @Column(name = "item_code", length = 50, nullable = false)
     private String itemCode;
+
+    /** 年月，格式 YYYYMM */
+    @Column(name = "`year_month`", nullable = false)
+    private Integer yearMonth;
 
     /** 每日当量 */
     @Column(name = "daily_equivalent")
