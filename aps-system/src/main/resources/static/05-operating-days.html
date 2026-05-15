@@ -6,34 +6,46 @@
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=satoshi:400,500,700|instrument-sans:400,500,600|geist:400,500,600&display=swap" rel="stylesheet">
 <style>
-:root{--color-primary:#0057b8;--color-accent:#00875A;--color-neutral-050:#f1f2f3;--color-neutral-100:#fafbfc;--color-neutral-200:#c1c6c8;--color-neutral-300:#a4adb6;--color-neutral-400:#8A96A8;--color-neutral-500:#6C7A89;--color-neutral-600:#5A6B7D;--color-neutral-800:#3d3f40;--color-neutral-900:#1c2333;--color-warning:#fbc02d;--color-error:#f44339;--color-secondary:#FF6B35;--color-info:#03a9f4;--font-display:'Satoshi',-apple-system,sans-serif;--font-body:'Instrument Sans',-apple-system,sans-serif;--font-data:'Geist',-apple-system,sans-serif;--bg-sidebar:#1c2333}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(--color-neutral-800);font-size:14px;line-height:1.5}
-.sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--bg-sidebar);color:#fff;padding:20px 0;overflow-y:auto;z-index:100}
-.sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px}
-.logo-mark{width:36px;height:36px;background:var(--color-accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:13px}
-.logo-text{font-family:var(--font-display);font-weight:700;font-size:14px}
-.logo-sub{font-size:9.5px;color:var(--color-neutral-400);letter-spacing:.8px;margin-top:2px}
-.nav-group{padding:8px 12px}
-.nav-group-label{font-size:10.5px;color:var(--color-neutral-400);text-transform:uppercase;letter-spacing:1.2px;padding:8px 10px 6px;font-weight:600}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;color:rgba(255,255,255,.78);text-decoration:none;border-radius:6px;font-size:13px;margin-bottom:2px;transition:all .15s}
-.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
-.nav-item.active{background:var(--color-accent);color:#fff;font-weight:500}
-.ni{width:18px;text-align:center;font-size:13px;opacity:.85}
-.main{margin-left:240px;min-height:100vh}
-.topbar{height:52px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
-.breadcrumb{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--color-neutral-500)}
-.breadcrumb a{color:var(--color-neutral-500);text-decoration:none}
-.breadcrumb a:hover{color:var(--color-primary)}
-.breadcrumb .sep{color:var(--color-neutral-300)}
-.breadcrumb .cur{color:var(--color-neutral-800);font-weight:500}
-.topbar-right{display:flex;align-items:center;gap:14px}
-.version-pill{padding:3px 10px;background:rgba(0,135,90,.08);color:var(--color-accent);border-radius:10px;font-size:11px;font-weight:600;font-family:var(--font-data)}
-.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0057b8,#00875A);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
-.content{padding:24px 32px 40px}
-.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
-.page-title{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:-.3px;color:var(--color-neutral-900)}
-.page-sub{font-size:13px;color:var(--color-neutral-500);margin-top:4px}
+:root{
+  --color-primary:#0057b8;--color-secondary:#FF6B35;--color-accent:#00875A;
+  --color-neutral-050:#f1f2f3;--color-neutral-100:#fafbfc;
+  --color-neutral-200:#c1c6c8;--color-neutral-400:#8A96A8;
+  --color-neutral-600:#5A6B7D;--color-neutral-800:#3d3f40;
+  --color-success:#4caf50;--color-warning:#fbc02d;
+  --color-error:#f44339;--color-info:#03a9f4;
+  --font-display:'Satoshi',-apple-system,sans-serif;
+  --font-body:'Instrument Sans',-apple-system,sans-serif;
+  --font-data:'Geist',-apple-system,sans-serif;
+  --bg-sidebar:#1c2333;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(--color-neutral-800);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
+.sidebar{width:240px;flex-shrink:0;background:var(--bg-sidebar);color:#c8d0da;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);position:fixed;left:0;top:0;bottom:0;overflow-y:auto;z-index:100}
+.sidebar-logo{height:64px;display:flex;align-items:center;padding:0 18px;gap:11px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-mark{width:34px;height:34px;border-radius:8px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:900;color:#fff;box-shadow:0 4px 12px rgba(0,87,184,.4)}
+.logo-text{font-family:var(--font-display);font-size:14px;font-weight:700;color:#f0f4f8}
+.logo-sub{font-size:9px;color:#6b7a8d;letter-spacing:.1em;margin-top:2px}
+.nav-group{padding:14px 0 6px}
+.nav-group-label{padding:6px 18px;font-family:var(--font-data);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6b7a8d}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;color:#c8d0da;font-size:13px;text-decoration:none;transition:all .12s;position:relative}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav-item.active{background:rgba(0,87,184,.22);color:#78b4ff}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--color-primary)}
+.nav-item .ni{width:16px;flex-shrink:0;text-align:center;font-size:13px;opacity:.75}
+.nav-item.active .ni{opacity:1}
+.main{flex:1;margin-left:240px;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:52px;background:#fff;border-bottom:1px solid var(--color-neutral-200);display:flex;align-items:center;padding:0 28px;gap:14px;flex-shrink:0}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-400)}
+.breadcrumb a{color:var(--color-primary);text-decoration:none}
+.breadcrumb .sep{opacity:.4}
+.breadcrumb .cur{color:var(--color-neutral-800);font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.version-pill{font-size:11px;font-family:var(--font-data);padding:3px 9px;border-radius:99px;background:rgba(0,135,90,.1);color:var(--color-accent);font-weight:600}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.content{padding:32px 36px;flex:1}
+.page-head{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start}
+.page-title{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--color-neutral-800);letter-spacing:-.4px}
+.page-sub{font-size:13px;color:var(--color-neutral-400);margin-top:4px}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid transparent;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;text-decoration:none;font-family:var(--font-body)}
 .btn-primary{background:var(--color-accent);color:#fff;border-color:var(--color-accent)}
 .btn-primary:hover{background:#006c47}
@@ -114,22 +126,31 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 </head>
 <body>
 <aside class="sidebar">
-<div class="sidebar-logo"><div class="logo-mark">APS</div><div><div class="logo-text">高级计划排程</div><div class="logo-sub">MANUFACTURING · v1.0</div></div></div>
-<div class="nav-group"><div class="nav-group-label">导航</div><a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a></div>
-<div class="nav-group"><div class="nav-group-label">工作台</div><a href="01-dashboard.html" class="nav-item"><span class="ni">▦</span>计划看板</a></div>
-<div class="nav-group"><div class="nav-group-label">基础数据</div>
-<a href="02-forecast-list.html" class="nav-item"><span class="ni">◷</span>入库需求数</a>
-<a href="03-bom-list.html" class="nav-item"><span class="ni">⊞</span>BOM 管理</a>
-<a href="04-material-params.html" class="nav-item"><span class="ni">◈</span>安全库存</a>
-<a href="05-operating-days.html" class="nav-item active"><span class="ni">▤</span>稼动天数</a>
-<a href="06-inventory-count.html" class="nav-item"><span class="ni">◰</span>盘点数</a></div>
-<div class="nav-group"><div class="nav-group-label">生产计划</div>
-<a href="07-plan-calculate.html" class="nav-item"><span class="ni">▶</span>计划计算</a>
-<a href="08-plan-result.html" class="nav-item"><span class="ni">◇</span>计划结果</a></div>
-<div class="nav-group"><div class="nav-group-label">能力测算</div>
-<a href="09-capacity-calendar.html" class="nav-item"><span class="ni">▦</span>工作日历</a>
-<a href="10-workforce-report.html" class="nav-item"><span class="ni">◉</span>人员测算</a>
-<a href="11-equipment-load.html" class="nav-item"><span class="ni">▥</span>设备负荷</a></div>
+  <div class="sidebar-logo">
+    <div class="logo-mark">APS</div>
+    <div><div class="logo-text">高级计划排程</div><div class="logo-sub">MANUFACTURING · v1.0</div></div>
+  </div>
+  <div class="nav-group"><div class="nav-group-label">导航</div><a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a></div>
+  <div class="nav-group"><div class="nav-group-label">工作台</div><a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a></div>
+  <div class="nav-group">
+    <div class="nav-group-label">基础数据</div>
+    <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
+    <a href="05-operating-days.html" class="nav-item active"><span class="ni">◫</span>稼动天数</a>
+    <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">生产计划</div>
+    <a href="07-plan-calculate.html" class="nav-item"><span class="ni">⚙</span>计划计算</a>
+    <a href="08-plan-result.html" class="nav-item"><span class="ni">▤</span>计划结果</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">能力测算</div>
+    <a href="09-capacity-calendar.html" class="nav-item"><span class="ni">▥</span>工作日历</a>
+    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
+    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
+  </div>
 </aside>
 <main class="main">
 <div class="topbar">
@@ -232,7 +253,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-100);color:var(
 <div class="toast" id="toast"></div>
 
 <script>
-const API='http://localhost:8080';
+const API=location.origin;
 const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let opMap={};
 let allData=[];

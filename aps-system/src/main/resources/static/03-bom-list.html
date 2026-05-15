@@ -438,7 +438,7 @@ async function confirmImport(){
 }
 
 // ── 数据 ───────────────────────────────────────────────
-const API='http://localhost:8080';
+const API=location.origin;
 let allBoms=[],filteredBoms=[];
 
 async function loadData(){

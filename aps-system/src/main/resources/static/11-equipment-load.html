@@ -99,44 +99,45 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 </style>
 </head>
 <body>
-<nav class="sidebar">
+<aside class="sidebar">
   <div class="sidebar-logo">
     <div class="logo-mark">APS</div>
-    <div><div class="logo-text">高级计划排程</div><div class="logo-sub">Advanced Planning</div></div>
+    <div><div class="logo-text">高级计划排程</div><div class="logo-sub">MANUFACTURING · v1.0</div></div>
   </div>
   <div class="nav-group">
-    <div class="nav-group-label">概览</div>
-    <a class="nav-item" href="01-dashboard.html"><span class="ni">▦</span>仪表盘</a>
+    <div class="nav-group-label">导航</div>
+    <a class="nav-item" href="index.html"><span class="ni">◉</span>原型总览</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">工作台</div>
+    <a class="nav-item" href="01-dashboard.html"><span class="ni">◐</span>工作台</a>
   </div>
   <div class="nav-group">
     <div class="nav-group-label">基础数据</div>
-    <a class="nav-item" href="02-forecast-list.html"><span class="ni">◈</span>销售预测</a>
-    <a class="nav-item" href="03-bom-list.html"><span class="ni">⎘</span>BOM 管理</a>
-    <a class="nav-item" href="04-material-params.html"><span class="ni">⚙</span>物料参数</a>
-    <a class="nav-item" href="06-inventory-count.html"><span class="ni">◻</span>期初库存</a>
+    <a class="nav-item" href="02-forecast-list.html"><span class="ni">◇</span>入库需求数</a>
+    <a class="nav-item" href="03-bom-list.html"><span class="ni">▣</span>BOM 管理</a>
+    <a class="nav-item" href="04-material-params.html"><span class="ni">⊞</span>安全库存</a>
+    <a class="nav-item" href="05-operating-days.html"><span class="ni">◫</span>稼动天数</a>
+    <a class="nav-item" href="06-inventory-count.html"><span class="ni">▦</span>盘点数</a>
   </div>
   <div class="nav-group">
-    <div class="nav-group-label">产能配置</div>
-    <a class="nav-item" href="05-operating-days.html"><span class="ni">◷</span>稼动天数</a>
-    <a class="nav-item" href="09-capacity-calendar.html"><span class="ni">▦</span>产能日历</a>
+    <div class="nav-group-label">生产计划</div>
+    <a class="nav-item" href="07-plan-calculate.html"><span class="ni">⚙</span>计划计算</a>
+    <a class="nav-item" href="08-plan-result.html"><span class="ni">▤</span>计划结果</a>
   </div>
   <div class="nav-group">
-    <div class="nav-group-label">计划执行</div>
-    <a class="nav-item" href="07-plan-calculate.html"><span class="ni">▷</span>计划运算</a>
-    <a class="nav-item" href="08-plan-result.html"><span class="ni">≡</span>计划结果</a>
+    <div class="nav-group-label">能力测算</div>
+    <a class="nav-item" href="09-capacity-calendar.html"><span class="ni">▥</span>工作日历</a>
+    <a class="nav-item" href="10-workforce-report.html"><span class="ni">⚐</span>人员需求</a>
+    <a class="nav-item active" href="11-equipment-load.html"><span class="ni">⌬</span>设备负荷</a>
   </div>
-  <div class="nav-group">
-    <div class="nav-group-label">报表分析</div>
-    <a class="nav-item" href="10-workforce-report.html"><span class="ni">♟</span>人员需求</a>
-    <a class="nav-item active" href="11-equipment-load.html"><span class="ni">⊟</span>设备负荷</a>
-  </div>
-</nav>
+</aside>
 
 <div class="main">
   <div class="topbar">
     <div class="crumb">
-      <a href="01-dashboard.html">APS</a><span class="sep">/</span>
-      <span>报表分析</span><span class="sep">/</span>
+      <a href="index.html">首页</a><span class="sep">/</span>
+      <span>能力测算</span><span class="sep">/</span>
       <span class="now">设备负荷利用率</span>
     </div>
     <div class="topbar-right">
@@ -294,7 +295,7 @@ function render(){
 function tog(ei){expanded.has(ei)?expanded.delete(ei):expanded.add(ei);render();}
 render();
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = location.origin;
 let loadData_real = [];
 
 async function loadEquipmentData() {

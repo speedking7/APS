@@ -299,7 +299,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 <div class="toast" id="toast"></div>
 
 <script>
-const API = 'http://localhost:8080';
+const API = location.origin;
 let allData = [], filteredData = [];
 
 function openModal(id){document.getElementById(id).classList.add('show')}
@@ -315,11 +315,16 @@ function closeModal(id){
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
 
 async function loadData(){
-  const r = await fetch(`${API}/api/safety-stock`);
-  const j = await r.json();
-  allData = j.data||[];
-  applyFilter();
-  updateStats(allData);
+  try{
+    const r = await fetch(`${API}/api/safety-stock`);
+    const j = await r.json();
+    allData = j.data||[];
+    applyFilter();
+    updateStats(allData);
+  }catch(err){
+    console.error(err);
+    showToast('加载失败，请确认后端服务已启动');
+  }
 }
 
 function applyFilter(){
@@ -402,16 +407,26 @@ async function saveSafetyStock(){
   const body={itemCode,yearMonth,dailyEquivalent:toNum('fDailyEquivalent'),safetyDays,maxDays:toNum('fMaxDays'),version};
   const url    = id?`${API}/api/safety-stock/${id}`:`${API}/api/safety-stock`;
   const method = id?'PUT':'POST';
-  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const j=await r.json();
-  if(j.code===200){showToast(id?'修改成功':'新增成功');closeModal('editModal');loadData();}
-  else showToast(j.message||'保存失败');
+  try{
+    const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json();
+    if(j.code===200){showToast(id?'修改成功':'新增成功');closeModal('editModal');loadData();}
+    else showToast(j.message||'保存失败');
+  }catch(err){
+    console.error(err);
+    showToast('保存失败，请确认后端服务已启动');
+  }
 }
 
 async function deleteRow(id){
   if(!confirm('确认删除？'))return;
-  await fetch(`${API}/api/safety-stock/${id}`,{method:'DELETE'});
-  showToast('已删除');loadData();
+  try{
+    await fetch(`${API}/api/safety-stock/${id}`,{method:'DELETE'});
+    showToast('已删除');loadData();
+  }catch(err){
+    console.error(err);
+    showToast('删除失败，请确认后端服务已启动');
+  }
 }
 
 function onFileSelected(input){
@@ -422,16 +437,21 @@ function onFileSelected(input){
 async function confirmImport(){
   const file=document.getElementById('importFile').files[0];
   if(!file){showToast('请先选择文件');return;}
-  const fd=new FormData();fd.append('file',file);
-  const r=await fetch(`${API}/api/excel/import`,{method:'POST',body:fd});
-  const j=await r.json();const d=j.data||{};
-  const el=document.getElementById('importResult');
-  el.className='import-result show';
-  let html=`导入成功：<b>${d.safetyStockCount||0}</b> 条安全库存记录`;
-  if(d.skippedCount>0) html+=`，跳过 <b style="color:var(--color-warning)">${d.skippedCount}</b> 行`;
-  if(d.errors&&d.errors.length>0) html+=`<div class="error-list">${d.errors.map(e=>`• ${e}`).join('<br>')}</div>`;
-  el.innerHTML=html;
-  loadData();
+  try{
+    const fd=new FormData();fd.append('file',file);
+    const r=await fetch(`${API}/api/excel/import`,{method:'POST',body:fd});
+    const j=await r.json();const d=j.data||{};
+    const el=document.getElementById('importResult');
+    el.className='import-result show';
+    let html=`导入成功：<b>${d.safetyStockCount||0}</b> 条安全库存记录`;
+    if(d.skippedCount>0) html+=`，跳过 <b style="color:var(--color-warning)">${d.skippedCount}</b> 行`;
+    if(d.errors&&d.errors.length>0) html+=`<div class="error-list">${d.errors.map(e=>`• ${e}`).join('<br>')}</div>`;
+    el.innerHTML=html;
+    loadData();
+  }catch(err){
+    console.error(err);
+    showToast('导入失败，请确认后端服务已启动');
+  }
 }
 
 loadData();

@@ -45,14 +45,16 @@ class ProductionPlanControllerTest {
 
     @Test
     void calculate_triggersServiceAndReturnsSuccess() throws Exception {
-        doNothing().when(planCalculationService).calculate();
+        doNothing().when(planCalculationService).calculate(any());
 
-        mockMvc.perform(post("/api/production-plan/calculate"))
+        mockMvc.perform(post("/api/production-plan/calculate")
+                        .contentType("application/json")
+                        .content("{\"version\":\"20260331-1\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").value("calculation completed"));
 
-        verify(planCalculationService).calculate();
+        verify(planCalculationService).calculate(any());
     }
 
     // -------------------------------------------------------------------------

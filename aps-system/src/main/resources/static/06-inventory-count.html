@@ -278,7 +278,7 @@ function closeModal(id){
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show')}));
 
-const API='http://localhost:8080';
+const API=location.origin;
 let allData=[],filteredData=[];
 
 async function loadData(){

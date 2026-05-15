@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Modifying;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,5 +33,7 @@ public interface DemandRepository extends JpaRepository<Demand, Long> {
 
     List<Demand> findByItemCode(String itemCode);
 
+    @Modifying
+    @Query("DELETE FROM Demand d WHERE d.version = :version AND d.customer = :customer")
     void deleteByVersionAndCustomer(String version, String customer);
 }

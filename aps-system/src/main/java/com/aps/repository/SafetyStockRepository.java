@@ -2,6 +2,8 @@ package com.aps.repository;
 
 import com.aps.entity.SafetyStock;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,5 +18,7 @@ public interface SafetyStockRepository extends JpaRepository<SafetyStock, Long> 
 
     Optional<SafetyStock> findFirstByItemCodeAndVersion(String itemCode, String version);
 
+    @Modifying
+    @Query("DELETE FROM SafetyStock s WHERE s.version = :version")
     void deleteByVersion(String version);
 }

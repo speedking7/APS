@@ -71,12 +71,12 @@ java -jar target/aps-system-1.0.0.jar
 ### 4. 加载示例数据（可选）
 首次启动 JPA 会自动建表。要加载示例数据：
 - 在 `application.yml` 中将 `spring.sql.init.mode` 改为 `always`
-- 取消注释 `data-locations: classpath:schema.sql` 行
+- `data-locations` 现在指向 `classpath:schema-current.sql`
 - 重启应用一次（之后建议改回 `never` 防止重复插入）
 
 或手动执行：
 ```bash
-mysql -uroot -proot aps_db < src/main/resources/schema.sql
+mysql -uroot -proot aps_db < src/main/resources/schema-current.sql
 ```
 
 ## REST API

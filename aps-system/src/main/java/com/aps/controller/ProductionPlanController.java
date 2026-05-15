@@ -21,14 +21,10 @@ public class ProductionPlanController {
     @Autowired
     private PlanCalculationService planCalculationService;
 
-    /** 触发计算（带版本参数） */
+    /** 触发计算（必须指定单一基础数据版本） */
     @PostMapping("/calculate")
-    public ApiResponse<String> calculate(@RequestBody(required = false) CalculateRequest req) {
-        if (req == null) {
-            planCalculationService.calculate();
-        } else {
-            planCalculationService.calculate(req);
-        }
+    public ApiResponse<String> calculate(@RequestBody CalculateRequest req) {
+        planCalculationService.calculate(req);
         return ApiResponse.success("calculation completed");
     }
 

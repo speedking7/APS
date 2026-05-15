@@ -321,7 +321,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 <div class="toast" id="toast"></div>
 
 <script>
-const API = 'http://localhost:8080';
+const API = location.origin;
 let allData = [], filteredData = [];
 const PAGE_SIZE = 20;
 let currentPage = 1;

@@ -19,5 +19,5 @@ spring:
   sql:
     init:
       mode: ${SPRING_SQL_INIT_MODE:never}   # Docker 启动时由环境变量设为 always
-      data-locations: classpath:schema.sql
+      data-locations: classpath:schema-current.sql
       continue-on-error: true               # 重复数据插入失败时忽略

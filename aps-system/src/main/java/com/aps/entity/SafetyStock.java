@@ -9,7 +9,7 @@ import javax.persistence.*;
  * 半成品安全库存
  */
 @Entity
-@Table(name = "t_safety_stock")
+@Table(name = "t_safety_stock", uniqueConstraints = @UniqueConstraint(columnNames = {"item_code", "year_month", "version"}))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -2,6 +2,8 @@ package com.aps.repository;
 
 import com.aps.entity.Bom;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,5 +24,7 @@ public interface BomRepository extends JpaRepository<Bom, Long> {
     /** 获取某版本下某物料作为父零件的工序信息 */
     Optional<Bom> findFirstByParentCodeAndVersion(String parentCode, String version);
 
+    @Modifying
+    @Query("DELETE FROM Bom b WHERE b.version = :version")
     void deleteByVersion(String version);
 }

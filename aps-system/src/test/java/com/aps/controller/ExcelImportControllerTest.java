@@ -36,8 +36,8 @@ class ExcelImportControllerTest {
         mockMvc.perform(multipart("/api/excel/import").file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.forecastCount").value(3))
-                .andExpect(jsonPath("$.data.scrapRateCount").value(6))
+                .andExpect(jsonPath("$.data.demandCount").value(3))
+                .andExpect(jsonPath("$.data.safetyStockCount").value(6))
                 .andExpect(jsonPath("$.data.bomCount").value(5));
     }
 

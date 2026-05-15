@@ -2,6 +2,8 @@ package com.aps.repository;
 
 import com.aps.entity.InventoryCount;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -15,5 +17,7 @@ public interface InventoryCountRepository extends JpaRepository<InventoryCount, 
     /** 按物料编码和版本查找盘点数 */
     Optional<InventoryCount> findFirstByItemCodeAndVersion(String itemCode, String version);
 
+    @Modifying
+    @Query("DELETE FROM InventoryCount ic WHERE ic.version = :version")
     void deleteByVersion(String version);
 }

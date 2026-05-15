@@ -29,37 +29,20 @@ public class PlanCalculationService {
     @Autowired private InventoryCountRepository inventoryCountRepository;
     @Autowired private ProductionPlanRepository productionPlanRepository;
 
-    /** 兼容旧无版本调用（全量删除重算） */
-    public void calculate() {
-        CalculateRequest req = new CalculateRequest();
-        req.setDemandVersion(null);
-        req.setBomVersion(null);
-        req.setSafetyStockVersion(null);
-        req.setInventoryVersion(null);
-        req.setResultVersion("default");
-        calculate(req);
-    }
-
     public void calculate(CalculateRequest req) {
-        log.info("=== APS Plan Calculation Start, resultVersion={} ===", req.getResultVersion());
-
-        // 删除旧的结果版本
-        if (req.getResultVersion() != null) {
-            productionPlanRepository.deleteByVersion(req.getResultVersion());
-        } else {
-            productionPlanRepository.deleteAllInBatch();
+        if (req == null || req.getVersion() == null || req.getVersion().isBlank()) {
+            throw new IllegalArgumentException("请选择基础数据版本");
         }
+        String version = req.getVersion().trim();
+        String resultVersion = version;
+        log.info("=== APS Plan Calculation Start, version={}, resultVersion={} ===", version, resultVersion);
 
-        // 获取完成品列表和期间列表
-        List<String> finishedProducts;
-        List<Integer> allPeriods;
-        if (req.getDemandVersion() != null) {
-            finishedProducts = demandRepository.findDistinctItemCodesByVersion(req.getDemandVersion());
-            allPeriods       = demandRepository.findDistinctYearMonthsByVersion(req.getDemandVersion());
-        } else {
-            finishedProducts = demandRepository.findDistinctItemCodes();
-            allPeriods       = demandRepository.findDistinctYearMonths();
-        }
+        // 结果版本与基础版本保持一致，避免结果页和计算输入脱节
+        productionPlanRepository.deleteByVersion(resultVersion);
+
+        // 仅按用户选择的单一版本获取全部基础数据
+        List<String> finishedProducts = demandRepository.findDistinctItemCodesByVersion(version);
+        List<Integer> allPeriods       = demandRepository.findDistinctYearMonthsByVersion(version);
         log.info("Finished products: {}, periods: {}", finishedProducts.size(), allPeriods);
 
         // 跨月期末库存：key=itemCode, value=期末库存量
@@ -79,11 +62,7 @@ public class PlanCalculationService {
 
             for (String fp : finishedProducts) {
                 Optional<Demand> dOpt;
-                if (req.getDemandVersion() != null) {
-                    dOpt = demandRepository.findFirstByItemCodeAndYearMonthAndVersion(fp, period, req.getDemandVersion());
-                } else {
-                    dOpt = demandRepository.findFirstByItemCodeAndYearMonth(fp, period);
-                }
+                dOpt = demandRepository.findFirstByItemCodeAndYearMonthAndVersion(fp, period, version);
                 if (!dOpt.isPresent()) continue;
 
                 double netDemand = dOpt.get().getNetDemand() != null ? dOpt.get().getNetDemand() : 0.0;
@@ -92,7 +71,8 @@ public class PlanCalculationService {
                 processNode(fp, fp, netDemand, true, period,
                         crossMonthInventory, remainingInventory, safetyStockAdded,
                         periodTotalPlanQty, periodScrapRate, periodGrossDemand,
-                        req, batch);
+                        new HashSet<>(),
+                        req, version, resultVersion, batch);
             }
 
             productionPlanRepository.saveAll(batch);
@@ -130,119 +110,121 @@ public class PlanCalculationService {
             Map<String, Double> periodTotalPlanQty,
             Map<String, Double> periodScrapRate,
             Map<String, Double> periodGrossDemand,
+            Set<String> path,
             CalculateRequest req,
+            String version,
+            String resultVersion,
             List<ProductionPlan> batch) {
 
-        // 从 BOM 获取制造信息
-        Optional<Bom> bomOpt;
-        if (req.getBomVersion() != null) {
-            bomOpt = bomRepository.findFirstByParentCodeAndVersion(itemCode, req.getBomVersion());
-        } else {
-            bomOpt = bomRepository.findFirstByParentCode(itemCode);
+        if (!path.add(itemCode)) {
+            return;
         }
-
-        String  process    = null;
-        String  equipment  = null;
-        Integer moldCavity = null;
-        Double  cycleTime  = null;
-        Double  staffCount = null;
-        Double  taktTime   = null;
-        double  scrapRate  = 0.0;
-
-        if (bomOpt.isPresent()) {
-            Bom b = bomOpt.get();
-            process    = b.getProcess();
-            equipment  = b.getEquipment();
-            moldCavity = b.getMoldCavity();
-            cycleTime  = b.getCycleTime();
-            staffCount = b.getStaffCount();
-            taktTime   = b.getTaktTime();
-            scrapRate  = b.getScrapRate() != null ? b.getScrapRate() : 0.0;
-        }
-
-        // 累计毛需求
-        periodGrossDemand.merge(itemCode, grossDemand, Double::sum);
-
-        double planQty;
-        double currentInventory = 0.0;
-        double safetyDaysRecorded = 0.0;
-
-        if (isFinishedProduct) {
-            // 完成品层：直接用 netDemand 计算
-            double oneMinusScrap = 1.0 - scrapRate;
-            planQty = oneMinusScrap > 0 ? Math.ceil(grossDemand / oneMinusScrap) : 0.0;
-        } else {
-            // 半成品层：初始化期初库存
-            if (!remainingInventory.containsKey(itemCode)) {
-                double initInv;
-                if (crossMonthInventory.containsKey(itemCode)) {
-                    initInv = crossMonthInventory.get(itemCode);
-                } else if (req.getInventoryVersion() != null) {
-                    initInv = inventoryCountRepository
-                            .findFirstByItemCodeAndVersion(itemCode, req.getInventoryVersion())
-                            .map(InventoryCount::getAvailableQty).orElse(0.0);
-                } else {
-                    initInv = inventoryCountRepository
-                            .findFirstByItemCodeOrderByYearMonthDesc(itemCode)
-                            .map(InventoryCount::getAvailableQty).orElse(0.0);
-                }
-                remainingInventory.put(itemCode, initInv);
-            }
-
-            double inventory = remainingInventory.get(itemCode);
-            currentInventory = inventory;
-
-            // 安全库存（同月只加一次）
-            double safetyStockQty = 0.0;
-            if (!safetyStockAdded.contains(itemCode)) {
-                safetyStockQty = getSafetyStockQty(itemCode, period, req);
-                safetyStockAdded.add(itemCode);
-                safetyDaysRecorded = safetyStockQty;
-            }
-
-            double netDemand = grossDemand - inventory + safetyStockQty;
-
-            if (netDemand <= 0) {
-                planQty = 0.0;
-                remainingInventory.put(itemCode, Math.max(0.0, inventory - grossDemand));
-
-                saveRecord(batch, finishedProduct, itemCode, period,
-                        process, equipment, moldCavity, cycleTime, staffCount, taktTime,
-                        currentInventory, grossDemand, safetyDaysRecorded, scrapRate, planQty, req.getResultVersion());
-                periodTotalPlanQty.merge(itemCode, planQty, Double::sum);
-                periodScrapRate.putIfAbsent(itemCode, scrapRate);
-                // 净需求 <= 0，剪枝，不展开子件
-                return;
+        try {
+            // 从 BOM 获取制造信息
+            Optional<Bom> bomOpt;
+            if (version != null) {
+                bomOpt = bomRepository.findFirstByParentCodeAndVersion(itemCode, version);
             } else {
+                bomOpt = bomRepository.findFirstByParentCode(itemCode);
+            }
+
+            String  process    = null;
+            String  equipment  = null;
+            Integer moldCavity = null;
+            Double  cycleTime  = null;
+            Double  staffCount = null;
+            Double  taktTime   = null;
+            double  scrapRate  = 0.0;
+
+            if (bomOpt.isPresent()) {
+                Bom b = bomOpt.get();
+                process    = b.getProcess();
+                equipment  = b.getEquipment();
+                moldCavity = b.getMoldCavity();
+                cycleTime  = b.getCycleTime();
+                staffCount = b.getStaffCount();
+                taktTime   = b.getTaktTime();
+                scrapRate  = b.getScrapRate() != null ? b.getScrapRate() : 0.0;
+            }
+
+            // 累计毛需求
+            periodGrossDemand.merge(itemCode, grossDemand, Double::sum);
+
+            double planQty;
+            double currentInventory = 0.0;
+            double safetyDaysRecorded = 0.0;
+
+            if (isFinishedProduct) {
                 double oneMinusScrap = 1.0 - scrapRate;
-                planQty = oneMinusScrap > 0 ? Math.ceil(netDemand / oneMinusScrap) : 0.0;
-                remainingInventory.put(itemCode, 0.0);
-            }
-        }
-
-        saveRecord(batch, finishedProduct, itemCode, period,
-                process, equipment, moldCavity, cycleTime, staffCount, taktTime,
-                currentInventory, grossDemand, safetyDaysRecorded, scrapRate, planQty, req.getResultVersion());
-
-        periodTotalPlanQty.merge(itemCode, planQty, Double::sum);
-        periodScrapRate.putIfAbsent(itemCode, scrapRate);
-
-        // planQty > 0 时向下展开子件
-        if (planQty > 0) {
-            List<Bom> children;
-            if (req.getBomVersion() != null) {
-                children = bomRepository.findByParentCodeAndVersion(itemCode, req.getBomVersion());
+                planQty = oneMinusScrap > 0 ? Math.ceil(grossDemand / oneMinusScrap) : 0.0;
             } else {
-                children = bomRepository.findByParentCode(itemCode);
+                if (!remainingInventory.containsKey(itemCode)) {
+                    double initInv;
+                    if (crossMonthInventory.containsKey(itemCode)) {
+                        initInv = crossMonthInventory.get(itemCode);
+                    } else {
+                        initInv = inventoryCountRepository
+                                .findFirstByItemCodeAndVersion(itemCode, version)
+                                .map(InventoryCount::getAvailableQty).orElse(0.0);
+                    }
+                    remainingInventory.put(itemCode, initInv);
+                }
+
+                double inventory = remainingInventory.get(itemCode);
+                currentInventory = inventory;
+
+                double safetyStockQty = 0.0;
+                if (!safetyStockAdded.contains(itemCode)) {
+                    safetyStockQty = getSafetyStockQty(itemCode, period, req);
+                    safetyStockAdded.add(itemCode);
+                    safetyDaysRecorded = safetyStockQty;
+                }
+
+                double netDemand = grossDemand - inventory + safetyStockQty;
+
+                if (netDemand <= 0) {
+                    planQty = 0.0;
+                    remainingInventory.put(itemCode, Math.max(0.0, inventory - grossDemand));
+
+                    saveRecord(batch, finishedProduct, itemCode, period,
+                            process, equipment, moldCavity, cycleTime, staffCount, taktTime,
+                            currentInventory, grossDemand, safetyDaysRecorded, scrapRate, planQty, resultVersion);
+                    periodTotalPlanQty.merge(itemCode, planQty, Double::sum);
+                    periodScrapRate.putIfAbsent(itemCode, scrapRate);
+                    return;
+                } else {
+                    double oneMinusScrap = 1.0 - scrapRate;
+                    planQty = oneMinusScrap > 0 ? Math.ceil(netDemand / oneMinusScrap) : 0.0;
+                    remainingInventory.put(itemCode, 0.0);
+                }
             }
-            for (Bom child : children) {
-                if (child.getChildCode() == null || child.getChildCode().isEmpty()) continue;
-                double childGross = planQty * (child.getUsageQty() != null ? child.getUsageQty() : 0.0);
-                processNode(child.getChildCode(), finishedProduct, childGross, false, period,
-                        crossMonthInventory, remainingInventory, safetyStockAdded,
-                        periodTotalPlanQty, periodScrapRate, periodGrossDemand,
-                        req, batch);
+
+            saveRecord(batch, finishedProduct, itemCode, period,
+                    process, equipment, moldCavity, cycleTime, staffCount, taktTime,
+                    currentInventory, grossDemand, safetyDaysRecorded, scrapRate, planQty, resultVersion);
+
+            periodTotalPlanQty.merge(itemCode, planQty, Double::sum);
+            periodScrapRate.putIfAbsent(itemCode, scrapRate);
+
+            if (planQty > 0) {
+                List<Bom> children;
+                if (version != null) {
+                    children = bomRepository.findByParentCodeAndVersion(itemCode, version);
+                } else {
+                    children = bomRepository.findByParentCode(itemCode);
+                }
+                for (Bom child : children) {
+                    if (child.getChildCode() == null || child.getChildCode().isEmpty()) continue;
+                    double childGross = planQty * (child.getUsageQty() != null ? child.getUsageQty() : 0.0);
+                    processNode(child.getChildCode(), finishedProduct, childGross, false, period,
+                            crossMonthInventory, remainingInventory, safetyStockAdded,
+                            periodTotalPlanQty, periodScrapRate, periodGrossDemand,
+                            path,
+                            req, version, resultVersion, batch);
+                }
             }
+        } finally {
+            path.remove(itemCode);
         }
     }
 
@@ -252,20 +234,11 @@ public class PlanCalculationService {
     private double getSafetyStockQty(String itemCode, Integer yearMonth, CalculateRequest req) {
         Optional<SafetyStock> ssOpt = Optional.empty();
 
-        if (req.getSafetyStockVersion() != null) {
-            ssOpt = safetyStockRepository.findByItemCodeAndYearMonthAndVersion(
-                    itemCode, yearMonth, req.getSafetyStockVersion());
-            if (!ssOpt.isPresent()) {
-                ssOpt = safetyStockRepository.findFirstByItemCodeAndVersion(
-                        itemCode, req.getSafetyStockVersion());
-            }
-        } else {
-            ssOpt = safetyStockRepository.findByItemCode(itemCode).stream()
-                    .filter(s -> yearMonth.equals(s.getYearMonth()))
-                    .findFirst();
-            if (!ssOpt.isPresent()) {
-                ssOpt = safetyStockRepository.findByItemCode(itemCode).stream().findFirst();
-            }
+        ssOpt = safetyStockRepository.findByItemCodeAndYearMonthAndVersion(
+                itemCode, yearMonth, req.getVersion());
+        if (!ssOpt.isPresent()) {
+            ssOpt = safetyStockRepository.findFirstByItemCodeAndVersion(
+                    itemCode, req.getVersion());
         }
 
         if (!ssOpt.isPresent()) return 0.0;

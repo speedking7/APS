@@ -56,6 +56,7 @@ public class ExcelImportService {
                             String[] parts = key.split("\0", 2);
                             demandRepository.deleteByVersionAndCustomer(parts[1], parts[0]);
                         });
+                    demandRepository.flush();
                     demandRepository.saveAll(list);
                 }
                 result.setDemandCount(list.size());
@@ -67,6 +68,7 @@ public class ExcelImportService {
                     // 按版本号全删全导，不影响其他版本的数据
                     list.stream().map(Bom::getVersion).distinct()
                         .forEach(bomRepository::deleteByVersion);
+                    bomRepository.flush();
                     bomRepository.saveAll(list);
                 }
                 result.setBomCount(list.size());
@@ -77,6 +79,7 @@ public class ExcelImportService {
                 if (!list.isEmpty()) {
                     list.stream().map(InventoryCount::getVersion).distinct()
                         .forEach(inventoryCountRepository::deleteByVersion);
+                    inventoryCountRepository.flush();
                     inventoryCountRepository.saveAll(list);
                 }
                 result.setInventoryCountCount(list.size());
@@ -87,6 +90,7 @@ public class ExcelImportService {
                 if (!list.isEmpty()) {
                     list.stream().map(SafetyStock::getVersion).distinct()
                         .forEach(safetyStockRepository::deleteByVersion);
+                    safetyStockRepository.flush();
                     safetyStockRepository.saveAll(list);
                 }
                 result.setSafetyStockCount(list.size());
