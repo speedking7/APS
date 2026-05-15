@@ -139,7 +139,6 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">能力测算</div>
-    <a href="09-capacity-calendar.html" class="nav-item"><span class="ni">▥</span>工作日历</a>
     <a href="10-workforce-report.html" class="nav-item active"><span class="ni">⚐</span>人员需求</a>
     <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
   </div>
@@ -190,19 +189,13 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 
     <!-- filter -->
     <div class="toolbar">
-      <div class="field"><label>期间范围</label>
-        <select><option selected>202504 ~ 202506</option><option>202505 ~ 202507</option></select>
-      </div>
-      <div class="field"><label>工序</label>
-        <select><option>全部</option><option>注塑 INJ</option><option>冲压 STM</option><option>机加 MCH</option><option>装配 ASM</option><option>检测 QC</option></select>
-      </div>
-      <div class="field"><label>设备</label>
-        <select><option>全部</option><option>INJ-01</option><option>INJ-02</option><option>STM-A</option><option>MCH-01</option><option>ASM-L1</option></select>
+      <div class="field">
+        <label>计划版本</label>
+        <select id="versionSel" style="min-width:180px" onchange="loadData()">
+          <option value="">请选择版本</option>
+        </select>
       </div>
       <div class="spacer"></div>
-      <button class="btn btn-ghost">重置</button>
-      <button class="btn btn-primary">查询</button>
-      <button class="btn btn-ghost">⬇ 导出</button>
     </div>
 
     <!-- tabs -->
@@ -315,91 +308,174 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 </div>
 
 <script>
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active')
-    const id=t.dataset.tab
-    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'))
-    document.getElementById(id).classList.add('active')
-  })
-})
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const id = t.dataset.tab;
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  });
+});
 
 const API = location.origin;
-let wfData = [];
+let planData = [], odData = [];
 
-async function loadData() {
-  const r = await fetch(`${API}/api/workforce-report`);
-  const j = await r.json();
-  wfData = j.data || [];
-  renderProcessView(wfData);
-  renderDetailView(wfData);
-  updateStats(wfData);
+function getDailyHours() {
+  return parseFloat(localStorage.getItem('aps.dailyEffectiveHours') || '10.5');
 }
 
-function renderProcessView(data) {
+async function loadVersions() {
+  try {
+    const r = await fetch(`${API}/api/production-plan/versions`);
+    const j = await r.json();
+    const versions = j.data || [];
+    const sel = document.getElementById('versionSel');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">请选择版本</option>' +
+      versions.map(v => `<option value="${v}">${v}</option>`).join('');
+  } catch(e) { console.warn('loadVersions failed', e); }
+}
+
+async function loadData() {
+  const sel = document.getElementById('versionSel');
+  const version = sel?.value;
+  if (!version) return;
+  try {
+    const [planRes, odRes] = await Promise.all([
+      fetch(`${API}/api/production-plan/by-version/${encodeURIComponent(version)}`).then(r => r.json()),
+      fetch(`${API}/api/operating-days`).then(r => r.json()),
+    ]);
+    planData = planRes.data || [];
+    odData   = odRes.data  || [];
+    renderProcessView();
+    renderDetailView();
+    updateStats();
+  } catch(e) {
+    console.error('loadData failed', e);
+  }
+}
+
+function calcProcessData() {
+  const dailyHours = getDailyHours();
+  const odMap = {};
+  odData.forEach(d => { odMap[d.yearMonth] = d.workDays || 0; });
+
+  // 按 process × yearMonth 聚合人工时
+  const grouped = {};
+  planData.forEach(d => {
+    const key = `${d.process}|||${d.yearMonth}`;
+    if (!grouped[key]) grouped[key] = { process: d.process, yearMonth: d.yearMonth, laborHours: 0 };
+    // 人工时(h) = planQty * staffCount * taktTime(s) / 3600
+    grouped[key].laborHours += (d.planQty || 0) * (d.staffCount || 0) * (d.taktTime || 0) / 3600;
+  });
+
+  return Object.values(grouped).map(g => {
+    const availHours = (odMap[g.yearMonth] || 0) * dailyHours;
+    // 所需人数 = 总人工时 / 可用人时
+    return { ...g, availHours, requiredPeople: availHours > 0 ? g.laborHours / availHours : 0 };
+  });
+}
+
+function renderProcessView() {
   const tbody = document.getElementById('processTbody');
   if (!tbody) return;
-  if (data.length === 0) {
+  const pd = calcProcessData();
+  if (pd.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
     return;
   }
-  // 按工序+设备聚合，列为期间
-  const periods = [...new Set(data.map(d => d.yearMonth))].sort();
-  const keys = [...new Set(data.map(d => `${d.process}|${d.equipment}`))].sort();
-  tbody.innerHTML = keys.map(k => {
-    const [process, equipment] = k.split('|');
-    const periodVals = periods.map(p => {
-      const row = data.find(d => d.process===process && d.equipment===equipment && d.yearMonth===p);
-      return row ? row.workforceDemand.toFixed(1) : '—';
+  const periods   = [...new Set(pd.map(d => d.yearMonth))].sort();
+  const processes = [...new Set(pd.map(d => d.process))].sort();
+
+  // 更新表头
+  const thead = tbody.closest('table')?.querySelector('thead tr');
+  if (thead) {
+    thead.innerHTML = '<th>工序</th>' +
+      periods.map(p => `<th class="num">${String(p).slice(0,4)}-${String(p).slice(4)}</th>`).join('') +
+      '<th class="num">峰值</th>';
+  }
+
+  // 数据行
+  const dataRows = processes.map(proc => {
+    const vals = periods.map(ym => {
+      const row = pd.find(d => d.process === proc && d.yearMonth === ym);
+      return row ? row.requiredPeople : null;
     });
-    const nums = periodVals.filter(v => v !== '—').map(Number);
-    const peak = nums.length ? Math.max(...nums).toFixed(1) : '—';
+    const nums = vals.filter(v => v !== null);
+    const peak = nums.length ? Math.max(...nums) : null;
     return `<tr>
-      <td>${process}</td>
-      <td class="code">${equipment}</td>
-      <td class="num">—</td>
-      ${periodVals.map(v => `<td class="num">${v}</td>`).join('')}
-      <td class="num" style="font-weight:600;color:var(--color-primary)">${peak}</td>
+      <td class="proc">${proc}</td>
+      ${vals.map(v => `<td class="num">${v !== null ? v.toFixed(1) : '—'}</td>`).join('')}
+      <td class="num" style="font-weight:600;color:var(--color-primary)">${peak !== null ? peak.toFixed(1) : '—'}</td>
     </tr>`;
   }).join('');
 
-  // 更新表头期间列
-  const thead = tbody.closest('table')?.querySelector('thead tr');
-  if (thead) {
-    const fixedCols = ['工序','设备','编制人数'];
-    const periodCols = periods.map(p => `<th class="num">${p}</th>`).join('');
-    thead.innerHTML = fixedCols.map(c=>`<th>${c}</th>`).join('') + periodCols + '<th class="num">峰值</th>';
-  }
+  // 合计行
+  const totals = periods.map(ym => pd.filter(d => d.yearMonth === ym).reduce((s,d) => s + d.requiredPeople, 0));
+  const totalPeak = totals.length ? Math.max(...totals) : 0;
+  const sumRow = `<tr class="summary">
+    <td>合计</td>
+    ${totals.map(v => `<td class="num">${v.toFixed(1)}</td>`).join('')}
+    <td class="num">${totalPeak.toFixed(1)}</td>
+  </tr>`;
+
+  tbody.innerHTML = dataRows + sumRow;
 }
 
-function renderDetailView(data) {
+function renderDetailView() {
   const tbody = document.getElementById('detailTbody');
   if (!tbody) return;
-  if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
+  if (planData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
     return;
   }
-  tbody.innerHTML = data.map(d => `
-    <tr>
-      <td><span class="tag tag-month">${d.yearMonth}</span></td>
+  const dailyHours = getDailyHours();
+  const odMap = {};
+  odData.forEach(d => { odMap[d.yearMonth] = d.workDays || 0; });
+
+  // 更新表头
+  const thead = tbody.closest('table')?.querySelector('thead tr');
+  if (thead) {
+    thead.innerHTML = '<th>期间</th><th>工序</th><th>设备</th><th>关联完成品</th>' +
+      '<th class="num">月计划数量</th><th class="num">单件节拍(s)</th><th class="num">持台人数</th><th class="num">所需人数</th>';
+  }
+
+  tbody.innerHTML = planData.map(d => {
+    const laborH  = (d.planQty || 0) * (d.staffCount || 0) * (d.taktTime || 0) / 3600;
+    const availH  = (odMap[d.yearMonth] || 0) * dailyHours;
+    const people  = availH > 0 ? laborH / availH : 0;
+    return `<tr>
+      <td style="font-family:var(--font-data)">${d.yearMonth}</td>
       <td>${d.process || '—'}</td>
-      <td class="code">${d.equipment || '—'}</td>
-      <td class="num">${d.workforceDemand.toFixed(2)}</td>
-      <td>—</td>
-    </tr>`).join('');
+      <td style="font-family:var(--font-data)">${d.equipment || '—'}</td>
+      <td>${d.finishedProductCode || '—'}</td>
+      <td class="num">${(d.planQty || 0).toLocaleString()}</td>
+      <td class="num">${d.taktTime ?? '—'}</td>
+      <td class="num">${d.staffCount ?? '—'}</td>
+      <td class="num">${people.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
 }
 
-function updateStats(data) {
-  const processes = new Set(data.map(d => d.process));
-  const periods = new Set(data.map(d => d.yearMonth));
-  const maxDemand = data.length ? Math.max(...data.map(d => d.workforceDemand)) : 0;
+function updateStats() {
+  const pd = calcProcessData();
+  const processes = new Set(pd.map(d => d.process));
+  const periods = [...new Set(pd.map(d => d.yearMonth))].sort();
+  const totals = periods.map(ym => pd.filter(d => d.yearMonth === ym).reduce((s,d) => s + d.requiredPeople, 0));
+  const maxTotal = totals.length ? Math.max(...totals) : 0;
+  const peakIdx = totals.indexOf(maxTotal);
+  const peakPeriod = peakIdx >= 0 ? periods[peakIdx] : '—';
+
   const statVals = document.querySelectorAll('.stat-value');
-  if (statVals[0]) statVals[0].textContent = [...periods].sort().join('~') || '—';
+  if (statVals[0]) statVals[0].textContent = periods.length >= 2 ? `${periods[0]}~${periods[periods.length-1]}` : (periods[0] || '—');
   if (statVals[1]) statVals[1].textContent = processes.size;
-  if (statVals[2]) statVals[2].textContent = maxDemand.toFixed(1);
+  if (statVals[2]) statVals[2].textContent = peakPeriod;
+  if (statVals[3]) statVals[3].textContent = maxTotal.toFixed(1);
 }
 
-loadData();
+loadVersions();
 </script>
 </body>
 </html>
