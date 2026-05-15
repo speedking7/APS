@@ -272,7 +272,10 @@ function saveDailyHours(val) {
   else {
     document.addEventListener('DOMContentLoaded', () => {
       const i = document.getElementById('dailyHours');
-      if (i) i.value = isNaN(saved) ? 10.5 : saved;
+      if (i) {
+        const current = parseFloat(localStorage.getItem('aps.dailyEffectiveHours'));
+        i.value = isNaN(current) ? 10.5 : current;
+      }
     });
   }
 })();
