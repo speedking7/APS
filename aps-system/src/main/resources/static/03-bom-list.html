@@ -154,7 +154,6 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">能力测算</div>
-    <a href="09-capacity-calendar.html" class="nav-item"><span class="ni">▥</span>工作日历</a>
     <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
     <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
   </div>
@@ -240,6 +239,17 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
           </thead>
           <tbody id="dataTbody"></tbody>
         </table>
+        <div style="padding:12px 18px;border-top:1px solid var(--color-neutral-200);display:flex;justify-content:space-between;align-items:center">
+          <div id="pageInfo" style="font-size:12px;color:var(--color-neutral-600)">共 0 条</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="font-size:12px;color:var(--color-neutral-600)">每页</label>
+            <select id="pageSizeSelect" style="font-size:12px;border:1px solid var(--color-neutral-200);border-radius:5px;padding:3px 8px;color:var(--color-neutral-600);outline:none" onchange="changePageSize(this.value)">
+              <option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="0">全部</option>
+            </select>
+            <label style="font-size:12px;color:var(--color-neutral-600)">行</label>
+            <div id="pageBtns" style="display:flex;gap:4px"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -461,6 +471,7 @@ function applyFilter(){
     (!process ||(d.process||'').toLowerCase().includes(process))&&
     (!version ||(d.version||'').toLowerCase().includes(version))
   );
+  currentPage = 1;
   renderListView(filteredBoms);
 }
 
@@ -469,14 +480,42 @@ function resetFilter(){
   applyFilter();
 }
 
+let pageSize=parseInt(localStorage.getItem('aps.pageSize')||'20');
+let currentPage=1;
+
+function changePageSize(val){pageSize=parseInt(val);localStorage.setItem('aps.pageSize',String(pageSize));currentPage=1;renderListView(filteredBoms);}
+
+function renderPagerBtns(totalPages){
+  const btns=document.getElementById('pageBtns');if(!btns)return;btns.innerHTML='';
+  if(totalPages<=1)return;
+  const mk=(txt,fn)=>{const b=document.createElement('button');b.textContent=txt;b.style.cssText='padding:4px 9px;border:1px solid var(--color-neutral-200);border-radius:5px;background:#fff;font-size:12px;cursor:pointer;font-family:var(--font-data);color:var(--color-neutral-600)';if(fn)b.onclick=fn;else{b.disabled=true;b.style.cursor='default';}btns.appendChild(b);return b;};
+  mk('‹',currentPage>1?()=>{currentPage--;renderListView(filteredBoms);}:null);
+  for(let p=1;p<=totalPages;p++){
+    if(totalPages<=7||p===1||p===totalPages||Math.abs(p-currentPage)<=1){const b=mk(String(p),(()=>{const pp=p;return pp===currentPage?null:()=>{currentPage=pp;renderListView(filteredBoms);}})(p));if(p===currentPage){b.style.background='var(--color-primary)';b.style.color='#fff';b.style.borderColor='var(--color-primary)';}}
+    else if(Math.abs(p-currentPage)===2){mk('…',null);}
+  }
+  mk('›',currentPage<totalPages?()=>{currentPage++;renderListView(filteredBoms);}:null);
+}
+
 function renderListView(data){
   const tbody=document.getElementById('dataTbody');
-  document.getElementById('totalCount').textContent=data.length;
-  if(data.length===0){
+  const total=data.length;
+  document.getElementById('totalCount').textContent=total;
+  if(total===0){
     tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
+    document.getElementById('pageInfo').textContent='共 0 条';
+    document.getElementById('pageBtns').innerHTML='';
     return;
   }
-  tbody.innerHTML=data.map((d,i)=>`
+  const ps=pageSize===0?total:pageSize;
+  const totalPages=Math.ceil(total/ps)||1;
+  if(currentPage>totalPages)currentPage=totalPages;
+  const slice=data.slice((currentPage-1)*ps,currentPage*ps);
+  const offset=(currentPage-1)*ps;
+  document.getElementById('pageInfo').textContent=ps>=total?`共 ${total} 条`:`共 ${total} 条 · 第 ${currentPage}/${totalPages} 页`;
+  const sel=document.getElementById('pageSizeSelect');if(sel&&sel.value!==String(pageSize)){sel.value=String(pageSize);if(!sel.value)sel.value='20';}
+  renderPagerBtns(totalPages);
+  tbody.innerHTML=slice.map((d,i)=>`
     <tr>
       <td class="code">${d.parentCode}</td>
       <td class="code">${d.childCode||'<span style="color:var(--color-neutral-400)">—</span>'}</td>
@@ -490,7 +529,7 @@ function renderListView(data){
       <td class="num">${d.scrapRate!=null?(d.scrapRate*100).toFixed(2)+'%':'—'}</td>
       <td><span style="font-family:var(--font-data);font-size:11px;color:var(--color-neutral-400)">${d.version||'—'}</span></td>
       <td>
-        <a class="action-link" onclick="openBomModal(filteredBoms[${i}])">编辑</a>
+        <a class="action-link" onclick="openBomModal(filteredBoms[${offset+i}])">编辑</a>
         <span class="act-sep">|</span>
         <a class="action-link danger" onclick="deleteBom(${d.id})">删除</a>
       </td>

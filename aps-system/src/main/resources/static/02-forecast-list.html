@@ -141,7 +141,6 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">能力测算</div>
-    <a href="09-capacity-calendar.html" class="nav-item"><span class="ni">▥</span>工作日历</a>
     <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
     <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
   </div>
@@ -225,7 +224,14 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       </table>
       <div class="pagination">
         <div class="page-info" id="pageInfo">共 0 条</div>
-        <div class="page-btns" id="pageBtns"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:12px;color:var(--color-neutral-600)">每页</label>
+          <select id="pageSizeSelect" style="font-size:12px;border:1px solid var(--color-neutral-200);border-radius:5px;padding:3px 8px;color:var(--color-neutral-600);outline:none" onchange="changePageSize(this.value)">
+            <option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="0">全部</option>
+          </select>
+          <label style="font-size:12px;color:var(--color-neutral-600)">行</label>
+          <div class="page-btns" id="pageBtns"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -323,7 +329,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 <script>
 const API = location.origin;
 let allData = [], filteredData = [];
-const PAGE_SIZE = 20;
+let pageSize = parseInt(localStorage.getItem('aps.pageSize')||'20');
 let currentPage = 1;
 
 function openModal(id){document.getElementById(id).classList.add('show')}
@@ -378,9 +384,10 @@ function renderTable(){
     document.getElementById('pageBtns').innerHTML='';
     return;
   }
-  const totalPages = Math.ceil(total/PAGE_SIZE);
+  const ps = pageSize===0 ? total : pageSize;
+  const totalPages = Math.ceil(total/ps)||1;
   if(currentPage>totalPages) currentPage=totalPages;
-  const slice = filteredData.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  const slice = filteredData.slice((currentPage-1)*ps, currentPage*ps);
   tbody.innerHTML = slice.map(d=>`
     <tr>
       <td>${d.customer||'—'}</td>
@@ -397,23 +404,31 @@ function renderTable(){
         <a class="action-link danger" onclick="deleteDemand(${d.id})">删除</a>
       </td>
     </tr>`).join('');
-  document.getElementById('pageInfo').textContent=`共 ${total} 条 · 每页 ${PAGE_SIZE} 条`;
-  const btns = document.getElementById('pageBtns');
-  btns.innerHTML='';
-  const prev = document.createElement('button');
-  prev.className='page-btn'; prev.textContent='‹';
-  prev.onclick=()=>{if(currentPage>1){currentPage--;renderTable();}};
-  btns.appendChild(prev);
+  document.getElementById('pageInfo').textContent = ps>=total ? `共 ${total} 条` : `共 ${total} 条 · 第 ${currentPage}/${totalPages} 页`;
+  renderPagerBtns('pageBtns', totalPages);
+  initPageSizeSelect();
+}
+
+function renderPagerBtns(id, totalPages){
+  const btns = document.getElementById(id); btns.innerHTML='';
+  if(totalPages<=1) return;
+  const mk=(txt,cls,fn)=>{const b=document.createElement('button');b.className=cls;b.textContent=txt;if(fn)b.onclick=fn;else b.disabled=true;btns.appendChild(b);};
+  mk('‹','page-btn',currentPage>1?()=>{currentPage--;renderTable();}:null);
   for(let p=1;p<=totalPages;p++){
-    const b=document.createElement('button');
-    b.className='page-btn'+(p===currentPage?' active':'');
-    b.textContent=p; b.onclick=(()=>{const pp=p;return()=>{currentPage=pp;renderTable();}})(p);
-    btns.appendChild(b);
+    if(totalPages<=7||p===1||p===totalPages||Math.abs(p-currentPage)<=1){
+      mk(String(p),'page-btn'+(p===currentPage?' active':''),(()=>{const pp=p;return()=>{currentPage=pp;renderTable();}})(p));
+    } else if(Math.abs(p-currentPage)===2){mk('…','page-btn',null);}
   }
-  const next = document.createElement('button');
-  next.className='page-btn'; next.textContent='›';
-  next.onclick=()=>{if(currentPage<totalPages){currentPage++;renderTable();}};
-  btns.appendChild(next);
+  mk('›','page-btn',currentPage<totalPages?()=>{currentPage++;renderTable();}:null);
+}
+
+function changePageSize(val){
+  pageSize=parseInt(val); localStorage.setItem('aps.pageSize',String(pageSize)); currentPage=1; renderTable();
+}
+
+function initPageSizeSelect(){
+  const s=document.getElementById('pageSizeSelect'); if(!s) return;
+  s.value=String(pageSize); if(!s.value) s.value='20';
 }
 
 function fmt(v){return v!=null?v:'—';}

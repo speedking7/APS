@@ -151,7 +151,6 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">能力测算</div>
-    <a href="09-capacity-calendar.html" class="nav-item"><span class="ni">▥</span>工作日历</a>
     <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
     <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
   </div>
@@ -250,13 +249,14 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       </table>
     </div>
     <div class="pager">
-      <div class="pager-info">显示 1-18 / 共 54 行（仅展示前 18 行）</div>
-      <div class="pager-ctrl">
-        <button class="pager-btn">‹</button>
-        <button class="pager-btn active">1</button>
-        <button class="pager-btn">2</button>
-        <button class="pager-btn">3</button>
-        <button class="pager-btn">›</button>
+      <div class="pager-info" id="pagerInfo">共 0 条</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:12px;color:var(--color-neutral-600)">每页</label>
+        <select id="pageSizeSelect" style="font-size:12px;border:1px solid var(--color-neutral-200);border-radius:5px;padding:3px 8px;color:var(--color-neutral-600);outline:none" onchange="changePageSize(this.value)">
+          <option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="0">全部</option>
+        </select>
+        <label style="font-size:12px;color:var(--color-neutral-600)">行</label>
+        <div class="pager-ctrl" id="pagerCtrl"></div>
       </div>
     </div>
   </div>
@@ -332,6 +332,22 @@ document.getElementById('detailModal').addEventListener('click',e=>{if(e.target.
 const API = 'http://localhost:8080';
 let planData = [];
 let filteredData = [];
+let pageSize = parseInt(localStorage.getItem('aps.pageSize')||'20');
+let currentPage = 1;
+
+function changePageSize(val){pageSize=parseInt(val);localStorage.setItem('aps.pageSize',String(pageSize));currentPage=1;renderTable(filteredData);}
+
+function renderPagerBtns(totalPages){
+  const ctrl=document.getElementById('pagerCtrl');if(!ctrl)return;ctrl.innerHTML='';
+  if(totalPages<=1)return;
+  const mk=(txt,fn,active)=>{const b=document.createElement('button');b.textContent=txt;b.className='pager-btn'+(active?' active':'');if(fn)b.onclick=fn;else b.disabled=true;ctrl.appendChild(b);return b;};
+  mk('‹',currentPage>1?()=>{currentPage--;renderTable(filteredData);}:null,false);
+  for(let p=1;p<=totalPages;p++){
+    if(totalPages<=7||p===1||p===totalPages||Math.abs(p-currentPage)<=1){mk(String(p),(()=>{const pp=p;return pp===currentPage?null:()=>{currentPage=pp;renderTable(filteredData);}})(p),p===currentPage);}
+    else if(Math.abs(p-currentPage)===2){mk('…',null,false);}
+  }
+  mk('›',currentPage<totalPages?()=>{currentPage++;renderTable(filteredData);}:null,false);
+}
 
 async function loadData() {
   try {
@@ -389,13 +405,26 @@ function resetFilters() {
 function renderTable(data) {
   const tbody = document.getElementById('dataTbody');
   if (!tbody) return;
-  if (data.length === 0) {
+  const total = data.length;
+  if (total === 0) {
     tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
     const tl = document.querySelector('.toolbar-left');
     if (tl) tl.innerHTML = '共 <b>0</b> 条计划记录';
+    const pi = document.getElementById('pagerInfo'); if(pi) pi.textContent='共 0 条';
+    const pc = document.getElementById('pagerCtrl'); if(pc) pc.innerHTML='';
     return;
   }
-  tbody.innerHTML = data.map(d => `
+  const ps = pageSize===0 ? total : pageSize;
+  const totalPages = Math.ceil(total/ps)||1;
+  if(currentPage>totalPages) currentPage=totalPages;
+  const slice = data.slice((currentPage-1)*ps, currentPage*ps);
+  const pi = document.getElementById('pagerInfo');
+  if(pi) pi.textContent = ps>=total ? `共 ${total} 条` : `共 ${total} 条 · 第 ${currentPage}/${totalPages} 页`;
+  const sel = document.getElementById('pageSizeSelect'); if(sel&&sel.value!==String(pageSize)){sel.value=String(pageSize);if(!sel.value)sel.value='20';}
+  renderPagerBtns(totalPages);
+  const tl = document.querySelector('.toolbar-left');
+  if (tl) tl.innerHTML = `共 <b style="color:var(--color-neutral-800);font-family:var(--font-data)">${total}</b> 条计划记录`;
+  tbody.innerHTML = slice.map(d => `
     <tr style="cursor:pointer" onclick='showDetailFromData(${JSON.stringify(d).replace(/'/g,"&apos;")})'>
       <td class="code">${d.finishedProductCode||'—'}</td>
       <td class="code">${d.itemCode||'—'}</td>
@@ -413,8 +442,6 @@ function renderTable(data) {
           color:${d.isProduce==='Y'?'var(--color-accent)':'var(--color-error)'}">
           ${d.isProduce==='Y'?'需生产':'不生产'}</span></td>
     </tr>`).join('');
-  const tl = document.querySelector('.toolbar-left');
-  if (tl) tl.innerHTML = `共 <b style="color:var(--color-neutral-800);font-family:var(--font-data)">${data.length}</b> 条计划记录`;
 }
 
 function updateStats(data) {
