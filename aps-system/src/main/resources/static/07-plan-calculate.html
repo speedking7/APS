@@ -130,9 +130,9 @@ input[type=text]:focus,select:focus,textarea:focus{border-color:var(--color-prim
   </div>
   <div class="nav-group">
     <div class="nav-group-label">基础数据</div>
-    <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
+    <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>预测管理</a>
     <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
-    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
+    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>物料参数</a>
     <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
     <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
   </div>
@@ -175,10 +175,74 @@ input[type=text]:focus,select:focus,textarea:focus{border-color:var(--color-prim
         <div class="panel-body">
 
           <div class="field-row">
-            <label>基础数据版本</label>
-            <select id="baseVersion" onchange="syncResultVersion()">
-              <option value="">请选择版本</option>
-            </select>
+            <label>计划期间</label>
+            <div class="dual">
+              <div class="dual-cell">
+                <label>起始期间</label>
+                <select><option selected>202504</option><option>202505</option><option>202506</option></select>
+              </div>
+              <div class="dual-cell">
+                <label>截止期间</label>
+                <select><option>202504</option><option>202505</option><option selected>202506</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label>完成品范围</label>
+            <div class="radio-group">
+              <label class="radio-opt sel">
+                <input type="radio" name="scope" checked>
+                <div><div class="rl">全部完成品</div><div class="rd">系统识别 6 种完成品（含 11201A012 / 11201A022 / 11201A033 等）</div></div>
+              </label>
+              <label class="radio-opt">
+                <input type="radio" name="scope">
+                <div style="flex:1"><div class="rl">指定完成品</div><div class="rd">手动选择需要计算的完成品（多选）</div>
+                  <input type="text" placeholder="请选择 / 输入完成品编码…" style="margin-top:8px" disabled>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label>计算模式</label>
+            <div class="radio-group">
+              <label class="radio-opt sel">
+                <input type="radio" name="mode" checked>
+                <div><div class="rl">全量重算</div><div class="rd">清空本期已有结果后重新计算 · 推荐月度首次执行</div></div>
+              </label>
+              <label class="radio-opt">
+                <input type="radio" name="mode">
+                <div><div class="rl">增量计算</div><div class="rd">仅计算有变更的物料 · 适用于盘点数或预测局部更新</div></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label>版本参数</label>
+            <div class="dual" style="grid-template-columns:1fr 1fr;gap:10px">
+              <div class="dual-cell">
+                <label>需求版本</label>
+                <input type="text" id="demandVersion" placeholder="如 v1">
+              </div>
+              <div class="dual-cell">
+                <label>BOM 版本</label>
+                <input type="text" id="bomVersion" placeholder="如 v1">
+              </div>
+              <div class="dual-cell">
+                <label>安全库存版本</label>
+                <input type="text" id="safetyStockVersion" placeholder="如 v1">
+              </div>
+              <div class="dual-cell">
+                <label>盘点数版本</label>
+                <input type="text" id="inventoryVersion" placeholder="如 v1">
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label>结果版本（标识本次输出）</label>
+            <input type="text" id="resultVersion" value="2026-05 正式版" placeholder="将作为本次计算结果的版本标签">
           </div>
 
           <button class="exec-btn" id="execBtn" onclick="runCalc()">
@@ -268,13 +332,6 @@ document.querySelectorAll('.radio-group').forEach(grp=>{
 
 const API = location.origin;
 
-function syncResultVersion() {
-  const base = document.getElementById('baseVersion');
-  const version = base ? base.value : '';
-  const lr = document.querySelector('.last-run .lr-row:nth-child(3) b');
-  if (lr) lr.textContent = version || '—';
-}
-
 // 检查基础数据就绪状态（读取各接口的条数）
 async function checkReadiness() {
   try {
@@ -286,19 +343,6 @@ async function checkReadiness() {
       fetch(`${API}/api/operating-days`).then(r=>r.json()),
       fetch(`${API}/api/inventory-count`).then(r=>r.json()),
     ]);
-    const versions = [...new Set([
-      ...(f.data||[]).map(d=>d.version),
-      ...(b.data||[]).map(d=>d.version),
-      ...(s.data||[]).map(d=>d.version),
-      ...(i.data||[]).map(d=>d.version),
-    ].filter(Boolean))].sort();
-    const versionSel = document.getElementById('baseVersion');
-    if (versionSel) {
-      const current = versionSel.value;
-      versionSel.innerHTML = '<option value="">请选择版本</option>' + versions.map(v=>`<option value="${v}">${v}</option>`).join('');
-      if (versions.includes(current)) versionSel.value = current;
-    }
-
     const checks = [
       { name:'预测数据', count: (f.data||[]).length, unit:'条' },
       { name:'BOM 结构', count: (b.data||[]).length, unit:'条' },
@@ -356,14 +400,17 @@ window.runCalc = async function() {
   }
 
   try {
+    // 取第一个非空版本号作为统一版本（后端已合并为单一 version 字段）
+    const demVer = document.getElementById('demandVersion')?.value?.trim() || null;
+    const bomVer = document.getElementById('bomVersion')?.value?.trim() || null;
+    const ssVer  = document.getElementById('safetyStockVersion')?.value?.trim() || null;
+    const invVer = document.getElementById('inventoryVersion')?.value?.trim() || null;
     const calcReq = {
-      version:            document.getElementById('baseVersion')?.value?.trim() || null,
+      version:       demVer || bomVer || ssVer || invVer || null,
+      resultVersion: document.getElementById('resultVersion')?.value?.trim() || null,
     };
     // 空字符串转 null
     Object.keys(calcReq).forEach(k => { if (!calcReq[k]) calcReq[k] = null; });
-    if (!calcReq.version) {
-      throw new Error('请选择基础数据版本');
-    }
     const resp = await fetch(`${API}/api/production-plan/calculate`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -377,7 +424,6 @@ window.runCalc = async function() {
     // 查询结果行数
     const pr = await fetch(`${API}/api/production-plan`).then(r=>r.json());
     const count = (pr.data||[]).length;
-    const version = calcReq.version;
 
     logBox.innerHTML += `<div><span class="log-time">[${ts}]</span> <span class="log-ok">✓ 计算完成，共生成 ${count} 条计划结果</span></div>`;
     logBox.scrollTop = logBox.scrollHeight;
@@ -386,7 +432,6 @@ window.runCalc = async function() {
     goResult.classList.add('show');
     goResult.querySelector('a').textContent = `→ 查看 ${count} 行计划结果`;
     goResult.querySelector('a').href = '08-plan-result.html';
-    localStorage.setItem('aps.planVersion', version);
 
     if (calcResult) {
       calcResult.innerHTML = `<div style="padding:16px;background:rgba(0,135,90,.08);border:1px solid rgba(0,135,90,.2);border-radius:8px;color:var(--color-accent);font-size:13px">
