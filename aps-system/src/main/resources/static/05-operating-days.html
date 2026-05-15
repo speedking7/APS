@@ -147,7 +147,6 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">能力测算</div>
-    <a href="09-capacity-calendar.html" class="nav-item"><span class="ni">▥</span>工作日历</a>
     <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
     <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
   </div>
@@ -170,6 +169,13 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 <div class="banner">
 <div class="banner-icon">i</div>
 <div class="banner-text">卡片显示<strong>工作日（稼动天数）</strong>，括号内为总出勤天数。计划计算使用工作日，<strong>请在每月计划计算前完成维护</strong>。</div>
+</div>
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 18px;display:flex;align-items:center;gap:14px;margin-bottom:16px">
+  <span style="font-size:12px;color:var(--color-neutral-600);font-weight:600;white-space:nowrap">每天有效工时（小时）</span>
+  <input type="number" id="dailyHours" min="1" max="24" step="0.5"
+    style="width:90px;padding:6px 10px;border:1px solid #d4dbe2;border-radius:6px;font-size:13px;font-family:var(--font-data)"
+    oninput="saveDailyHours(this.value)">
+  <span style="font-size:12px;color:var(--color-neutral-400)">设备负荷与人员需求报表共用此配置</span>
 </div>
 <div class="filter-bar">
 <div class="filter-item"><span class="filter-label">年份</span><select class="filter-select" id="yearSelect" onchange="loadOperatingDays()"><option>2026</option><option>2025</option></select></div>
@@ -254,6 +260,22 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 
 <script>
 const API=location.origin;
+
+function saveDailyHours(val) {
+  const v = parseFloat(val);
+  if (!isNaN(v) && v > 0) localStorage.setItem('aps.dailyEffectiveHours', String(v));
+}
+(function initDailyHours() {
+  const saved = parseFloat(localStorage.getItem('aps.dailyEffectiveHours'));
+  const inp = document.getElementById('dailyHours');
+  if (inp) inp.value = isNaN(saved) ? 10.5 : saved;
+  else {
+    document.addEventListener('DOMContentLoaded', () => {
+      const i = document.getElementById('dailyHours');
+      if (i) i.value = isNaN(saved) ? 10.5 : saved;
+    });
+  }
+})();
 const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let opMap={};
 let allData=[];
