@@ -127,7 +127,6 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">能力测算</div>
-    <a class="nav-item" href="09-capacity-calendar.html"><span class="ni">▥</span>工作日历</a>
     <a class="nav-item" href="10-workforce-report.html"><span class="ni">⚐</span>人员需求</a>
     <a class="nav-item active" href="11-equipment-load.html"><span class="ni">⌬</span>设备负荷</a>
   </div>
@@ -180,12 +179,14 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 
     <div class="toolbar">
       <div class="field">
-        <label>工序</label>
-        <select id="fProc"><option value="">全部</option><option>注塑</option><option>装配</option><option>焊接</option><option>检验</option><option>冲压</option><option>喷涂</option></select>
+        <label>计划版本</label>
+        <select id="versionSel" style="min-width:180px" onchange="loadData()">
+          <option value="">请选择版本</option>
+        </select>
       </div>
       <div class="field">
-        <label>期间</label>
-        <input type="text" value="202601" style="width:88px"> <span style="color:var(--color-neutral-400)">—</span> <input type="text" value="202612" style="width:88px">
+        <label>工序</label>
+        <select id="fProc" onchange="render()"><option value="">全部</option></select>
       </div>
       <div class="field">
         <label>仅超负</label>
@@ -194,11 +195,10 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <div class="spacer"></div>
       <div class="legend">
         <span><span class="legend-dot" style="background:#4caf50"></span>&lt;60%</span>
-        <span><span class="legend-dot" style="background:#0057b8"></span>60~80%</span>
-        <span><span class="legend-dot" style="background:#fbc02d"></span>80~100%</span>
+        <span><span class="legend-dot" style="background:#0057b8"></span>60~85%</span>
+        <span><span class="legend-dot" style="background:#fbc02d"></span>85~100%</span>
         <span><span class="legend-dot" style="background:#f44339"></span>&gt;100%</span>
       </div>
-      <button class="btn btn-primary" onclick="render()">↻ 刷新</button>
     </div>
 
     <div class="table-wrap">
@@ -221,160 +221,150 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 </div>
 
 <script>
-const EQ=[
-  {name:'注塑机A',proc:'注塑',cavity:4,cycle:18},
-  {name:'注塑机B',proc:'注塑',cavity:2,cycle:22},
-  {name:'注塑机C',proc:'注塑',cavity:4,cycle:20},
-  {name:'装配线1',proc:'装配',cavity:1,cycle:25},
-  {name:'装配线2',proc:'装配',cavity:1,cycle:25},
-  {name:'焊接台A',proc:'焊接',cavity:1,cycle:32},
-  {name:'焊接台B',proc:'焊接',cavity:1,cycle:30},
-  {name:'检验台1',proc:'检验',cavity:1,cycle:15},
-  {name:'检验台2',proc:'检验',cavity:1,cycle:15},
-  {name:'冲压机A',proc:'冲压',cavity:2,cycle:12},
-  {name:'喷涂线1',proc:'喷涂',cavity:1,cycle:40},
-  {name:'打磨台1',proc:'打磨',cavity:1,cycle:20},
-];
-const PER=['202601','202602','202603','202604','202605','202606','202607','202608','202609','202610','202611','202612'];
-const OPDAYS=[22,19,23,22,21,20,23,21,22,20,22,23];
+const API = location.origin;
+let planData = [], odData = [];
 
-function rate(ei,ti){
-  const b=[.88,.72,.65,.70,.68,.85,.62,.58,.54,.75,.70,.60];
-  const pf=[.9,.85,1,.95,1.02,1.18,1,.82,.9,.78,.95,1.05];
-  return Math.round((b[ei%b.length]*pf[ti]+((ei*13+ti*7)%17-8)*.01)*100);
-}
-function lbCls(r){return r<60?'lb-idle':r<80?'lb-normal':r<=100?'lb-tight':'lb-over'}
-function barColor(r){return r>100?'#f44339':r>=80?'#fbc02d':r>=60?'#0057b8':'#4caf50'}
-
-const expanded=new Set();
-
-function render(){
-  const pf=document.getElementById('fProc').value;
-  const wo=document.getElementById('warnOnly').checked;
-  let html='';
-  EQ.forEach((eq,ei)=>{
-    if(pf&&eq.proc!==pf)return;
-    const rates=PER.map((_,ti)=>rate(ei,ti));
-    const peak=Math.max(...rates);
-    if(wo&&peak<=100)return;
-    const isExp=expanded.has(ei);
-    html+=`<tr style="cursor:pointer" onclick="tog(${ei})">
-      <td class="sticky"><strong>${eq.name}</strong><span class="toggle-hint">${isExp?'▲':'▼'}</span></td>
-      <td>${eq.proc}</td>
-      <td style="font-family:var(--font-data)">${eq.cavity}</td>
-      <td style="font-family:var(--font-data)">${eq.cycle}</td>
-      ${rates.map(r=>`<td><span class="lb ${lbCls(r)}">${r}%</span></td>`).join('')}
-      <td style="background:#e8f0fb"><span class="lb ${lbCls(peak)}">${peak}%</span></td>
-    </tr>`;
-    if(isExp){
-      const pti=rates.indexOf(peak);
-      const cap=OPDAYS[pti]*10.5*3600*eq.cavity;
-      const used=Math.round(cap*peak/100);
-      const qty=Math.round(used/eq.cycle);
-      const rem=cap-used;
-      html+=`<tr class="expand-row"><td colspan="17">
-        <div class="expand-inner">
-          <div class="ei"><div class="ei-label">参考期间（峰值月）</div><div class="ei-val">${PER[pti].slice(0,4)+'-'+PER[pti].slice(4)}</div><div class="ei-sub">负荷率 ${peak}%</div></div>
-          <div class="ei"><div class="ei-label">可用产能 (s)</div><div class="ei-val">${cap.toLocaleString()}</div><div class="ei-sub">${OPDAYS[pti]}天×10.5h×${eq.cavity}模穴</div></div>
-          <div class="ei"><div class="ei-label">已占产能 (s)</div><div class="ei-val">${used.toLocaleString()}</div><div class="ei-sub">计划量 × 周期时间</div></div>
-          <div class="ei"><div class="ei-label">计划数量</div><div class="ei-val">${qty.toLocaleString()}</div><div class="ei-sub">已占产能 ÷ 周期时间</div></div>
-          <div class="ei"><div class="ei-label">剩余产能 (s)</div><div class="ei-val" style="color:${rem<0?'var(--color-error)':'var(--color-accent)'}">${rem.toLocaleString()}</div><div class="ei-sub">${rem<0?'超出！':'尚有余量'}</div></div>
-        </div>
-        <div class="chart-row">
-          ${rates.map((r,ti)=>`<div class="chart-col">
-            <div class="chart-val">${r}%</div>
-            <div class="chart-bar" style="height:${Math.min(r,120)}px;background:${barColor(r)}"></div>
-            <div class="chart-label">${PER[ti].slice(4)}月</div>
-          </div>`).join('')}
-        </div>
-      </td></tr>`;
-    }
-  });
-  document.getElementById('dataTbody').innerHTML=html||'<tr><td colspan="17" style="text-align:center;padding:40px;color:var(--color-neutral-400)">无匹配数据</td></tr>';
-}
-function tog(ei){expanded.has(ei)?expanded.delete(ei):expanded.add(ei);render();}
-render();
-
-const API_BASE = location.origin;
-let loadData_real = [];
-
-async function loadEquipmentData() {
-  const r = await fetch(`${API_BASE}/api/equipment-load`);
-  const j = await r.json();
-  loadData_real = j.data || [];
-  renderEquipmentTable(loadData_real);
-  updateEquipmentStats(loadData_real);
+function getDailyHours() {
+  return parseFloat(localStorage.getItem('aps.dailyEffectiveHours') || '10.5');
 }
 
-function statusColor(s) {
-  switch(s) {
-    case 'OVERLOADED': return '#f44339';
-    case 'TIGHT': return '#fbc02d';
-    case 'NORMAL': return '#03a9f4';
-    default: return '#4caf50';
-  }
-}
-function statusLabel(s) {
-  switch(s) { case 'OVERLOADED': return '超载'; case 'TIGHT': return '紧张'; case 'NORMAL': return '正常'; default: return '宽松'; }
+async function loadVersions() {
+  try {
+    const r = await fetch(`${API}/api/production-plan/versions`);
+    const j = await r.json();
+    const versions = j.data || [];
+    const sel = document.getElementById('versionSel');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">请选择版本</option>' +
+      versions.map(v => `<option value="${v}">${v}</option>`).join('');
+  } catch(e) { console.warn('loadVersions failed', e); }
 }
 
-function renderEquipmentTable(data) {
+async function loadData() {
+  const sel = document.getElementById('versionSel');
+  const version = sel?.value;
   const tbody = document.getElementById('dataTbody');
-  if (!tbody) return;
-  if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
+  if (!version) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:40px;color:var(--color-neutral-400)">请先选择计划版本</td></tr>';
     return;
   }
-  const periods = [...new Set(data.map(d => d.yearMonth))].sort();
-  const equipments = [...new Set(data.map(d => `${d.equipment}|${d.process}`))].sort();
+  try {
+    const [planRes, odRes] = await Promise.all([
+      fetch(`${API}/api/production-plan/by-version/${encodeURIComponent(version)}`).then(r => r.json()),
+      fetch(`${API}/api/operating-days`).then(r => r.json()),
+    ]);
+    planData = planRes.data || [];
+    odData   = odRes.data  || [];
 
-  // 更新表头
-  const table = tbody.closest('table');
-  const thead = table?.querySelector('thead tr');
-  if (thead) {
-    thead.innerHTML = `<th>设备</th><th>工序</th>` +
-      periods.map(p=>`<th class="num" style="min-width:70px">${p}</th>`).join('') +
-      `<th class="num">峰值</th>`;
+    // 动态填充工序下拉
+    const procs = [...new Set(planData.map(d => d.process).filter(Boolean))].sort();
+    const fProc = document.getElementById('fProc');
+    if (fProc) {
+      const cur = fProc.value;
+      fProc.innerHTML = '<option value="">全部</option>' + procs.map(p => `<option value="${p}">${p}</option>`).join('');
+      if (procs.includes(cur)) fProc.value = cur;
+    }
+
+    render();
+  } catch(e) {
+    console.error('loadData failed', e);
+    const tbody = document.getElementById('dataTbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:40px;color:var(--color-error)">加载失败，请确认后端服务已启动</td></tr>';
+  }
+}
+
+function render() {
+  const dailyHours = getDailyHours();
+  const warnOnly   = document.getElementById('warnOnly')?.checked;
+  const procFilter = document.getElementById('fProc')?.value || '';
+
+  // yearMonth → workDays
+  const odMap = {};
+  odData.forEach(d => { odMap[d.yearMonth] = d.workDays || 0; });
+
+  // 所有期间（排序）
+  const periods = [...new Set(planData.map(d => d.yearMonth))].sort();
+
+  // 按 equipment+process 分组，累加 planQty*cycleTime/moldCavity（秒）
+  const equipMap = {};
+  planData.forEach(d => {
+    if (procFilter && d.process !== procFilter) return;
+    const mc = d.moldCavity || 1;
+    const ct = d.cycleTime  || 0;
+    const key = `${d.equipment}|||${d.process}|||${mc}|||${ct}`;
+    if (!equipMap[key]) equipMap[key] = {};
+    if (!equipMap[key][d.yearMonth]) equipMap[key][d.yearMonth] = { taskSec: 0 };
+    equipMap[key][d.yearMonth].taskSec += (d.planQty || 0) * ct / mc;
+  });
+
+  function rateClass(r) {
+    if (r > 1)    return 'lb-over';
+    if (r >= .85) return 'lb-tight';
+    if (r >= .60) return 'lb-normal';
+    return 'lb-idle';
   }
 
-  tbody.innerHTML = equipments.map(k => {
-    const [equipment, process] = k.split('|');
-    const cells = periods.map(p => {
-      const row = data.find(d => d.equipment===equipment && d.yearMonth===p);
-      if (!row) return '<td class="num">—</td>';
-      const pct = (row.utilizationRate * 100).toFixed(1);
-      const color = statusColor(row.status);
-      return `<td class="num" title="${statusLabel(row.status)}: ${pct}%">
-        <span style="padding:2px 7px;border-radius:4px;font-size:11.5px;font-weight:600;
-          background:${color}22;color:${color};font-family:var(--font-data)">${pct}%</span>
-      </td>`;
+  // 构建行数组
+  const rows = Object.entries(equipMap).map(([key, byPeriod]) => {
+    const [equipment, process, mc, ct] = key.split('|||');
+    const periodRates = {};
+    periods.forEach(ym => {
+      const taskHours  = (byPeriod[ym]?.taskSec || 0) / 3600;
+      const availHours = (odMap[ym] || 0) * dailyHours;
+      periodRates[ym]  = { taskHours, availHours, rate: availHours > 0 ? taskHours / availHours : 0 };
     });
-    const nums = data.filter(d=>d.equipment===equipment).map(d=>d.utilizationRate*100);
-    const peak = nums.length ? Math.max(...nums).toFixed(1)+'%' : '—';
+    const maxRate = Math.max(...Object.values(periodRates).map(v => v.rate));
+    return { equipment, process, mc: parseInt(mc), ct: parseFloat(ct), periodRates, maxRate };
+  }).filter(r => !warnOnly || r.maxRate > 1);
+
+  // 更新表头
+  const table = document.querySelector('.matrix-table');
+  const thead = table?.querySelector('thead tr');
+  if (thead) {
+    thead.innerHTML =
+      '<th class="sticky" style="min-width:140px">设备名称</th><th>工序</th><th>模腔</th><th>周期(s)</th>' +
+      periods.map(p => `<th class="ph">${String(p).slice(0,4)}-${String(p).slice(4)}</th>`).join('') +
+      '<th style="background:#e8f0fb;color:var(--color-primary);min-width:72px">峰值</th>';
+  }
+
+  // 更新统计卡片
+  const allRates = rows.flatMap(r => Object.values(r.periodRates).map(v => v.rate));
+  const avgRate  = allRates.length ? (allRates.reduce((a,b)=>a+b,0)/allRates.length*100).toFixed(1) : '—';
+  const maxRateV = allRates.length ? (Math.max(...allRates)*100).toFixed(1) : '—';
+  const overCnt  = rows.filter(r => r.maxRate > 1).length;
+  const statVals = document.querySelectorAll('.stat-value');
+  if (statVals[0]) statVals[0].innerHTML = `${rows.length}<span class="stat-unit">台</span>`;
+  if (statVals[1]) statVals[1].innerHTML = `${avgRate}<span class="stat-unit">%</span>`;
+  if (statVals[2]) statVals[2].innerHTML = `${maxRateV}<span class="stat-unit">%</span>`;
+  if (statVals[3]) statVals[3].innerHTML = `${overCnt}<span class="stat-unit">次</span>`;
+
+  // 渲染 tbody
+  const tbody = document.getElementById('dataTbody');
+  if (!tbody) return;
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:40px;color:var(--color-neutral-400)">无匹配数据</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(row => {
+    const cells = periods.map(ym => {
+      const { taskHours, availHours, rate } = row.periodRates[ym];
+      if (availHours === 0 && taskHours === 0) return '<td style="text-align:center">—</td>';
+      const pct = (rate * 100).toFixed(1);
+      return `<td><span class="lb ${rateClass(rate)}">${pct}%</span></td>`;
+    }).join('');
+    const peakPct = (row.maxRate * 100).toFixed(1);
     return `<tr>
-      <td class="code">${equipment}</td>
-      <td>${process}</td>
-      ${cells.join('')}
-      <td class="num" style="font-weight:600">${peak}</td>
+      <td class="sticky"><strong>${row.equipment}</strong></td>
+      <td>${row.process}</td>
+      <td style="font-family:var(--font-data);text-align:center">${row.mc}</td>
+      <td style="font-family:var(--font-data);text-align:center">${row.ct}</td>
+      ${cells}
+      <td style="background:#e8f0fb;text-align:center"><span class="lb ${rateClass(row.maxRate)}">${peakPct}%</span></td>
     </tr>`;
   }).join('');
 }
 
-function updateEquipmentStats(data) {
-  const equips = new Set(data.map(d => d.equipment));
-  const overloaded = data.filter(d => d.status === 'OVERLOADED');
-  const rates = data.map(d => d.utilizationRate * 100);
-  const avgRate = rates.length ? (rates.reduce((a,b)=>a+b,0)/rates.length).toFixed(1) : 0;
-  const maxRate = rates.length ? Math.max(...rates).toFixed(1) : 0;
-
-  const statVals = document.querySelectorAll('.stat-value');
-  if (statVals[0]) statVals[0].textContent = equips.size;
-  if (statVals[1]) statVals[1].textContent = avgRate + '%';
-  if (statVals[2]) statVals[2].textContent = maxRate + '%';
-  if (statVals[3]) statVals[3].textContent = overloaded.length;
-}
-
-loadEquipmentData();
+loadVersions();
 </script>
 </body>
 </html>
