@@ -130,6 +130,8 @@ public class PlanCalculationService {
 
             String  process    = null;
             String  equipment  = null;
+            String  manufacturingDepartment = null;
+            String  manufacturingUnit = null;
             Integer moldCavity = null;
             Double  cycleTime  = null;
             Double  staffCount = null;
@@ -140,6 +142,8 @@ public class PlanCalculationService {
                 Bom b = bomOpt.get();
                 process    = b.getProcess();
                 equipment  = b.getEquipment();
+                manufacturingDepartment = b.getManufacturingDepartment();
+                manufacturingUnit = b.getManufacturingUnit();
                 moldCavity = b.getMoldCavity();
                 cycleTime  = b.getCycleTime();
                 staffCount = b.getStaffCount();
@@ -187,7 +191,8 @@ public class PlanCalculationService {
                     remainingInventory.put(itemCode, Math.max(0.0, inventory - grossDemand));
 
                     saveRecord(batch, finishedProduct, itemCode, period,
-                            process, equipment, moldCavity, cycleTime, staffCount, taktTime,
+                            process, equipment, manufacturingDepartment, manufacturingUnit,
+                            moldCavity, cycleTime, staffCount, taktTime,
                             currentInventory, grossDemand, safetyDaysRecorded, scrapRate, planQty, resultVersion);
                     periodTotalPlanQty.merge(itemCode, planQty, Double::sum);
                     periodScrapRate.putIfAbsent(itemCode, scrapRate);
@@ -200,7 +205,8 @@ public class PlanCalculationService {
             }
 
             saveRecord(batch, finishedProduct, itemCode, period,
-                    process, equipment, moldCavity, cycleTime, staffCount, taktTime,
+                    process, equipment, manufacturingDepartment, manufacturingUnit,
+                    moldCavity, cycleTime, staffCount, taktTime,
                     currentInventory, grossDemand, safetyDaysRecorded, scrapRate, planQty, resultVersion);
 
             periodTotalPlanQty.merge(itemCode, planQty, Double::sum);
@@ -253,7 +259,8 @@ public class PlanCalculationService {
     private void saveRecord(
             List<ProductionPlan> batch,
             String finishedProduct, String itemCode, Integer period,
-            String process, String equipment, Integer moldCavity,
+            String process, String equipment, String manufacturingDepartment,
+            String manufacturingUnit, Integer moldCavity,
             Double cycleTime, Double staffCount, Double taktTime,
             double currentInventory, double forecast, double safetyDays,
             double scrapRate, double planQty, String version) {
@@ -264,6 +271,8 @@ public class PlanCalculationService {
         plan.setYearMonth(period);
         plan.setProcess(process);
         plan.setEquipment(equipment);
+        plan.setManufacturingDepartment(manufacturingDepartment);
+        plan.setManufacturingUnit(manufacturingUnit);
         plan.setMoldCavity(moldCavity);
         plan.setCycleTime(cycleTime);
         plan.setStaffCount(staffCount);

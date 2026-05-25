@@ -153,9 +153,9 @@ class PlanCalculationIntegrationTest {
         inventoryCountRepository.save(new InventoryCount(null, "P004", 202512, 0.0, version));
         inventoryCountRepository.save(new InventoryCount(null, "C004", 202512, 0.0, version));
         // P004→C004 的用量关系（工序信息不放在此行）
-        bomRepository.save(new Bom(null, "P004", "C004", 2.0, null, null, null, null, null, null, null, version));
+        bomRepository.save(new Bom(null, "P004", "C004", 2.0, null, null, "制造一部", "单元A", null, null, null, null, null, version));
         // C004 作为"父零件"的叶节点行（childCode=null）：存储 C004 自身的工序信息
-        bomRepository.save(new Bom(null, "C004", null, 0.0, "PROC-A", "EQ-A", 2, 20.0, 1.0, 10.0, null, version));
+        bomRepository.save(new Bom(null, "C004", null, 0.0, "PROC-A", "EQ-A", "制造一部", "单元A", 2, 20.0, 1.0, 10.0, null, version));
 
         planCalculationService.calculate(request(version));
 
@@ -178,6 +178,8 @@ class PlanCalculationIntegrationTest {
         // 工艺信息应回填
         assertThat(childPlan.getProcess()).isEqualTo("PROC-A");
         assertThat(childPlan.getEquipment()).isEqualTo("EQ-A");
+        assertThat(childPlan.getManufacturingDepartment()).isEqualTo("制造一部");
+        assertThat(childPlan.getManufacturingUnit()).isEqualTo("单元A");
     }
 
     // =========================================================================

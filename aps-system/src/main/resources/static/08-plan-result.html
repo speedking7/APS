@@ -231,10 +231,18 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
         <thead>
           <tr>
             <th>完成品</th>
+            <th>完成品名称</th>
+            <th>完成品番号</th>
+            <th>完成品项目</th>
             <th>自制件编码</th>
+            <th>自制件名称</th>
+            <th>自制件番号</th>
+            <th>自制件项目</th>
             <th>年月</th>
             <th>工序</th>
             <th>设备</th>
+            <th>制造部门</th>
+            <th>制造单元</th>
             <th class="num">需求(毛)</th>
             <th class="num">计划数量</th>
             <th class="num">报废率</th>
@@ -329,7 +337,7 @@ function showDetail(layer,period,code,inv,demand,safe,days,scrap,qty,endInv){
 function closeModal(){document.getElementById('detailModal').classList.remove('show')}
 document.getElementById('detailModal').addEventListener('click',e=>{if(e.target.id==='detailModal')closeModal()})
 
-const API = 'http://localhost:8080';
+const API = location.origin;
 let planData = [];
 let filteredData = [];
 let pageSize = parseInt(localStorage.getItem('aps.pageSize')||'20');
@@ -370,7 +378,7 @@ async function loadData() {
     populateFilters(planData);
   } catch(e) {
     const tbody = document.getElementById('dataTbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--color-error)">加载失败，请确认后端服务已启动</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:32px;color:var(--color-error)">加载失败，请确认后端服务已启动</td></tr>';
     console.error('loadData failed', e);
   }
 }
@@ -407,7 +415,7 @@ function renderTable(data) {
   if (!tbody) return;
   const total = data.length;
   if (total === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
     const tl = document.querySelector('.toolbar-left');
     if (tl) tl.innerHTML = '共 <b>0</b> 条计划记录';
     const pi = document.getElementById('pagerInfo'); if(pi) pi.textContent='共 0 条';
@@ -427,10 +435,18 @@ function renderTable(data) {
   tbody.innerHTML = slice.map(d => `
     <tr style="cursor:pointer" onclick='showDetailFromData(${JSON.stringify(d).replace(/'/g,"&apos;")})'>
       <td class="code">${d.finishedProductCode||'—'}</td>
+      <td>${d.finishedProductName||'—'}</td>
+      <td>${d.finishedProductNo||'—'}</td>
+      <td>${d.finishedProjectName||'—'}</td>
       <td class="code">${d.itemCode||'—'}</td>
+      <td>${d.itemProductName||'—'}</td>
+      <td>${d.itemProductNo||'—'}</td>
+      <td>${d.itemProjectName||'—'}</td>
       <td>${d.yearMonth||'—'}</td>
       <td>${d.process||'—'}</td>
       <td>${d.equipment||'—'}</td>
+      <td>${d.manufacturingDepartment||'—'}</td>
+      <td>${d.manufacturingUnit||'—'}</td>
       <td class="num">${fmt(d.forecast)}</td>
       <td class="num" style="font-weight:600;color:var(--color-primary)">${fmt(d.planQty)}</td>
       <td class="num">${d.scrapRate!=null?(d.scrapRate*100).toFixed(1)+'%':'—'}</td>
@@ -485,9 +501,16 @@ window.showDetailFromData = function(d) {
       body.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;margin-bottom:14px">
           <div><span style="color:var(--color-neutral-400)">完成品</span><br><b>${d.finishedProductCode}</b></div>
+          <div><span style="color:var(--color-neutral-400)">完成品名称</span><br><b>${d.finishedProductName||'—'}</b></div>
+          <div><span style="color:var(--color-neutral-400)">完成品番号</span><br><b>${d.finishedProductNo||'—'}</b></div>
+          <div><span style="color:var(--color-neutral-400)">完成品项目</span><br><b>${d.finishedProjectName||'—'}</b></div>
           <div><span style="color:var(--color-neutral-400)">${isFP?'层级':'存货编码'}</span><br><b>${isFP?'完成品':d.itemCode}</b></div>
+          <div><span style="color:var(--color-neutral-400)">${isFP?'零件名称':'自制件名称'}</span><br><b>${d.itemProductName||'—'}</b></div>
+          <div><span style="color:var(--color-neutral-400)">${isFP?'零件番号':'自制件番号'}</span><br><b>${d.itemProductNo||'—'}</b></div>
+          <div><span style="color:var(--color-neutral-400)">${isFP?'零件项目':'自制件项目'}</span><br><b>${d.itemProjectName||'—'}</b></div>
           <div><span style="color:var(--color-neutral-400)">期间</span><br><b>${d.yearMonth}</b></div>
           <div><span style="color:var(--color-neutral-400)">工序/设备</span><br><b>${d.process||'—'} / ${d.equipment||'—'}</b></div>
+          <div><span style="color:var(--color-neutral-400)">制造部门/单元</span><br><b>${d.manufacturingDepartment||'—'} / ${d.manufacturingUnit||'—'}</b></div>
         </div>
         ${isFP ? `<div class="calc-step">净需求 = 入库需求数 = <span class="res">${fmt(gross,2)}</span>（已含库存与安全库存调整）</div>` : fpRow}
         <div class="calc-step">

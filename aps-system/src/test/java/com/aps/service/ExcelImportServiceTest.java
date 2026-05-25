@@ -1,9 +1,19 @@
 package com.aps.service;
 
-import com.aps.entity.*;
-import com.aps.repository.*;
+import com.aps.entity.Bom;
+import com.aps.entity.Demand;
+import com.aps.entity.InventoryCount;
+import com.aps.entity.OperatingDays;
+import com.aps.entity.SafetyStock;
+import com.aps.repository.BomRepository;
+import com.aps.repository.DemandRepository;
+import com.aps.repository.InventoryCountRepository;
+import com.aps.repository.OperatingDaysRepository;
+import com.aps.repository.SafetyStockRepository;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.ss.usermodel.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -15,82 +25,79 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-/**
- * ExcelImportService 单元测试
- *
- * 验证 6 张 Sheet 的解析逻辑：
- *   预测（仅完成品）→ Forecast
- *   报废率          → ScrapRate
- *   库存天数        → InventoryDays
- *   稼动天数        → OperatingDays
- *   BOM             → Bom
- *   盘点数          → InventoryCount
- */
 @ExtendWith(MockitoExtension.class)
 class ExcelImportServiceTest {
 
-    @InjectMocks  private ExcelImportService service;
+    @InjectMocks
+    private ExcelImportService service;
 
-    @Mock private ForecastRepository        forecastRepository;
-    @Mock private ScrapRateRepository       scrapRateRepository;
-    @Mock private InventoryDaysRepository   inventoryDaysRepository;
-    @Mock private OperatingDaysRepository   operatingDaysRepository;
-    @Mock private BomRepository             bomRepository;
-    @Mock private InventoryCountRepository  inventoryCountRepository;
+    @Mock
+    private DemandRepository demandRepository;
 
-    @Captor private ArgumentCaptor<List<Forecast>>       forecasts;
-    @Captor private ArgumentCaptor<List<ScrapRate>>      scrapRates;
-    @Captor private ArgumentCaptor<List<InventoryDays>>  invDays;
-    @Captor private ArgumentCaptor<List<OperatingDays>>  opDays;
-    @Captor private ArgumentCaptor<List<Bom>>            boms;
-    @Captor private ArgumentCaptor<List<InventoryCount>> invCounts;
+    @Mock
+    private BomRepository bomRepository;
 
-    // -------------------------------------------------------------------------
-    // Helper: build a complete workbook matching the template structure
-    // -------------------------------------------------------------------------
-    private byte[] buildWorkbook() throws Exception {
+    @Mock
+    private InventoryCountRepository inventoryCountRepository;
+
+    @Mock
+    private SafetyStockRepository safetyStockRepository;
+
+    @Mock
+    private OperatingDaysRepository operatingDaysRepository;
+
+    @Captor
+    private ArgumentCaptor<List<Demand>> demandsCaptor;
+
+    @Captor
+    private ArgumentCaptor<List<Bom>> bomsCaptor;
+
+    @Captor
+    private ArgumentCaptor<List<InventoryCount>> inventoryCaptor;
+
+    @Captor
+    private ArgumentCaptor<List<SafetyStock>> safetyCaptor;
+
+    private byte[] buildWorkbookWithBomRow(
+            String manufacturingDepartment,
+            String manufacturingUnit) throws Exception {
         Workbook wb = new XSSFWorkbook();
 
-        // 预测（仅完成品）: 存货编码, 年月, 数量, 删除重写标记
-        Sheet forecast = wb.createSheet("预测（仅完成品）");
-        addRow(forecast, 0, "存货编码", "年月", "数量", "删除重写标记");
-        addRow(forecast, 1, "P001", 202601, 100.0, "分类1");
-        addRow(forecast, 2, "P001", 202602, 110.0, "分类1");
+        Sheet demandSheet = wb.createSheet("完成品入库需求数");
+        addRow(demandSheet, 0);
+        addRow(demandSheet, 1);
+        addRow(demandSheet, 2, "AAA", "P001", 202601, 100.0, 10.0, 5.0, 90.0, "v1");
 
-        // 报废率: 存货编码, 报废率
-        Sheet scrap = wb.createSheet("报废率");
-        addRow(scrap, 0, "存货编码", "报废率");
-        addRow(scrap, 1, "P001", 0.01);
-        addRow(scrap, 2, "C001", 0.02);
-
-        // 库存天数: 存货编码, 安全天数, 最大天数
-        Sheet invDaySheet = wb.createSheet("库存天数");
-        addRow(invDaySheet, 0, "存货编码", "安全天数", "最大天数");
-        addRow(invDaySheet, 1, "P001", 3.0, 15.0);
-
-        // 稼动天数: 年月, 天数
-        Sheet opDaySheet = wb.createSheet("稼动天数");
-        addRow(opDaySheet, 0, "年月", "天数");
-        addRow(opDaySheet, 1, 202601, 22.0);
-        addRow(opDaySheet, 2, 202602, 20.0);
-
-        // BOM: 父零件, 子零件, 用量, 工序, 设备, 模腔数, 制造周期, 持台人数, 单件节拍
         Sheet bomSheet = wb.createSheet("BOM");
-        addRow(bomSheet, 0, "父零件", "子零件", "用量", "工序", "设备",
-               "模腔数/取数（pcs）", "制造周期（S）", "持台人数（人）", "单件节拍（S）");
-        addRow(bomSheet, 1, "P001", "C001", 2.0, "CNC", "EQ-01", 1, 30.0, 2.0, 15.0);
-        addRow(bomSheet, 2, "C001", null, null, "WELD", "EQ-02", 2, 20.0, 1.0, 10.0);
+        addRow(bomSheet, 0);
+        addRow(bomSheet, 1);
+        addRow(bomSheet, 2,
+                "P001", "C001", 1.0, "冲压", "EQ-01",
+                manufacturingDepartment, manufacturingUnit,
+                2, 30.0, 1.0, 15.0, 0.02, "v1");
 
-        // 盘点数: 存货编码, 年月（底）, 可用量, 删除重写标记
-        Sheet invCountSheet = wb.createSheet("盘点数");
-        addRow(invCountSheet, 0, "存货编码", "年月（底）", "可用量", "删除重写标记");
-        addRow(invCountSheet, 1, "P001", 202512, 50.0, "分类1");
-        addRow(invCountSheet, 2, "C001", 202512, 30.0, "分类1");
+        Sheet inventorySheet = wb.createSheet("半成品期末盘点数");
+        addRow(inventorySheet, 0);
+        addRow(inventorySheet, 1);
+        addRow(inventorySheet, 2, "C001", 202512, 20.0, "v1");
+
+        Sheet safetySheet = wb.createSheet("半成品安全库存");
+        addRow(safetySheet, 0);
+        addRow(safetySheet, 1);
+        addRow(safetySheet, 2, "C001", 202601, 10.0, 3.0, 15.0, "v1");
+
+        Sheet opDaysSheet = wb.createSheet("稼动天数");
+        addRow(opDaysSheet, 0);
+        addRow(opDaysSheet, 1);
+        addRow(opDaysSheet, 2, 202601, 31.0, 22.0, 8.0, 1.0);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         wb.write(out);
@@ -98,164 +105,110 @@ class ExcelImportServiceTest {
         return out.toByteArray();
     }
 
-    private void addRow(Sheet sheet, int rowIdx, Object... values) {
-        Row row = sheet.createRow(rowIdx);
+    private void addRow(Sheet sheet, int rowNum, Object... values) {
+        Row row = sheet.createRow(rowNum);
         for (int i = 0; i < values.length; i++) {
-            Cell cell = row.createCell(i);
-            Object v = values[i];
-            if (v == null) {
-                cell.setBlank();
-            } else if (v instanceof String) {
-                cell.setCellValue((String) v);
-            } else if (v instanceof Double) {
-                cell.setCellValue((Double) v);
-            } else if (v instanceof Integer) {
-                cell.setCellValue((Integer) v);
+            Object value = values[i];
+            if (value == null) {
+                continue;
+            }
+            if (value instanceof String) {
+                row.createCell(i).setCellValue((String) value);
+            } else if (value instanceof Integer) {
+                row.createCell(i).setCellValue((Integer) value);
+            } else if (value instanceof Double) {
+                row.createCell(i).setCellValue((Double) value);
             }
         }
     }
 
-    // =========================================================================
-    // 1. 导入结果统计
-    // =========================================================================
-
     @Test
-    void import_returnsCorrectRowCounts() throws Exception {
-        byte[] bytes = buildWorkbook();
-        ImportResult result = service.importFromExcel(new ByteArrayInputStream(bytes));
+    void importFromExcel_parsesCurrentSheetsAndCountsRows() throws Exception {
+        when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
-        assertThat(result.getOperatingDaysCount()).isEqualTo(2);
-        assertThat(result.getBomCount()).isEqualTo(2);
-        assertThat(result.getInventoryCountCount()).isEqualTo(2);
-    }
+        ImportResult result = service.importFromExcel(
+                new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", "单元A")));
 
-    // =========================================================================
-    // 2. 预测解析
-    // =========================================================================
-
-    @Test
-    void import_parsesForecastSheet_correctly() throws Exception {
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbook()));
-
-        verify(forecastRepository).saveAll(forecasts.capture());
-        List<Forecast> saved = forecasts.getValue();
-        assertThat(saved).hasSize(2);
-        Forecast f = saved.get(0);
-        assertThat(f.getItemCode()).isEqualTo("P001");
-        assertThat(f.getYearMonth()).isEqualTo(202601);
-        assertThat(f.getQuantity()).isEqualTo(100.0);
-    }
-
-    // =========================================================================
-    // 3. 报废率解析
-    // =========================================================================
-
-    @Test
-    void import_parsesScrapRateSheet_correctly() throws Exception {
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbook()));
-
-        verify(scrapRateRepository).saveAll(scrapRates.capture());
-        List<ScrapRate> saved = scrapRates.getValue();
-        assertThat(saved).hasSize(2);
-        assertThat(saved.get(0).getItemCode()).isEqualTo("P001");
-        assertThat(saved.get(0).getScrapRate()).isEqualTo(0.01);
-        assertThat(saved.get(1).getItemCode()).isEqualTo("C001");
-    }
-
-    // =========================================================================
-    // 4. 库存天数解析
-    // =========================================================================
-
-    @Test
-    void import_parsesInventoryDaysSheet_correctly() throws Exception {
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbook()));
-
-        verify(inventoryDaysRepository).saveAll(invDays.capture());
-        List<InventoryDays> saved = invDays.getValue();
-        assertThat(saved).hasSize(1);
-        assertThat(saved.get(0).getItemCode()).isEqualTo("P001");
-        assertThat(saved.get(0).getSafetyDays()).isEqualTo(3.0);
-        assertThat(saved.get(0).getMaxDays()).isEqualTo(15.0);
-    }
-
-    // =========================================================================
-    // 5. 稼动天数解析
-    // =========================================================================
-
-    @Test
-    void import_parsesOperatingDaysSheet_correctly() throws Exception {
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbook()));
-
-        verify(operatingDaysRepository).saveAll(opDays.capture());
-        List<OperatingDays> saved = opDays.getValue();
-        assertThat(saved).hasSize(2);
-        assertThat(saved.get(0).getYearMonth()).isEqualTo(202601);
-        assertThat(saved.get(0).getWorkDays()).isEqualTo(22.0);
-    }
-
-    // =========================================================================
-    // 6. BOM 解析
-    // =========================================================================
-
-    @Test
-    void import_parsesBomSheet_correctly() throws Exception {
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbook()));
-
-        verify(bomRepository).saveAll(boms.capture());
-        List<Bom> saved = boms.getValue();
-        assertThat(saved).hasSize(2);
-
-        Bom b = saved.get(0);
-        assertThat(b.getParentCode()).isEqualTo("P001");
-        assertThat(b.getChildCode()).isEqualTo("C001");
-        assertThat(b.getUsageQty()).isEqualTo(2.0);
-        assertThat(b.getProcess()).isEqualTo("CNC");
-        assertThat(b.getEquipment()).isEqualTo("EQ-01");
-        assertThat(b.getMoldCavity()).isEqualTo(1);
-        assertThat(b.getCycleTime()).isEqualTo(30.0);
-        assertThat(b.getStaffCount()).isEqualTo(2.0);
-        assertThat(b.getTaktTime()).isEqualTo(15.0);
+        assertThat(result.getDemandCount()).isEqualTo(1);
+        assertThat(result.getBomCount()).isEqualTo(1);
+        assertThat(result.getInventoryCountCount()).isEqualTo(1);
+        assertThat(result.getSafetyStockCount()).isEqualTo(1);
+        assertThat(result.getOperatingDaysCount()).isEqualTo(1);
+        assertThat(result.getErrors()).isEmpty();
     }
 
     @Test
-    void import_bomLeafNode_childCodeIsNull() throws Exception {
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbook()));
+    void importFromExcel_savesManufacturingDepartmentAndUnit() throws Exception {
+        when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
-        verify(bomRepository).saveAll(boms.capture());
-        Bom leaf = boms.getValue().get(1);
-        assertThat(leaf.getParentCode()).isEqualTo("C001");
-        assertThat(leaf.getChildCode()).isNull();
+        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", "单元A")));
+
+        verify(bomRepository).saveAll(bomsCaptor.capture());
+        Bom saved = bomsCaptor.getValue().get(0);
+        assertThat(saved.getManufacturingDepartment()).isEqualTo("制造一部");
+        assertThat(saved.getManufacturingUnit()).isEqualTo("单元A");
     }
 
-    // =========================================================================
-    // 7. 盘点数解析
-    // =========================================================================
-
     @Test
-    void import_parsesInventoryCountSheet_correctly() throws Exception {
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbook()));
+    void importFromExcel_missingManufacturingDepartment_isRejected() throws Exception {
+        when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
-        verify(inventoryCountRepository).saveAll(invCounts.capture());
-        List<InventoryCount> saved = invCounts.getValue();
-        assertThat(saved).hasSize(2);
-        assertThat(saved.get(0).getItemCode()).isEqualTo("P001");
-        assertThat(saved.get(0).getYearMonth()).isEqualTo(202512);
-        assertThat(saved.get(0).getAvailableQty()).isEqualTo(50.0);
+        ImportResult result = service.importFromExcel(
+                new ByteArrayInputStream(buildWorkbookWithBomRow(null, "单元A")));
+
+        assertThat(result.getBomCount()).isEqualTo(0);
+        assertThat(result.getErrors()).anyMatch(msg -> msg.contains("制造部门必填"));
+        verify(bomRepository, never()).saveAll(any());
     }
 
-    // =========================================================================
-    // 8. 覆盖模式：导入前清空各表
-    // =========================================================================
+    @Test
+    void importFromExcel_missingManufacturingUnit_isRejected() throws Exception {
+        when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
+
+        ImportResult result = service.importFromExcel(
+                new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", null)));
+
+        assertThat(result.getBomCount()).isEqualTo(0);
+        assertThat(result.getErrors()).anyMatch(msg -> msg.contains("制造单元必填"));
+        verify(bomRepository, never()).saveAll(any());
+    }
 
     @Test
-    void import_clearsAllTablesBeforeSaving() throws Exception {
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbook()));
+    void importFromExcel_savesOtherSheetsUsingCurrentRepositories() throws Exception {
+        when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
-        verify(forecastRepository).deleteAllInBatch();
-        verify(scrapRateRepository).deleteAllInBatch();
-        verify(inventoryDaysRepository).deleteAllInBatch();
-        verify(operatingDaysRepository).deleteAllInBatch();
-        verify(bomRepository).deleteAllInBatch();
-        verify(inventoryCountRepository).deleteAllInBatch();
+        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", "单元A")));
+
+        verify(demandRepository).saveAll(demandsCaptor.capture());
+        verify(inventoryCountRepository).saveAll(inventoryCaptor.capture());
+        verify(safetyStockRepository).saveAll(safetyCaptor.capture());
+
+        Demand demand = demandsCaptor.getValue().get(0);
+        assertThat(demand.getCustomer()).isEqualTo("AAA");
+        assertThat(demand.getItemCode()).isEqualTo("P001");
+        assertThat(demand.getVersion()).isEqualTo("v1");
+
+        InventoryCount inventoryCount = inventoryCaptor.getValue().get(0);
+        assertThat(inventoryCount.getItemCode()).isEqualTo("C001");
+        assertThat(inventoryCount.getYearMonth()).isEqualTo(202512);
+
+        SafetyStock safetyStock = safetyCaptor.getValue().get(0);
+        assertThat(safetyStock.getItemCode()).isEqualTo("C001");
+        assertThat(safetyStock.getYearMonth()).isEqualTo(202601);
+        assertThat(safetyStock.getSafetyDays()).isEqualTo(3.0);
+    }
+
+    @Test
+    void importFromExcel_upsertsOperatingDays() throws Exception {
+        OperatingDays existing = new OperatingDays(1L, 202601, 30.0, 20.0, 8.0, 2.0);
+        when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.of(existing));
+
+        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", "单元A")));
+
+        assertThat(existing.getTotalDays()).isEqualTo(31.0);
+        assertThat(existing.getWorkDays()).isEqualTo(22.0);
+        assertThat(existing.getWeekendDays()).isEqualTo(8.0);
+        assertThat(existing.getHolidayDays()).isEqualTo(1.0);
+        verify(operatingDaysRepository).save(existing);
     }
 }

@@ -428,7 +428,7 @@ function renderDetailView() {
   const tbody = document.getElementById('detailTbody');
   if (!tbody) return;
   if (planData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
     return;
   }
   const dailyHours = getDailyHours();
@@ -438,7 +438,9 @@ function renderDetailView() {
   // 更新表头
   const thead = tbody.closest('table')?.querySelector('thead tr');
   if (thead) {
-    thead.innerHTML = '<th>期间</th><th>工序</th><th>设备</th><th>关联完成品</th>' +
+    thead.innerHTML = '<th>期间</th><th>工序</th><th>设备</th><th>制造部门</th><th>制造单元</th>' +
+      '<th>关联完成品</th><th>完成品名称</th><th>完成品番号</th><th>完成品项目</th>' +
+      '<th>自制件编码</th><th>自制件名称</th><th>自制件番号</th><th>自制件项目</th>' +
       '<th class="num">月计划数量</th><th class="num">单件节拍(s)</th><th class="num">持台人数</th><th class="num">所需人数</th>';
   }
 
@@ -450,7 +452,16 @@ function renderDetailView() {
       <td style="font-family:var(--font-data)">${d.yearMonth}</td>
       <td>${d.process || '—'}</td>
       <td style="font-family:var(--font-data)">${d.equipment || '—'}</td>
+      <td>${d.manufacturingDepartment || '—'}</td>
+      <td>${d.manufacturingUnit || '—'}</td>
       <td>${d.finishedProductCode || '—'}</td>
+      <td>${d.finishedProductName || '—'}</td>
+      <td>${d.finishedProductNo || '—'}</td>
+      <td>${d.finishedProjectName || '—'}</td>
+      <td style="font-family:var(--font-data)">${d.itemCode || '—'}</td>
+      <td>${d.itemProductName || '—'}</td>
+      <td>${d.itemProductNo || '—'}</td>
+      <td>${d.itemProjectName || '—'}</td>
       <td class="num">${(d.planQty || 0).toLocaleString()}</td>
       <td class="num">${d.taktTime ?? '—'}</td>
       <td class="num">${d.staffCount ?? '—'}</td>

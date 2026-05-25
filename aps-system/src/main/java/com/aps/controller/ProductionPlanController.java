@@ -2,7 +2,7 @@ package com.aps.controller;
 
 import com.aps.common.ApiResponse;
 import com.aps.dto.CalculateRequest;
-import com.aps.entity.ProductionPlan;
+import com.aps.dto.ProductionPlanView;
 import com.aps.service.PlanCalculationService;
 import com.aps.service.ProductionPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,29 +34,29 @@ public class ProductionPlanController {
     }
 
     @GetMapping
-    public ApiResponse<List<ProductionPlan>> findAll() {
-        return ApiResponse.success(service.findAll());
+    public ApiResponse<List<ProductionPlanView>> findAll() {
+        return ApiResponse.success(service.findAllViews());
     }
 
     @GetMapping("/by-version/{version}")
-    public ApiResponse<List<ProductionPlan>> findByVersion(@PathVariable String version) {
-        return ApiResponse.success(service.findByVersion(version));
+    public ApiResponse<List<ProductionPlanView>> findByVersion(@PathVariable String version) {
+        return ApiResponse.success(service.findViewsByVersion(version));
     }
 
     @GetMapping("/by-period/{yearMonth}")
-    public ApiResponse<List<ProductionPlan>> findByPeriod(@PathVariable Integer yearMonth) {
-        return ApiResponse.success(service.findByYearMonth(yearMonth));
+    public ApiResponse<List<ProductionPlanView>> findByPeriod(@PathVariable Integer yearMonth) {
+        return ApiResponse.success(service.findViewsByYearMonth(yearMonth));
     }
 
     @GetMapping("/by-product/{code}")
-    public ApiResponse<List<ProductionPlan>> findByProduct(@PathVariable String code) {
-        return ApiResponse.success(service.findByFinishedProductCode(code));
+    public ApiResponse<List<ProductionPlanView>> findByProduct(@PathVariable String code) {
+        return ApiResponse.success(service.findViewsByFinishedProductCode(code));
     }
 
     @GetMapping("/by-product/{code}/period/{yearMonth}")
-    public ApiResponse<List<ProductionPlan>> findByProductAndPeriod(
+    public ApiResponse<List<ProductionPlanView>> findByProductAndPeriod(
             @PathVariable String code,
             @PathVariable Integer yearMonth) {
-        return ApiResponse.success(service.findByFinishedProductCodeAndYearMonth(code, yearMonth));
+        return ApiResponse.success(service.findViewsByFinishedProductCodeAndYearMonth(code, yearMonth));
     }
 }

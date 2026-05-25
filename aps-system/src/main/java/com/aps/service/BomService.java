@@ -35,10 +35,14 @@ public class BomService {
         existing.setUsageQty(entity.getUsageQty());
         existing.setProcess(entity.getProcess());
         existing.setEquipment(entity.getEquipment());
+        existing.setManufacturingDepartment(entity.getManufacturingDepartment());
+        existing.setManufacturingUnit(entity.getManufacturingUnit());
         existing.setMoldCavity(entity.getMoldCavity());
         existing.setCycleTime(entity.getCycleTime());
         existing.setStaffCount(entity.getStaffCount());
         existing.setTaktTime(entity.getTaktTime());
+        existing.setScrapRate(entity.getScrapRate());
+        existing.setVersion(entity.getVersion());
         return repository.save(existing);
     }
 

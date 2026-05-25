@@ -231,7 +231,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
           <thead>
             <tr>
               <th>父零件</th><th>子零件</th><th class="num">用量</th>
-              <th>工序</th><th>设备</th><th class="num">模腔数</th>
+              <th>工序</th><th>设备</th><th>制造部门</th><th>制造单元</th><th class="num">模腔数</th>
               <th class="num">制造周期(s)</th><th class="num">持台人数</th>
               <th class="num">节拍(s)</th><th class="num">报废率</th>
               <th>版本号</th><th>操作</th>
@@ -292,6 +292,14 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
         <input class="form-input" id="bomEquipment" placeholder="如 aa001">
       </div>
       <div class="form-group">
+        <label class="form-label">制造部门<span class="req">*</span></label>
+        <input class="form-input" id="bomManufacturingDepartment" placeholder="如 制造一部">
+      </div>
+      <div class="form-group">
+        <label class="form-label">制造单元<span class="req">*</span></label>
+        <input class="form-input" id="bomManufacturingUnit" placeholder="如 单元A">
+      </div>
+      <div class="form-group">
         <label class="form-label">模腔数</label>
         <input class="form-input" id="bomMoldCavity" type="number" min="0" step="1" placeholder="1">
       </div>
@@ -330,7 +338,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <span>批量导入 BOM</span>
       <button class="modal-close" onclick="closeImportModal()">×</button>
     </div>
-    <div class="tpl-row">Sheet 名称：<b>BOM</b>，列顺序：父零件/子零件/用量/工序/设备/模腔数/制造周期/持台人数/节拍/报废率/版本号</div>
+    <div class="tpl-row">Sheet 名称：<b>BOM</b>，列顺序：父零件/子零件/用量/工序/设备/制造部门/制造单元/模腔数/制造周期/持台人数/节拍/报废率/版本号</div>
     <div class="upload-zone" onclick="document.getElementById('importFile').click()">
       <div class="upload-icon">⇪</div>
       <div class="upload-text" id="importFileName">点击或拖拽文件到此处上传</div>
@@ -382,6 +390,8 @@ function openBomModal(d){
   document.getElementById('bomUsageQty').value  =d?(d.usageQty??''):'';
   document.getElementById('bomProcess').value   =d?(d.process||''):'';
   document.getElementById('bomEquipment').value =d?(d.equipment||''):'';
+  document.getElementById('bomManufacturingDepartment').value=d?(d.manufacturingDepartment||''):'';
+  document.getElementById('bomManufacturingUnit').value=d?(d.manufacturingUnit||''):'';
   document.getElementById('bomMoldCavity').value=d?(d.moldCavity??''):'';
   document.getElementById('bomCycleTime').value =d?(d.cycleTime??''):'';
   document.getElementById('bomStaffCount').value=d?(d.staffCount??''):'';
@@ -399,6 +409,10 @@ async function saveBom(){
   const version=document.getElementById('bomVersion').value.trim();
   if(!parentCode){showToast('父零件编码不能为空');return;}
   if(!version){showToast('版本号不能为空');return;}
+  const manufacturingDepartment=document.getElementById('bomManufacturingDepartment').value.trim();
+  const manufacturingUnit=document.getElementById('bomManufacturingUnit').value.trim();
+  if(!manufacturingDepartment){showToast('制造部门不能为空');return;}
+  if(!manufacturingUnit){showToast('制造单元不能为空');return;}
   const toNum=(vid)=>{const v=document.getElementById(vid).value;return v===''?null:parseFloat(v);};
   const toInt=(vid)=>{const v=document.getElementById(vid).value;return v===''?null:parseInt(v);};
   const childCode=document.getElementById('bomChild').value.trim()||null;
@@ -407,6 +421,8 @@ async function saveBom(){
   const body={parentCode,childCode,usageQty,version,
     process:document.getElementById('bomProcess').value||null,
     equipment:document.getElementById('bomEquipment').value.trim()||null,
+    manufacturingDepartment,
+    manufacturingUnit,
     moldCavity:toInt('bomMoldCavity'),
     cycleTime:toNum('bomCycleTime'),
     staffCount:toNum('bomStaffCount'),
@@ -502,7 +518,7 @@ function renderListView(data){
   const total=data.length;
   document.getElementById('totalCount').textContent=total;
   if(total===0){
-    tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
+    tbody.innerHTML='<tr><td colspan="14" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
     document.getElementById('pageInfo').textContent='共 0 条';
     document.getElementById('pageBtns').innerHTML='';
     return;
@@ -522,6 +538,8 @@ function renderListView(data){
       <td class="num">${d.usageQty??'—'}</td>
       <td>${d.process?'<span class="proc-tag" style="background:rgba(0,87,184,.1);color:var(--color-primary)">'+d.process+'</span>':'—'}</td>
       <td>${d.equipment||'—'}</td>
+      <td>${d.manufacturingDepartment||'—'}</td>
+      <td>${d.manufacturingUnit||'—'}</td>
       <td class="num">${d.moldCavity??'—'}</td>
       <td class="num">${d.cycleTime??'—'}</td>
       <td class="num">${d.staffCount??'—'}</td>
@@ -547,7 +565,7 @@ function renderTreeView(data){
     const hasKids=children.length>0;
     const lvlClass='lvl-'+Math.min(level,3);
     const meta=entry
-      ?`<span>用量 <b>${entry.usageQty??'—'}</b></span><span>工序 <b>${entry.process||'—'}</b></span><span>设备 <b>${entry.equipment||'—'}</b></span>${entry.taktTime!=null?'<span>节拍 <b>'+entry.taktTime+'s</b></span>':''}`
+      ?`<span>用量 <b>${entry.usageQty??'—'}</b></span><span>工序 <b>${entry.process||'—'}</b></span><span>设备 <b>${entry.equipment||'—'}</b></span><span>部门/单元 <b>${entry.manufacturingDepartment||'—'} / ${entry.manufacturingUnit||'—'}</b></span>${entry.taktTime!=null?'<span>节拍 <b>'+entry.taktTime+'s</b></span>':''}`
       :`<span>子件数 <b>${children.length}</b></span>`;
     const childrenHtml=hasKids?`<div class="tree-children">${children.map(c=>nodeHtml(c.childCode,level+1,c)).join('')}</div>`:'';
     return `<div class="tree-node"><div class="tree-row"${hasKids?' onclick="toggleNode(this)"':''}>

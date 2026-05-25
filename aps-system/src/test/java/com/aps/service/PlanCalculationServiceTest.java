@@ -207,7 +207,7 @@ class PlanCalculationServiceTest {
         String version = "202601";
         setupSingleProductSinglePeriod("P001", 202601, 100.0, 0.0, 7.0, 22.0, 0.0, version);
         when(bomRepository.findFirstByParentCodeAndVersion("P001", version))
-                .thenReturn(Optional.of(new Bom(null, "P001", null, 0.0, null, null, null, null, null, null, 1.0, version)));
+                .thenReturn(Optional.of(new Bom(null, "P001", null, 0.0, null, null, null, null, null, null, null, null, 1.0, version)));
 
         service.calculate(request(version));
 
@@ -407,7 +407,7 @@ class PlanCalculationServiceTest {
         when(bomRepository.findFirstByParentCodeAndVersion(child, version)).thenReturn(Optional.empty());
 
         // BOM 关系
-        Bom bomRow = new Bom(null, parent, child, 2.0, null, null, null, null, null, null, null, version);
+        Bom bomRow = new Bom(null, parent, child, 2.0, null, null, null, null, null, null, null, null, null, version);
         when(bomRepository.findByParentCodeAndVersion(parent, version)).thenReturn(List.of(bomRow));
 
         service.calculate(request(version));
@@ -461,11 +461,11 @@ class PlanCalculationServiceTest {
         }
 
         // C001 作为父零件的 BOM 行，含工序/设备信息
-        Bom childBomInfo = new Bom(null, child, null, 0.0, "CNC", "EQ-01", 4, 30.0, 2.0, 15.0, null, version);
+        Bom childBomInfo = new Bom(null, child, null, 0.0, "CNC", "EQ-01", null, null, 4, 30.0, 2.0, 15.0, null, version);
         when(bomRepository.findFirstByParentCodeAndVersion(child, version)).thenReturn(Optional.of(childBomInfo));
         when(bomRepository.findFirstByParentCodeAndVersion(parent, version)).thenReturn(Optional.empty());
 
-        Bom bomRel = new Bom(null, parent, child, 1.0, null, null, null, null, null, null, null, version);
+        Bom bomRel = new Bom(null, parent, child, 1.0, null, null, null, null, null, null, null, null, null, version);
         when(bomRepository.findByParentCodeAndVersion(parent, version)).thenReturn(List.of(bomRel));
 
         service.calculate(request(version));
@@ -478,6 +478,53 @@ class PlanCalculationServiceTest {
         assertThat(childPlan.getEquipment()).isEqualTo("EQ-01");
         assertThat(childPlan.getMoldCavity()).isEqualTo(4);
         assertThat(childPlan.getCycleTime()).isEqualTo(30.0);
+    }
+
+    @Test
+    void testBomNode_manufacturingFieldsCopiedToResult() {
+        String parent = "P001";
+        String child = "C001";
+        int period = 202601;
+        String version = "202601";
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(parent));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(period));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(parent, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", parent, period, 100.0, null, null, 100.0, version)));
+        when(operatingDaysRepository.findByYearMonth(period))
+                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0, 22.0, 0.0, 0.0)));
+
+        for (String code : List.of(parent, child)) {
+            when(scrapRateRepository.findByItemCode(code)).thenReturn(Optional.empty());
+            when(inventoryDaysRepository.findByItemCode(code)).thenReturn(Optional.empty());
+            when(safetyStockRepository.findByItemCodeAndYearMonthAndVersion(code, period, version))
+                    .thenReturn(Optional.empty());
+            when(safetyStockRepository.findFirstByItemCodeAndVersion(code, version))
+                    .thenReturn(Optional.empty());
+            when(inventoryCountRepository.findFirstByItemCodeAndVersion(code, version))
+                    .thenReturn(Optional.empty());
+            when(bomRepository.findByParentCodeAndVersion(code, version)).thenReturn(Collections.emptyList());
+        }
+
+        Bom childBomInfo = new Bom(
+                null, child, null, 0.0, "CNC", "EQ-01",
+                "制造一部", "单元A", 4, 30.0, 2.0, 15.0, null, version);
+        when(bomRepository.findFirstByParentCodeAndVersion(child, version)).thenReturn(Optional.of(childBomInfo));
+        when(bomRepository.findFirstByParentCodeAndVersion(parent, version)).thenReturn(Optional.empty());
+
+        Bom bomRel = new Bom(
+                null, parent, child, 1.0, null, null,
+                "制造一部", "单元A", null, null, null, null, null, version);
+        when(bomRepository.findByParentCodeAndVersion(parent, version)).thenReturn(List.of(bomRel));
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        ProductionPlan childPlan = batchCaptor.getValue().get(1);
+
+        assertThat(childPlan.getManufacturingDepartment()).isEqualTo("制造一部");
+        assertThat(childPlan.getManufacturingUnit()).isEqualTo("单元A");
     }
 
     // =========================================================================
@@ -513,8 +560,8 @@ class PlanCalculationServiceTest {
             when(bomRepository.findFirstByParentCodeAndVersion(code, version)).thenReturn(Optional.empty());
         }
 
-        Bom bom1 = new Bom(null, item1, item2, 1.0, null, null, null, null, null, null, null, version);
-        Bom bom2 = new Bom(null, item2, item1, 1.0, null, null, null, null, null, null, null, version);
+        Bom bom1 = new Bom(null, item1, item2, 1.0, null, null, null, null, null, null, null, null, null, version);
+        Bom bom2 = new Bom(null, item2, item1, 1.0, null, null, null, null, null, null, null, null, null, version);
         when(bomRepository.findByParentCodeAndVersion(item1, version)).thenReturn(List.of(bom1));
         when(bomRepository.findByParentCodeAndVersion(item2, version)).thenReturn(List.of(bom2));
 

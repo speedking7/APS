@@ -40,6 +40,14 @@ public class ProductionPlan {
     @Column(length = 50)
     private String equipment;
 
+    /** 制造部门 */
+    @Column(name = "manufacturing_department", length = 50)
+    private String manufacturingDepartment;
+
+    /** 制造单元 */
+    @Column(name = "manufacturing_unit", length = 50)
+    private String manufacturingUnit;
+
     /** 模腔数 */
     @Column(name = "mold_cavity")
     private Integer moldCavity;

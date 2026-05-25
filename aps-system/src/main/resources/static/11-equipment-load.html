@@ -245,7 +245,7 @@ async function loadData() {
   const version = sel?.value;
   const tbody = document.getElementById('dataTbody');
   if (!version) {
-    if (tbody) tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:40px;color:var(--color-neutral-400)">请先选择计划版本</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="22" style="text-align:center;padding:40px;color:var(--color-neutral-400)">请先选择计划版本</td></tr>';
     return;
   }
   try {
@@ -269,7 +269,7 @@ async function loadData() {
   } catch(e) {
     console.error('loadData failed', e);
     const tbody = document.getElementById('dataTbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:40px;color:var(--color-error)">加载失败，请确认后端服务已启动</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="22" style="text-align:center;padding:40px;color:var(--color-error)">加载失败，请确认后端服务已启动</td></tr>';
   }
 }
 
@@ -292,9 +292,29 @@ function render() {
     const mc = d.moldCavity || 1;
     const ct = d.cycleTime  || 0;
     const key = `${d.equipment}|||${d.process}|||${mc}|||${ct}`;
-    if (!equipMap[key]) equipMap[key] = {};
-    if (!equipMap[key][d.yearMonth]) equipMap[key][d.yearMonth] = { taskSec: 0 };
-    equipMap[key][d.yearMonth].taskSec += (d.planQty || 0) * ct / mc;
+    if (!equipMap[key]) {
+      equipMap[key] = {
+        byPeriod: {},
+        departments: new Set(),
+        units: new Set(),
+        finishedProductNames: new Set(),
+        finishedProductNos: new Set(),
+        finishedProjectNames: new Set(),
+        itemProductNames: new Set(),
+        itemProductNos: new Set(),
+        itemProjectNames: new Set()
+      };
+    }
+    if (!equipMap[key].byPeriod[d.yearMonth]) equipMap[key].byPeriod[d.yearMonth] = { taskSec: 0 };
+    if (d.manufacturingDepartment) equipMap[key].departments.add(d.manufacturingDepartment);
+    if (d.manufacturingUnit) equipMap[key].units.add(d.manufacturingUnit);
+    if (d.finishedProductName) equipMap[key].finishedProductNames.add(d.finishedProductName);
+    if (d.finishedProductNo) equipMap[key].finishedProductNos.add(d.finishedProductNo);
+    if (d.finishedProjectName) equipMap[key].finishedProjectNames.add(d.finishedProjectName);
+    if (d.itemProductName) equipMap[key].itemProductNames.add(d.itemProductName);
+    if (d.itemProductNo) equipMap[key].itemProductNos.add(d.itemProductNo);
+    if (d.itemProjectName) equipMap[key].itemProjectNames.add(d.itemProjectName);
+    equipMap[key].byPeriod[d.yearMonth].taskSec += (d.planQty || 0) * ct / mc;
   });
 
   function rateClass(r) {
@@ -305,16 +325,31 @@ function render() {
   }
 
   // 构建行数组
-  const rows = Object.entries(equipMap).map(([key, byPeriod]) => {
+  const rows = Object.entries(equipMap).map(([key, meta]) => {
     const [equipment, process, mc, ct] = key.split('|||');
     const periodRates = {};
     periods.forEach(ym => {
-      const taskHours  = (byPeriod[ym]?.taskSec || 0) / 3600;
+      const taskHours  = (meta.byPeriod[ym]?.taskSec || 0) / 3600;
       const availHours = (odMap[ym] || 0) * dailyHours;
       periodRates[ym]  = { taskHours, availHours, rate: availHours > 0 ? taskHours / availHours : 0 };
     });
     const maxRate = Math.max(...Object.values(periodRates).map(v => v.rate));
-    return { equipment, process, mc: parseInt(mc), ct: parseFloat(ct), periodRates, maxRate };
+    return {
+      equipment,
+      process,
+      manufacturingDepartment: meta.departments.size ? [...meta.departments].join(' / ') : '—',
+      manufacturingUnit: meta.units.size ? [...meta.units].join(' / ') : '—',
+      itemProductName: meta.itemProductNames.size ? [...meta.itemProductNames].join(' / ') : '—',
+      itemProductNo: meta.itemProductNos.size ? [...meta.itemProductNos].join(' / ') : '—',
+      itemProjectName: meta.itemProjectNames.size ? [...meta.itemProjectNames].join(' / ') : '—',
+      finishedProductName: meta.finishedProductNames.size ? [...meta.finishedProductNames].join(' / ') : '—',
+      finishedProductNo: meta.finishedProductNos.size ? [...meta.finishedProductNos].join(' / ') : '—',
+      finishedProjectName: meta.finishedProjectNames.size ? [...meta.finishedProjectNames].join(' / ') : '—',
+      mc: parseInt(mc),
+      ct: parseFloat(ct),
+      periodRates,
+      maxRate
+    };
   }).filter(r => !warnOnly || r.maxRate > 1);
 
   // 更新表头
@@ -322,7 +357,9 @@ function render() {
   const thead = table?.querySelector('thead tr');
   if (thead) {
     thead.innerHTML =
-      '<th class="sticky" style="min-width:140px">设备名称</th><th>工序</th><th>模腔</th><th>周期(s)</th>' +
+      '<th class="sticky" style="min-width:140px">设备名称</th><th>工序</th><th>制造部门</th><th>制造单元</th>' +
+      '<th>完成品名称</th><th>完成品番号</th><th>完成品项目</th>' +
+      '<th>自制件名称</th><th>自制件番号</th><th>自制件项目</th><th>模腔</th><th>周期(s)</th>' +
       periods.map(p => `<th class="ph">${String(p).slice(0,4)}-${String(p).slice(4)}</th>`).join('') +
       '<th style="background:#e8f0fb;color:var(--color-primary);min-width:72px">峰值</th>';
   }
@@ -342,7 +379,7 @@ function render() {
   const tbody = document.getElementById('dataTbody');
   if (!tbody) return;
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:40px;color:var(--color-neutral-400)">无匹配数据</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="28" style="text-align:center;padding:40px;color:var(--color-neutral-400)">无匹配数据</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(row => {
@@ -356,6 +393,14 @@ function render() {
     return `<tr>
       <td class="sticky"><strong>${row.equipment}</strong></td>
       <td>${row.process}</td>
+      <td>${row.manufacturingDepartment}</td>
+      <td>${row.manufacturingUnit}</td>
+      <td>${row.finishedProductName}</td>
+      <td>${row.finishedProductNo}</td>
+      <td>${row.finishedProjectName}</td>
+      <td>${row.itemProductName}</td>
+      <td>${row.itemProductNo}</td>
+      <td>${row.itemProjectName}</td>
       <td style="font-family:var(--font-data);text-align:center">${row.mc}</td>
       <td style="font-family:var(--font-data);text-align:center">${row.ct}</td>
       ${cells}

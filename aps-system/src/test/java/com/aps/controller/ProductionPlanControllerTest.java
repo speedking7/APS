@@ -1,6 +1,6 @@
 package com.aps.controller;
 
-import com.aps.entity.ProductionPlan;
+import com.aps.dto.ProductionPlanView;
 import com.aps.service.PlanCalculationService;
 import com.aps.service.ProductionPlanService;
 import org.junit.jupiter.api.Test;
@@ -28,8 +28,8 @@ class ProductionPlanControllerTest {
     @MockBean
     private PlanCalculationService planCalculationService;
 
-    private ProductionPlan makePlan(Long id, String product, String item, int period, double qty) {
-        ProductionPlan p = new ProductionPlan();
+    private ProductionPlanView makePlan(Long id, String product, String item, int period, double qty) {
+        ProductionPlanView p = new ProductionPlanView();
         p.setId(id);
         p.setFinishedProductCode(product);
         p.setItemCode(item);
@@ -63,10 +63,10 @@ class ProductionPlanControllerTest {
 
     @Test
     void getAll_returnsAllPlans() throws Exception {
-        List<ProductionPlan> plans = List.of(
+        List<ProductionPlanView> plans = List.of(
                 makePlan(1L, "P001", "P001", 202601, 146.46),
                 makePlan(2L, "P001", "C001", 202601, 292.92));
-        when(productionPlanService.findAll()).thenReturn(plans);
+        when(productionPlanService.findAllViews()).thenReturn(plans);
 
         mockMvc.perform(get("/api/production-plan"))
                 .andExpect(status().isOk())
@@ -80,8 +80,8 @@ class ProductionPlanControllerTest {
 
     @Test
     void getByPeriod_returnsMatchingPlans() throws Exception {
-        List<ProductionPlan> plans = List.of(makePlan(1L, "P001", "P001", 202601, 146.46));
-        when(productionPlanService.findByYearMonth(202601)).thenReturn(plans);
+        List<ProductionPlanView> plans = List.of(makePlan(1L, "P001", "P001", 202601, 146.46));
+        when(productionPlanService.findViewsByYearMonth(202601)).thenReturn(plans);
 
         mockMvc.perform(get("/api/production-plan/by-period/202601"))
                 .andExpect(status().isOk())
@@ -92,7 +92,7 @@ class ProductionPlanControllerTest {
 
     @Test
     void getByPeriod_noResults_returnsEmptyArray() throws Exception {
-        when(productionPlanService.findByYearMonth(202699)).thenReturn(List.of());
+        when(productionPlanService.findViewsByYearMonth(202699)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/production-plan/by-period/202699"))
                 .andExpect(status().isOk())
@@ -105,10 +105,10 @@ class ProductionPlanControllerTest {
 
     @Test
     void getByProduct_returnsAllPeriodsForProduct() throws Exception {
-        List<ProductionPlan> plans = List.of(
+        List<ProductionPlanView> plans = List.of(
                 makePlan(1L, "P001", "P001", 202601, 146.46),
                 makePlan(2L, "P001", "P001", 202602, 140.40));
-        when(productionPlanService.findByFinishedProductCode("P001")).thenReturn(plans);
+        when(productionPlanService.findViewsByFinishedProductCode("P001")).thenReturn(plans);
 
         mockMvc.perform(get("/api/production-plan/by-product/P001"))
                 .andExpect(status().isOk())
@@ -122,10 +122,10 @@ class ProductionPlanControllerTest {
 
     @Test
     void getByProductAndPeriod_returnsFilteredResult() throws Exception {
-        List<ProductionPlan> plans = List.of(
+        List<ProductionPlanView> plans = List.of(
                 makePlan(1L, "P001", "P001", 202601, 146.46),
                 makePlan(2L, "P001", "C001", 202601, 292.92));
-        when(productionPlanService.findByFinishedProductCodeAndYearMonth("P001", 202601))
+        when(productionPlanService.findViewsByFinishedProductCodeAndYearMonth("P001", 202601))
                 .thenReturn(plans);
 
         mockMvc.perform(get("/api/production-plan/by-product/P001/period/202601"))
@@ -133,5 +133,18 @@ class ProductionPlanControllerTest {
                 .andExpect(jsonPath("$.data", hasSize(2)))
                 .andExpect(jsonPath("$.data[*].finishedProductCode", everyItem(equalTo("P001"))))
                 .andExpect(jsonPath("$.data[*].yearMonth", everyItem(equalTo(202601))));
+    }
+
+    @Test
+    void getByVersion_returnsEnrichedFields() throws Exception {
+        ProductionPlanView plan = makePlan(1L, "P001", "C001", 202601, 146.46);
+        plan.setItemProductName("支架");
+        plan.setFinishedProductName("总成A");
+        when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(plan));
+
+        mockMvc.perform(get("/api/production-plan/by-version/v1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].itemProductName").value("支架"))
+                .andExpect(jsonPath("$.data[0].finishedProductName").value("总成A"));
     }
 }

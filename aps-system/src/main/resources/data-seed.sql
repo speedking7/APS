@@ -14,17 +14,17 @@ INSERT INTO t_demand (customer,item_code,`year_month`,demand_qty,ending_inventor
 
 -- t_bom
 DELETE FROM t_bom;
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012','11201A012-1',1,'aa','aa001',1,30,1,30,0.01,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012-1','21201A012',1,'bb','bb001',1,31,1,31,0.02,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012-1','11201A012-1-1',1,'bb','bb001',1,31,1,31,0.02,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012-1-1','31201A012',1,'cc','cc001',1,33,1,33,0.04,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012-1-1','31201A013',1,'cc','cc001',1,33,1,33,0.04,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('21201A012','31201A014',1,'dd','dd001',1,35,1,35,0.06,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('31201A013','41201A012',1,'ee','ee001',1,36,1,36,0.07,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('41201A012',NULL,NULL,'ff','ff001',1,37,1,37,0.08,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A022','21201A022',1,'aa','aa001',1,38,1,38,0.09,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('21201A022','31201A022',1,'bb','bb002',1,39,1,39,0.1,'20260331-1');
-INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('31201A022',NULL,NULL,'cc','cc002',1,40,1,40,0.11,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012','11201A012-1',1,'aa','aa001','制造一部','单元A',1,30,1,30,0.01,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012-1','21201A012',1,'bb','bb001','制造一部','单元A',1,31,1,31,0.02,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012-1','11201A012-1-1',1,'bb','bb001','制造一部','单元A',1,31,1,31,0.02,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012-1-1','31201A012',1,'cc','cc001','制造二部','单元B',1,33,1,33,0.04,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A012-1-1','31201A013',1,'cc','cc001','制造二部','单元B',1,33,1,33,0.04,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('21201A012','31201A014',1,'dd','dd001','制造二部','单元C',1,35,1,35,0.06,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('31201A013','41201A012',1,'ee','ee001','制造三部','单元D',1,36,1,36,0.07,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('41201A012',NULL,NULL,'ff','ff001','制造三部','单元D',1,37,1,37,0.08,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('11201A022','21201A022',1,'aa','aa001','制造一部','单元A',1,38,1,38,0.09,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('21201A022','31201A022',1,'bb','bb002','制造二部','单元E',1,39,1,39,0.1,'20260331-1');
+INSERT INTO t_bom (parent_code,child_code,usage_qty,process,equipment,manufacturing_department,manufacturing_unit,mold_cavity,cycle_time,staff_count,takt_time,scrap_rate,version) VALUES ('31201A022',NULL,NULL,'cc','cc002','制造三部','单元F',1,40,1,40,0.11,'20260331-1');
 
 -- t_safety_stock
 DELETE FROM t_safety_stock;
@@ -45,5 +45,14 @@ INSERT INTO t_inventory_count (item_code,`year_month`,available_qty,version) VAL
 INSERT INTO t_inventory_count (item_code,`year_month`,available_qty,version) VALUES ('31201A012',202603,12,'20260331-1');
 INSERT INTO t_inventory_count (item_code,`year_month`,available_qty,version) VALUES ('21201A022',202603,14,'20260331-1');
 INSERT INTO t_inventory_count (item_code,`year_month`,available_qty,version) VALUES ('31201A022',202603,15,'20260331-1');
+
+-- t_part_master
+DELETE FROM t_part_master;
+INSERT INTO t_part_master (part_no,product_name,product_no,project_name) VALUES ('11201A012','总成A','P-11201A012','项目A');
+INSERT INTO t_part_master (part_no,product_name,product_no,project_name) VALUES ('11201A012-1','半成品A1','P-11201A012-1','项目A');
+INSERT INTO t_part_master (part_no,product_name,product_no,project_name) VALUES ('21201A012','半成品A2','P-21201A012','项目A');
+INSERT INTO t_part_master (part_no,product_name,product_no,project_name) VALUES ('31201A012','零件A3','P-31201A012','项目A');
+INSERT INTO t_part_master (part_no,product_name,product_no,project_name) VALUES ('11201A022','总成B','P-11201A022','项目B');
+INSERT INTO t_part_master (part_no,product_name,product_no,project_name) VALUES ('21201A022','半成品B1','P-21201A022','项目B');
 
 SET FOREIGN_KEY_CHECKS=1;
