@@ -147,8 +147,8 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">能力测算</div>
-    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
-    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
+    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>工时分析</a>
+    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备分析</a>
   </div>
 </aside>
 <main class="main">
@@ -175,7 +175,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   <input type="number" id="dailyHours" min="1" max="24" step="0.5"
     style="width:90px;padding:6px 10px;border:1px solid #d4dbe2;border-radius:6px;font-size:13px;font-family:var(--font-data)"
     oninput="saveDailyHours(this.value)">
-  <span style="font-size:12px;color:var(--color-neutral-400)">设备负荷与人员需求报表共用此配置</span>
+  <span style="font-size:12px;color:var(--color-neutral-400)">设备分析与工时分析共用此配置</span>
 </div>
 <div class="filter-bar">
 <div class="filter-item"><span class="filter-label">年份</span><select class="filter-select" id="yearSelect" onchange="loadOperatingDays()"><option>2026</option><option>2025</option></select></div>

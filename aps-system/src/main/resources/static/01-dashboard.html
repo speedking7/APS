@@ -169,8 +169,8 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">能力测算</div>
-    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
-    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
+    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>工时分析</a>
+    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备分析</a>
   </div>
 </aside>
 
@@ -202,7 +202,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
         <div class="kpi-meta">含完成品 9 行 · 子件 18 行 · 毛坯 27 行</div>
       </div>
       <div class="kpi-card warn">
-        <div class="kpi-label">设备负荷超预警</div>
+        <div class="kpi-label">设备分析超预警</div>
         <div><span class="kpi-value" style="color:var(--color-warning)">2</span><span class="kpi-unit">台</span></div>
         <div class="kpi-meta">INJ-02 (95%) · STM-A (112%)</div>
       </div>
@@ -226,7 +226,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       </a>
       <a href="11-equipment-load.html" class="qa-card">
         <div class="qa-icon">⌬</div>
-        <div><div class="qa-name">查看设备负荷</div><div class="qa-desc">关键设备月度利用率</div></div>
+        <div><div class="qa-name">查看设备分析</div><div class="qa-desc">关键设备能力测算明细</div></div>
       </a>
       <a href="05-operating-days.html" class="qa-card">
         <div class="qa-icon">◫</div>
@@ -303,21 +303,21 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
           <div class="alert-list">
             <div class="alert-item high">
               <div>
-                <div class="alert-text"><b>STM-A</b> 设备负荷 <b>112%</b>，超出上限 <b>12%</b></div>
+                <div class="alert-text"><b>STM-A</b> 设备分析负荷率 <b>112%</b>，超出上限 <b>12%</b></div>
                 <div class="alert-meta">202505 · 冲压机 A · 转向节总成</div>
               </div>
               <span class="alert-tag high">超载</span>
             </div>
             <div class="alert-item high">
               <div>
-                <div class="alert-text">装配工序 <b>202505</b> 人员需求 <b>6.5 人</b>，编制仅 <b>6 人</b></div>
+                <div class="alert-text">装配工序 <b>202505</b> 工时分析折算 <b>6.5 人</b>，编制仅 <b>6 人</b></div>
                 <div class="alert-meta">缺口 0.5 人 · 建议加班或外协</div>
               </div>
               <span class="alert-tag high">缺口</span>
             </div>
             <div class="alert-item mid">
               <div>
-                <div class="alert-text"><b>INJ-02</b> 设备负荷 <b>95%</b>，接近预警线</div>
+                <div class="alert-text"><b>INJ-02</b> 设备分析负荷率 <b>95%</b>，接近预警线</div>
                 <div class="alert-meta">202505 · 注塑机 2 号 · 制动盘总成</div>
               </div>
               <span class="alert-tag mid">预警</span>
@@ -382,7 +382,7 @@ async function loadDashboard() {
       }).join('');
     }
 
-    // 设备负荷预警
+    // 设备分析预警
     const alertTbody = document.getElementById('alertTbody') || document.querySelector('.alert-table tbody, .alert-list');
     if (alertTbody && overloaded.length > 0) {
       alertTbody.innerHTML = overloaded.slice(0,5).map(r => `

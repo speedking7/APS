@@ -3,488 +3,240 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1440">
-<title>APS · 人员需求报表</title>
+<title>APS · 人工明细</title>
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=satoshi:400,500,700,900|instrument-sans:400,500,600|geist:400,500,600,700&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --color-primary:#0057b8;--color-secondary:#FF6B35;--color-accent:#00875A;
-  --color-neutral-050:#f1f2f3;--color-neutral-100:#fafbfc;
-  --color-neutral-200:#c1c6c8;--color-neutral-400:#8A96A8;
-  --color-neutral-600:#5A6B7D;--color-neutral-800:#3d3f40;
-  --color-success:#4caf50;--color-warning:#fbc02d;
-  --color-error:#f44339;--color-info:#03a9f4;
-  --font-display:'Satoshi',-apple-system,sans-serif;
-  --font-body:'Instrument Sans',-apple-system,sans-serif;
-  --font-data:'Geist',-apple-system,sans-serif;
-  --bg-sidebar:#1c2333;
+  --color-primary:#0057b8;--color-accent:#00875A;--color-neutral-050:#f1f2f3;--color-neutral-100:#fafbfc;
+  --color-neutral-200:#c1c6c8;--color-neutral-400:#8A96A8;--color-neutral-600:#5A6B7D;--color-neutral-800:#3d3f40;
+  --font-display:'Satoshi',-apple-system,sans-serif;--font-body:'Instrument Sans',-apple-system,sans-serif;
+  --font-data:'Geist',-apple-system,sans-serif;--bg-sidebar:#1c2333;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(--color-neutral-800);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
-
-.sidebar{width:240px;flex-shrink:0;background:var(--bg-sidebar);color:#c8d0da;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);position:fixed;left:0;top:0;bottom:0;overflow-y:auto;z-index:100}
+.sidebar{width:240px;flex-shrink:0;background:var(--bg-sidebar);color:#c8d0da;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;overflow-y:auto;z-index:100}
 .sidebar-logo{height:64px;display:flex;align-items:center;padding:0 18px;gap:11px;border-bottom:1px solid rgba(255,255,255,.07)}
-.logo-mark{width:34px;height:34px;border-radius:8px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:900;color:#fff;box-shadow:0 4px 12px rgba(0,87,184,.4)}
-.logo-text{font-family:var(--font-display);font-size:14px;font-weight:700;color:#f0f4f8}
-.logo-sub{font-size:9px;color:#6b7a8d;letter-spacing:.1em;margin-top:2px}
-.nav-group{padding:14px 0 6px}
-.nav-group-label{padding:6px 18px;font-family:var(--font-data);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6b7a8d}
+.logo-mark{width:34px;height:34px;border-radius:8px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:900;color:#fff}
+.logo-text{font-family:var(--font-display);font-size:14px;font-weight:700;color:#f0f4f8}.logo-sub{font-size:9px;color:#6b7a8d;letter-spacing:.1em;margin-top:2px}
+.nav-group{padding:14px 0 6px}.nav-group-label{padding:6px 18px;font-family:var(--font-data);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6b7a8d}
 .nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;color:#c8d0da;font-size:13px;text-decoration:none;transition:all .12s;position:relative}
 .nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
 .nav-item.active{background:rgba(0,87,184,.22);color:#78b4ff}
 .nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--color-primary)}
 .nav-item .ni{width:16px;flex-shrink:0;text-align:center;font-size:13px;opacity:.75}
-.nav-item.active .ni{opacity:1}
-
 .main{flex:1;margin-left:240px;display:flex;flex-direction:column;min-height:100vh}
 .topbar{height:52px;background:#fff;border-bottom:1px solid var(--color-neutral-200);display:flex;align-items:center;padding:0 28px;gap:14px;flex-shrink:0}
 .crumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-400)}
-.crumb a{color:var(--color-primary);text-decoration:none}.crumb a:hover{text-decoration:underline}
-.crumb .sep{opacity:.4}
-.crumb .now{color:var(--color-neutral-800);font-weight:600}
+.crumb a{color:var(--color-primary);text-decoration:none}.crumb .sep{opacity:.4}.crumb .now{color:var(--color-neutral-800);font-weight:600}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
 .version-pill{font-size:11px;font-family:var(--font-data);padding:3px 9px;border-radius:99px;background:rgba(0,135,90,.1);color:var(--color-accent);font-weight:600}
-.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;font-family:var(--font-display)}
-
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
 .content{padding:32px 36px;flex:1}
-.page-head{margin-bottom:22px}
-.page-title{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--color-neutral-800);letter-spacing:-.4px}
-.page-sub{font-size:13px;color:var(--color-neutral-400);margin-top:4px}
-
-/* stats */
+.page-head{margin-bottom:24px}.page-title{font-family:var(--font-display);font-size:26px;font-weight:800;letter-spacing:-.4px}.page-sub{font-size:13px;color:var(--color-neutral-400);margin-top:4px}
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
 .stat-card{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:16px 20px;position:relative}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--color-accent);border-radius:10px 10px 0 0}
-.stat-card.peak::before{background:var(--color-secondary)}
-.stat-card.warn::before{background:var(--color-warning)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0;background:var(--color-primary)}
 .stat-label{font-size:12px;color:var(--color-neutral-400);margin-bottom:6px}
 .stat-value{font-family:var(--font-data);font-size:24px;font-weight:700;color:var(--color-neutral-800);font-feature-settings:'tnum'}
 .stat-unit{font-size:13px;color:var(--color-neutral-400);margin-left:4px}
 .stat-meta{font-size:11px;color:var(--color-neutral-400);margin-top:4px;font-family:var(--font-data)}
-
-/* toolbar */
-.toolbar{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.field{display:flex;align-items:center;gap:7px}
-.field label{font-size:12px;color:var(--color-neutral-600);font-weight:500}
-.field input,.field select{font-family:var(--font-body);font-size:12.5px;border:1px solid var(--color-neutral-200);border-radius:6px;padding:6px 10px;color:var(--color-neutral-800);background:#fff;outline:none;min-width:140px}
-.toolbar .spacer{flex:1}
+.note-row{margin-bottom:12px;padding:10px 14px;background:rgba(0,87,184,.06);border:1px solid rgba(0,87,184,.16);border-radius:8px;font-size:12px;color:var(--color-neutral-600)}
+.toolbar{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;color:var(--color-neutral-400);letter-spacing:.04em}
+.field select,.field input{font-family:var(--font-body);font-size:12.5px;border:1px solid var(--color-neutral-200);border-radius:6px;padding:7px 10px;color:var(--color-neutral-800);background:#fff;outline:none;min-width:140px}
+.field-wide{min-width:220px}
+.spacer{flex:1}
 .btn{font-family:var(--font-body);font-size:13px;font-weight:500;padding:7px 14px;border-radius:6px;border:none;cursor:pointer;transition:all .15s}
 .btn-primary{background:var(--color-primary);color:#fff}.btn-primary:hover{background:#004a9e}
 .btn-ghost{background:#fff;color:var(--color-neutral-600);border:1px solid var(--color-neutral-200)}.btn-ghost:hover{border-color:var(--color-primary);color:var(--color-primary)}
-
-/* tabs */
-.tabs{display:flex;gap:2px;background:var(--color-neutral-100);border:1px solid var(--color-neutral-200);border-radius:8px;padding:3px;margin-bottom:14px;width:fit-content}
-.tab{padding:7px 16px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--color-neutral-600);font-weight:500;transition:all .12s}
-.tab:hover{color:var(--color-neutral-800)}
-.tab.active{background:#fff;color:var(--color-primary);box-shadow:0 1px 3px rgba(0,0,0,.06);font-weight:600}
-
-.tab-pane{display:none}
-.tab-pane.active{display:block}
-
-/* matrix table */
-.table-wrap{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow:hidden}
+.table-wrap{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow:hidden;overflow-x:auto}
 .matrix{width:100%;border-collapse:collapse}
-.matrix th{background:var(--color-neutral-100);padding:11px 16px;font-size:11.5px;font-weight:700;color:var(--color-neutral-800);text-align:left;border-bottom:1px solid var(--color-neutral-200);letter-spacing:.02em;text-transform:uppercase}
-.matrix th.num{text-align:right}
-.matrix td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--color-neutral-050)}
-.matrix tr:last-child td{border-bottom:none}
-.matrix td.num{text-align:right;font-family:var(--font-data);font-feature-settings:'tnum';color:var(--color-neutral-800);font-weight:500}
-.matrix tr.summary td{background:var(--color-neutral-100);font-weight:700;border-top:2px solid var(--color-neutral-200);font-size:13.5px}
-.matrix tr.summary td.num{color:var(--color-primary)}
-.matrix .proc{font-weight:600;color:var(--color-neutral-800)}
-.matrix .equip{color:var(--color-neutral-600);font-family:var(--font-data);font-size:12px}
-.matrix td.over{background:rgba(255,107,53,.12);color:#d84315;font-weight:700;position:relative}
-.matrix td.over::after{content:'⚠';margin-left:4px;font-size:11px}
-
-/* bar chart */
-.chart-panel{background:#fff;border:1px solid var(--color-neutral-200);border-radius:12px;padding:20px 24px}
-.chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-.chart-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--color-neutral-800)}
-.chart-legend{display:flex;gap:18px;font-size:12px;color:var(--color-neutral-600)}
-.chart-legend span{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-data)}
-.chart-legend i{width:14px;height:8px;border-radius:2px}
-
-/* detail list */
-.det-card{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow:hidden}
-.det-card .matrix th:nth-child(n+3),.det-card .matrix td:nth-child(n+3){text-align:right;font-family:var(--font-data)}
+.matrix th{background:var(--color-neutral-100);padding:11px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-800);text-align:left;border-bottom:1px solid var(--color-neutral-200);white-space:nowrap;letter-spacing:.04em;text-transform:uppercase}
+.matrix td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--color-neutral-050);white-space:nowrap}
+.matrix td.num{text-align:right;font-family:var(--font-data);font-feature-settings:'tnum'}
+.matrix tbody tr:hover td{background:#f6f9fc}
+.matrix tbody tr:last-child td{border-bottom:none}
+.code{font-family:var(--font-data);color:var(--color-neutral-600)}
+.empty{padding:40px;text-align:center;color:var(--color-neutral-400);font-size:13px}
 </style>
 </head>
 <body>
-
 <aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-mark">APS</div>
-    <div><div class="logo-text">高级计划排程</div><div class="logo-sub">MANUFACTURING · v1.0</div></div>
-  </div>
-  <div class="nav-group">
-    <div class="nav-group-label">导航</div>
-    <a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a>
-  </div>
-  <div class="nav-group">
-    <div class="nav-group-label">工作台</div>
-    <a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a>
-  </div>
-  <div class="nav-group">
-    <div class="nav-group-label">基础数据</div>
-    <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
-    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
-    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
-    <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
-    <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
-  </div>
-  <div class="nav-group">
-    <div class="nav-group-label">生产计划</div>
-    <a href="07-plan-calculate.html" class="nav-item"><span class="ni">⚙</span>计划计算</a>
-    <a href="08-plan-result.html" class="nav-item"><span class="ni">▤</span>计划结果</a>
-  </div>
-  <div class="nav-group">
-    <div class="nav-group-label">能力测算</div>
-    <a href="10-workforce-report.html" class="nav-item active"><span class="ni">⚐</span>人员需求</a>
-    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
-  </div>
+  <div class="sidebar-logo"><div class="logo-mark">APS</div><div><div class="logo-text">高级计划排程</div><div class="logo-sub">MANUFACTURING · v1.0</div></div></div>
+  <div class="nav-group"><div class="nav-group-label">导航</div><a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a></div>
+  <div class="nav-group"><div class="nav-group-label">工作台</div><a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a></div>
+  <div class="nav-group"><div class="nav-group-label">基础数据</div><a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a><a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a><a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a><a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a><a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a></div>
+  <div class="nav-group"><div class="nav-group-label">生产计划</div><a href="07-plan-calculate.html" class="nav-item"><span class="ni">⚙</span>计划计算</a><a href="08-plan-result.html" class="nav-item"><span class="ni">▤</span>计划结果</a></div>
+  <div class="nav-group"><div class="nav-group-label">能力测算</div><a href="10-workforce-report.html" class="nav-item active"><span class="ni">⚐</span>工时分析</a><a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备分析</a></div>
 </aside>
-
 <div class="main">
-  <div class="topbar">
-    <div class="crumb">
-      <a href="index.html">首页</a><span class="sep">/</span>
-      <span>能力测算</span><span class="sep">/</span>
-      <span class="now">人员需求</span>
-    </div>
-    <div class="topbar-right">
-      <span class="version-pill">v1.0 · 2026-05 正式版</span>
-      <div class="user-avatar">规</div>
-    </div>
-  </div>
-
+  <div class="topbar"><div class="crumb"><a href="index.html">首页</a><span class="sep">/</span><span>能力测算</span><span class="sep">/</span><span class="now">工时分析</span></div><div class="topbar-right"><span class="version-pill">v1.0 · 2026-05 正式版</span><div class="user-avatar">规</div></div></div>
   <div class="content">
-    <div class="page-head">
-      <div class="page-title">一线人员需求报表</div>
-      <div class="page-sub">基于计划数量 / 单件节拍 / 持台人数测算各工序所需人数</div>
-    </div>
-
-    <!-- stats -->
+    <div class="page-head"><div class="page-title">人工明细</div><div class="page-sub">贴近 Excel 原型的工时分析明细，基于生产计划结果逐行展开。</div></div>
     <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-label">分析期间</div>
-        <div><span class="stat-value" style="font-size:18px">202504~202506</span></div>
-        <div class="stat-meta">3 个月滚动</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">涉及工序</div>
-        <div><span class="stat-value">5</span><span class="stat-unit">道</span></div>
-        <div class="stat-meta">注塑 · 冲压 · 机加 · 装配 · 检测</div>
-      </div>
-      <div class="stat-card peak">
-        <div class="stat-label">需求峰值期间</div>
-        <div><span class="stat-value" style="color:var(--color-secondary)">202505</span></div>
-        <div class="stat-meta">总需求 19.3 人</div>
-      </div>
-      <div class="stat-card warn">
-        <div class="stat-label">峰值需求（人）</div>
-        <div><span class="stat-value" style="color:var(--color-warning)">—</span><span class="stat-unit">人</span></div>
-        <div class="stat-meta">所有工序峰值期间合计人数</div>
-      </div>
+      <div class="stat-card"><div class="stat-label">分析版本</div><div class="stat-value" id="statVersion">—</div><div class="stat-meta">当前选中的计划版本</div></div>
+      <div class="stat-card"><div class="stat-label">月份数</div><div class="stat-value" id="statMonths">0<span class="stat-unit">个</span></div><div class="stat-meta">结果集中覆盖的期间</div></div>
+      <div class="stat-card"><div class="stat-label">明细行数</div><div class="stat-value" id="statRows">0<span class="stat-unit">行</span></div><div class="stat-meta">过滤后的工时明细</div></div>
+      <div class="stat-card"><div class="stat-label">所需工时</div><div class="stat-value" id="statHours">0</div><div class="stat-meta">按 planQty × staffCount × taktTime 汇总</div></div>
     </div>
-
-    <!-- filter -->
+    <div class="note-row">说明：当前系统按生产计划结果实时推导工时分析。项目、产品名称、产品番号、产品编码默认取自制件维度。</div>
     <div class="toolbar">
-      <div class="field">
-        <label>计划版本</label>
-        <select id="versionSel" style="min-width:180px" onchange="loadData()">
-          <option value="">请选择版本</option>
-        </select>
-      </div>
+      <div class="field"><label>计划版本</label><select id="versionSel"></select></div>
+      <div class="field"><label>月份</label><select id="monthSel"></select></div>
+      <div class="field"><label>制造部门</label><select id="deptSel"></select></div>
+      <div class="field"><label>制造单元</label><select id="unitSel"></select></div>
+      <div class="field field-wide"><label>关键字</label><input id="keywordInput" placeholder="项目 / 产品名称 / 产品番号 / 产品编码 / 工序"></div>
       <div class="spacer"></div>
+      <button class="btn btn-ghost" id="resetBtn">重置</button>
+      <button class="btn btn-primary" id="queryBtn">查询</button>
     </div>
-
-    <!-- tabs -->
-    <div class="tabs">
-      <div class="tab active" data-tab="byProc">按工序汇总</div>
-      <div class="tab" data-tab="byPeriod">按期间汇总</div>
-      <div class="tab" data-tab="detail">明细列表</div>
+    <div class="table-wrap">
+      <table class="matrix">
+        <thead><tr><th>制造部门</th><th>制造单元</th><th>项目</th><th>产品名称</th><th>产品番号</th><th>产品编码</th><th>月份</th><th>计划生产数</th><th>工序</th><th>所需工时</th></tr></thead>
+        <tbody id="dataTbody"></tbody>
+      </table>
     </div>
-
-    <!-- 按工序汇总 -->
-    <div class="tab-pane active" id="byProc">
-      <div class="table-wrap">
-        <table class="matrix">
-          <thead>
-            <tr>
-              <th style="width:14%">工序</th>
-              <th style="width:18%">设备</th>
-              <th class="num">编制人数</th>
-              <th class="num">202504 需求</th>
-              <th class="num">202505 需求</th>
-              <th class="num">202506 需求</th>
-              <th class="num">峰值</th>
-            </tr>
-          </thead>
-          <tbody id="processTbody">
-          </tbody>
-        </table>
-      </div>
-      <div style="margin-top:14px;font-size:12px;color:var(--color-neutral-400);padding-left:6px">
-        ⚠ 装配 202505 需求 6.5 人 超出编制 6 人，建议加班 / 临时增援。
-      </div>
-    </div>
-
-    <!-- 按期间汇总（条形图） -->
-    <div class="tab-pane" id="byPeriod">
-      <div class="chart-panel">
-        <div class="chart-head">
-          <div class="chart-title">各期间总需求 vs 编制人数</div>
-          <div class="chart-legend">
-            <span><i style="background:#0057b8"></i>需求人数</span>
-            <span><i style="background:#c1c6c8"></i>编制人数</span>
-            <span><i style="background:#FF6B35"></i>缺口</span>
-          </div>
-        </div>
-        <svg viewBox="0 0 700 300" style="width:100%;height:300px" preserveAspectRatio="none">
-          <!-- horizontal grid -->
-          <line x1="60" y1="40"  x2="680" y2="40"  stroke="#eef0f2"/>
-          <line x1="60" y1="100" x2="680" y2="100" stroke="#eef0f2"/>
-          <line x1="60" y1="160" x2="680" y2="160" stroke="#eef0f2"/>
-          <line x1="60" y1="220" x2="680" y2="220" stroke="#eef0f2"/>
-          <text x="50" y="44"  font-size="11" fill="#8A96A8" font-family="Geist" text-anchor="end">25</text>
-          <text x="50" y="104" font-size="11" fill="#8A96A8" font-family="Geist" text-anchor="end">20</text>
-          <text x="50" y="164" font-size="11" fill="#8A96A8" font-family="Geist" text-anchor="end">15</text>
-          <text x="50" y="224" font-size="11" fill="#8A96A8" font-family="Geist" text-anchor="end">10</text>
-
-          <!-- 编制 21 人 reference -->
-          <line x1="60" y1="76" x2="680" y2="76" stroke="#FF6B35" stroke-width="1.5" stroke-dasharray="6 4" opacity=".7"/>
-          <text x="685" y="80" font-size="10" fill="#FF6B35" font-family="Geist">编制 21</text>
-
-          <!-- bars: 18.9, 19.3, 18.1 (max 25 → height 220, 0→220 baseline) -->
-          <!-- y_demand = 220 - (v/25)*220 ; 18.9→53.7, 19.3→50.2, 18.1→60.7 -->
-          <!-- 编制 21 → y=35.2 -->
-          <!-- 202504 -->
-          <rect x="120" y="65"  width="55" height="155" fill="#c1c6c8" rx="4"/>
-          <rect x="120" y="53.7" width="55" height="166.3" fill="#0057b8" opacity=".85" rx="4"/>
-          <text x="147.5" y="240" font-size="12" fill="#5A6B7D" font-family="Geist" text-anchor="middle">202504</text>
-          <text x="147.5" y="48" font-size="13" fill="#0057b8" font-family="Geist" font-weight="700" text-anchor="middle">18.9</text>
-
-          <!-- 202505 -->
-          <rect x="285" y="65"  width="55" height="155" fill="#c1c6c8" rx="4"/>
-          <rect x="285" y="50.2" width="55" height="169.8" fill="#0057b8" opacity=".85" rx="4"/>
-          <text x="312.5" y="240" font-size="12" fill="#5A6B7D" font-family="Geist" text-anchor="middle">202505</text>
-          <text x="312.5" y="44" font-size="13" fill="#0057b8" font-family="Geist" font-weight="700" text-anchor="middle">19.3 ⓘ</text>
-
-          <!-- 202506 -->
-          <rect x="450" y="65"  width="55" height="155" fill="#c1c6c8" rx="4"/>
-          <rect x="450" y="60.7" width="55" height="159.3" fill="#0057b8" opacity=".85" rx="4"/>
-          <text x="477.5" y="240" font-size="12" fill="#5A6B7D" font-family="Geist" text-anchor="middle">202506</text>
-          <text x="477.5" y="55" font-size="13" fill="#0057b8" font-family="Geist" font-weight="700" text-anchor="middle">18.1</text>
-
-          <!-- baseline -->
-          <line x1="60" y1="220" x2="680" y2="220" stroke="#5A6B7D"/>
-        </svg>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px">
-        <div class="stat-card"><div class="stat-label">202504 总需求</div><div><span class="stat-value">18.9</span><span class="stat-unit">人</span></div><div class="stat-meta">编制 21 · 富余 2.1</div></div>
-        <div class="stat-card peak"><div class="stat-label">202505 总需求</div><div><span class="stat-value" style="color:var(--color-secondary)">19.3</span><span class="stat-unit">人</span></div><div class="stat-meta">峰值 · 装配工序超编</div></div>
-        <div class="stat-card"><div class="stat-label">202506 总需求</div><div><span class="stat-value">18.1</span><span class="stat-unit">人</span></div><div class="stat-meta">编制 21 · 富余 2.9</div></div>
-      </div>
-    </div>
-
-    <!-- 明细列表 -->
-    <div class="tab-pane" id="detail">
-      <div class="det-card">
-        <table class="matrix">
-          <thead>
-            <tr>
-              <th>期间</th><th>工序</th><th>设备</th><th>关联完成品</th>
-              <th class="num">月计划数量</th><th class="num">单件节拍 (S)</th><th class="num">持台人数</th><th class="num">所需人数</th>
-            </tr>
-          </thead>
-          <tbody id="detailTbody">
-          </tbody>
-        </table>
-      </div>
-    </div>
-
   </div>
 </div>
-
 <script>
-// Tab switching
-document.querySelectorAll('.tab').forEach(t => {
-  t.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    const id = t.dataset.tab;
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-  });
-});
-
 const API = location.origin;
-let planData = [], odData = [];
+let planData = [];
+let rows = [];
 
-function getDailyHours() {
-  return parseFloat(localStorage.getItem('aps.dailyEffectiveHours') || '10.5');
+function toNumber(value) { return Number.isFinite(Number(value)) ? Number(value) : 0; }
+function formatNumber(value, digits = 2) { return toNumber(value).toLocaleString('zh-CN', {maximumFractionDigits: digits, minimumFractionDigits: 0}); }
+
+function setOptions(elementId, values, placeholder) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const current = el.value;
+  el.innerHTML = `<option value="">${placeholder}</option>` + values.map(v => `<option value="${v}">${v}</option>`).join('');
+  if (values.includes(current)) el.value = current;
+}
+
+function buildRows(data) {
+  return data.filter(d => d.yearMonth && d.process).map(d => ({
+    manufacturingDepartment: d.manufacturingDepartment || '—',
+    manufacturingUnit: d.manufacturingUnit || '—',
+    project: d.itemProjectName || d.finishedProjectName || '—',
+    productName: d.itemProductName || d.finishedProductName || '—',
+    productNo: d.itemProductNo || d.finishedProductNo || '—',
+    productCode: d.itemCode || '—',
+    yearMonth: String(d.yearMonth),
+    planQty: toNumber(d.planQty),
+    process: d.process || '—',
+    requiredHours: toNumber(d.planQty) * toNumber(d.staffCount) * toNumber(d.taktTime)
+  })).sort((a, b) =>
+    a.yearMonth.localeCompare(b.yearMonth) ||
+    a.manufacturingDepartment.localeCompare(b.manufacturingDepartment) ||
+    a.manufacturingUnit.localeCompare(b.manufacturingUnit) ||
+    a.productCode.localeCompare(b.productCode) ||
+    a.process.localeCompare(b.process)
+  );
+}
+
+function applyFilters() {
+  const month = document.getElementById('monthSel')?.value || '';
+  const dept = document.getElementById('deptSel')?.value || '';
+  const unit = document.getElementById('unitSel')?.value || '';
+  const keyword = (document.getElementById('keywordInput')?.value || '').trim().toLowerCase();
+  const filtered = rows.filter(row => {
+    if (month && row.yearMonth !== month) return false;
+    if (dept && row.manufacturingDepartment !== dept) return false;
+    if (unit && row.manufacturingUnit !== unit) return false;
+    if (!keyword) return true;
+    const target = [row.project, row.productName, row.productNo, row.productCode, row.process].join('|').toLowerCase();
+    return target.includes(keyword);
+  });
+  renderTable(filtered);
+  updateStats(filtered);
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('dataTbody');
+  if (!tbody) return;
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td class="empty" colspan="10">暂无匹配数据，请调整筛选条件或先执行计划计算。</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(row => `
+    <tr>
+      <td>${row.manufacturingDepartment}</td>
+      <td>${row.manufacturingUnit}</td>
+      <td>${row.project}</td>
+      <td>${row.productName}</td>
+      <td>${row.productNo}</td>
+      <td class="code">${row.productCode}</td>
+      <td class="code">${row.yearMonth}</td>
+      <td class="num">${formatNumber(row.planQty, 3)}</td>
+      <td>${row.process}</td>
+      <td class="num">${formatNumber(row.requiredHours, 3)}</td>
+    </tr>
+  `).join('');
+}
+
+function updateStats(data) {
+  const version = document.getElementById('versionSel')?.value || '—';
+  const months = new Set(data.map(row => row.yearMonth));
+  const totalHours = data.reduce((sum, row) => sum + row.requiredHours, 0);
+  document.getElementById('statVersion').textContent = version || '—';
+  document.getElementById('statMonths').innerHTML = `${months.size}<span class="stat-unit">个</span>`;
+  document.getElementById('statRows').innerHTML = `${data.length}<span class="stat-unit">行</span>`;
+  document.getElementById('statHours').textContent = formatNumber(totalHours, 3);
 }
 
 async function loadVersions() {
-  try {
-    const r = await fetch(`${API}/api/production-plan/versions`);
-    const j = await r.json();
-    const versions = j.data || [];
-    const sel = document.getElementById('versionSel');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">请选择版本</option>' +
-      versions.map(v => `<option value="${v}">${v}</option>`).join('');
-  } catch(e) { console.warn('loadVersions failed', e); }
+  const res = await fetch(`${API}/api/production-plan/versions`);
+  const json = await res.json();
+  const versions = json.data || [];
+  const versionSel = document.getElementById('versionSel');
+  versionSel.innerHTML = '<option value="">请选择版本</option>' + versions.map(v => `<option value="${v}">${v}</option>`).join('');
+  if (versions.length) {
+    versionSel.value = versions[versions.length - 1];
+    await loadData();
+  } else {
+    renderTable([]);
+    updateStats([]);
+  }
 }
 
 async function loadData() {
-  const sel = document.getElementById('versionSel');
-  const version = sel?.value;
-  if (!version) return;
-  try {
-    const [planRes, odRes] = await Promise.all([
-      fetch(`${API}/api/production-plan/by-version/${encodeURIComponent(version)}`).then(r => r.json()),
-      fetch(`${API}/api/operating-days`).then(r => r.json()),
-    ]);
-    planData = planRes.data || [];
-    odData   = odRes.data  || [];
-    renderProcessView();
-    renderDetailView();
-    updateStats();
-  } catch(e) {
-    console.error('loadData failed', e);
-  }
-}
-
-function calcProcessData() {
-  const dailyHours = getDailyHours();
-  const odMap = {};
-  odData.forEach(d => { odMap[d.yearMonth] = d.workDays || 0; });
-
-  // 按 process × yearMonth 聚合人工时
-  const grouped = {};
-  planData.forEach(d => {
-    const key = `${d.process}|||${d.yearMonth}`;
-    if (!grouped[key]) grouped[key] = { process: d.process, yearMonth: d.yearMonth, laborHours: 0 };
-    // 人工时(h) = planQty * staffCount * taktTime(s) / 3600
-    grouped[key].laborHours += (d.planQty || 0) * (d.staffCount || 0) * (d.taktTime || 0) / 3600;
-  });
-
-  return Object.values(grouped).map(g => {
-    const availHours = (odMap[g.yearMonth] || 0) * dailyHours;
-    // 所需人数 = 总人工时 / 可用人时
-    return { ...g, availHours, requiredPeople: availHours > 0 ? g.laborHours / availHours : 0 };
-  });
-}
-
-function renderProcessView() {
-  const tbody = document.getElementById('processTbody');
-  if (!tbody) return;
-  const pd = calcProcessData();
-  if (pd.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
+  const version = document.getElementById('versionSel')?.value || '';
+  if (!version) {
+    rows = [];
+    setOptions('monthSel', [], '全部月份');
+    setOptions('deptSel', [], '全部部门');
+    setOptions('unitSel', [], '全部单元');
+    renderTable([]);
+    updateStats([]);
     return;
   }
-  const periods   = [...new Set(pd.map(d => d.yearMonth))].sort();
-  const processes = [...new Set(pd.map(d => d.process))].sort();
-
-  // 更新表头
-  const thead = tbody.closest('table')?.querySelector('thead tr');
-  if (thead) {
-    thead.innerHTML = '<th>工序</th>' +
-      periods.map(p => `<th class="num">${String(p).slice(0,4)}-${String(p).slice(4)}</th>`).join('') +
-      '<th class="num">峰值</th>';
-  }
-
-  // 数据行
-  const dataRows = processes.map(proc => {
-    const vals = periods.map(ym => {
-      const row = pd.find(d => d.process === proc && d.yearMonth === ym);
-      return row ? row.requiredPeople : null;
-    });
-    const nums = vals.filter(v => v !== null);
-    const peak = nums.length ? Math.max(...nums) : null;
-    return `<tr>
-      <td class="proc">${proc}</td>
-      ${vals.map(v => `<td class="num">${v !== null ? v.toFixed(1) : '—'}</td>`).join('')}
-      <td class="num" style="font-weight:600;color:var(--color-primary)">${peak !== null ? peak.toFixed(1) : '—'}</td>
-    </tr>`;
-  }).join('');
-
-  // 合计行
-  const totals = periods.map(ym => pd.filter(d => d.yearMonth === ym).reduce((s,d) => s + d.requiredPeople, 0));
-  const totalPeak = totals.length ? Math.max(...totals) : 0;
-  const sumRow = `<tr class="summary">
-    <td>合计</td>
-    ${totals.map(v => `<td class="num">${v.toFixed(1)}</td>`).join('')}
-    <td class="num">${totalPeak.toFixed(1)}</td>
-  </tr>`;
-
-  tbody.innerHTML = dataRows + sumRow;
+  const res = await fetch(`${API}/api/production-plan/by-version/${encodeURIComponent(version)}`);
+  const json = await res.json();
+  planData = json.data || [];
+  rows = buildRows(planData);
+  setOptions('monthSel', [...new Set(rows.map(row => row.yearMonth))], '全部月份');
+  setOptions('deptSel', [...new Set(rows.map(row => row.manufacturingDepartment))], '全部部门');
+  setOptions('unitSel', [...new Set(rows.map(row => row.manufacturingUnit))], '全部单元');
+  applyFilters();
 }
 
-function renderDetailView() {
-  const tbody = document.getElementById('detailTbody');
-  if (!tbody) return;
-  if (planData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
-    return;
-  }
-  const dailyHours = getDailyHours();
-  const odMap = {};
-  odData.forEach(d => { odMap[d.yearMonth] = d.workDays || 0; });
-
-  // 更新表头
-  const thead = tbody.closest('table')?.querySelector('thead tr');
-  if (thead) {
-    thead.innerHTML = '<th>期间</th><th>工序</th><th>设备</th><th>制造部门</th><th>制造单元</th>' +
-      '<th>关联完成品</th><th>完成品名称</th><th>完成品番号</th><th>完成品项目</th>' +
-      '<th>自制件编码</th><th>自制件名称</th><th>自制件番号</th><th>自制件项目</th>' +
-      '<th class="num">月计划数量</th><th class="num">单件节拍(s)</th><th class="num">持台人数</th><th class="num">所需人数</th>';
-  }
-
-  tbody.innerHTML = planData.map(d => {
-    const laborH  = (d.planQty || 0) * (d.staffCount || 0) * (d.taktTime || 0) / 3600;
-    const availH  = (odMap[d.yearMonth] || 0) * dailyHours;
-    const people  = availH > 0 ? laborH / availH : 0;
-    return `<tr>
-      <td style="font-family:var(--font-data)">${d.yearMonth}</td>
-      <td>${d.process || '—'}</td>
-      <td style="font-family:var(--font-data)">${d.equipment || '—'}</td>
-      <td>${d.manufacturingDepartment || '—'}</td>
-      <td>${d.manufacturingUnit || '—'}</td>
-      <td>${d.finishedProductCode || '—'}</td>
-      <td>${d.finishedProductName || '—'}</td>
-      <td>${d.finishedProductNo || '—'}</td>
-      <td>${d.finishedProjectName || '—'}</td>
-      <td style="font-family:var(--font-data)">${d.itemCode || '—'}</td>
-      <td>${d.itemProductName || '—'}</td>
-      <td>${d.itemProductNo || '—'}</td>
-      <td>${d.itemProjectName || '—'}</td>
-      <td class="num">${(d.planQty || 0).toLocaleString()}</td>
-      <td class="num">${d.taktTime ?? '—'}</td>
-      <td class="num">${d.staffCount ?? '—'}</td>
-      <td class="num">${people.toFixed(2)}</td>
-    </tr>`;
-  }).join('');
+function resetFilters() {
+  ['monthSel', 'deptSel', 'unitSel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const keyword = document.getElementById('keywordInput');
+  if (keyword) keyword.value = '';
+  applyFilters();
 }
 
-function updateStats() {
-  const pd = calcProcessData();
-  const processes = new Set(pd.map(d => d.process));
-  const periods = [...new Set(pd.map(d => d.yearMonth))].sort();
-  const totals = periods.map(ym => pd.filter(d => d.yearMonth === ym).reduce((s,d) => s + d.requiredPeople, 0));
-  const maxTotal = totals.length ? Math.max(...totals) : 0;
-  const peakIdx = totals.indexOf(maxTotal);
-  const peakPeriod = peakIdx >= 0 ? periods[peakIdx] : '—';
-
-  const statVals = document.querySelectorAll('.stat-value');
-  if (statVals[0]) statVals[0].textContent = periods.length >= 2 ? `${periods[0]}~${periods[periods.length-1]}` : (periods[0] || '—');
-  if (statVals[1]) statVals[1].textContent = processes.size;
-  if (statVals[2]) statVals[2].textContent = peakPeriod;
-  if (statVals[3]) statVals[3].textContent = maxTotal.toFixed(1);
-}
+document.getElementById('versionSel').addEventListener('change', loadData);
+document.getElementById('queryBtn').addEventListener('click', applyFilters);
+document.getElementById('resetBtn').addEventListener('click', resetFilters);
+document.getElementById('keywordInput').addEventListener('keydown', (event) => { if (event.key === 'Enter') applyFilters(); });
 
 loadVersions();
 </script>
