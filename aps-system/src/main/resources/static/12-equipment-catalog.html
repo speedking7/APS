@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>APS · 设备清单</title>
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=satoshi:400,500,700,900|instrument-sans:400,500,600|geist:400,500,600,700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --color-primary:#0057b8;--color-secondary:#FF6B35;--color-accent:#00875A;
+  --color-neutral-050:#f1f2f3;--color-neutral-100:#fafbfc;--color-neutral-200:#c1c6c8;
+  --color-neutral-400:#8A96A8;--color-neutral-600:#5A6B7D;--color-neutral-800:#3d3f40;
+  --color-success:#4caf50;--color-warning:#fbc02d;--color-error:#f44339;
+  --font-display:'Satoshi',-apple-system,sans-serif;
+  --font-body:'Instrument Sans',-apple-system,sans-serif;
+  --font-data:'Geist',-apple-system,sans-serif;
+  --bg-sidebar:#1c2333;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(--color-neutral-800);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
+.sidebar{width:240px;flex-shrink:0;background:var(--bg-sidebar);color:#c8d0da;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);position:fixed;left:0;top:0;bottom:0;overflow-y:auto;z-index:100}
+.sidebar-logo{height:64px;display:flex;align-items:center;padding:0 18px;gap:11px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-mark{width:34px;height:34px;border-radius:8px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:900;color:#fff;box-shadow:0 4px 12px rgba(0,87,184,.4)}
+.logo-text{font-family:var(--font-display);font-size:14px;font-weight:700;color:#f0f4f8}
+.logo-sub{font-size:9px;color:#6b7a8d;letter-spacing:.1em;margin-top:2px}
+.nav-group{padding:14px 0 6px}
+.nav-group-label{padding:6px 18px;font-family:var(--font-data);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6b7a8d}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;color:#c8d0da;font-size:13px;text-decoration:none;transition:all .12s;position:relative}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav-item.active{background:rgba(0,87,184,.22);color:#78b4ff}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--color-primary)}
+.nav-item .ni{width:16px;flex-shrink:0;text-align:center;font-size:13px;opacity:.75}
+.nav-item.active .ni{opacity:1}
+.main{flex:1;margin-left:240px;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:52px;background:#fff;border-bottom:1px solid var(--color-neutral-200);display:flex;align-items:center;padding:0 28px;gap:14px;flex-shrink:0}
+.crumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-400)}
+.crumb a{color:var(--color-primary);text-decoration:none}
+.crumb .sep{opacity:.4}
+.crumb .now{color:var(--color-neutral-800);font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.version-pill{font-size:11px;font-family:var(--font-data);padding:3px 9px;border-radius:99px;background:rgba(0,135,90,.1);color:var(--color-accent);font-weight:600}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.content{padding:32px 36px;flex:1}
+.page-head{margin-bottom:24px}
+.page-title{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--color-neutral-800);letter-spacing:-.4px}
+.page-sub{font-size:13px;color:var(--color-neutral-400);margin-top:4px}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:18px 20px;position:relative}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--color-accent);border-radius:10px 10px 0 0}
+.stat-label{font-size:12px;color:var(--color-neutral-400);margin-bottom:6px}
+.stat-value{font-family:var(--font-data);font-size:28px;font-weight:700;color:var(--color-neutral-800);font-feature-settings:'tnum'}
+.stat-unit{font-size:13px;color:var(--color-neutral-400);margin-left:4px}
+.toolbar{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.field{display:flex;align-items:center;gap:8px}
+.field label{font-size:12px;color:var(--color-neutral-600);font-weight:500}
+.field input{font-family:var(--font-body);font-size:13px;border:1px solid var(--color-neutral-200);border-radius:6px;padding:6px 10px;color:var(--color-neutral-800);background:#fff;outline:none;min-width:130px}
+.field input:focus{border-color:var(--color-primary)}
+.toolbar .spacer{flex:1}
+.btn{font-family:var(--font-body);font-size:13px;font-weight:500;padding:7px 14px;border-radius:6px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-primary{background:var(--color-primary);color:#fff}
+.btn-primary:hover{background:#004a9e}
+.btn-secondary{background:#fff;color:var(--color-primary);border:1px solid var(--color-primary)}
+.btn-secondary:hover{background:rgba(0,87,184,.05)}
+.btn-ghost{background:#fff;color:var(--color-neutral-600);border:1px solid var(--color-neutral-200)}
+.btn-ghost:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.table-wrap{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow:hidden}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{background:var(--color-neutral-100);padding:11px 16px;font-size:12px;font-weight:600;color:var(--color-neutral-800);text-align:left;border-bottom:1px solid var(--color-neutral-200);white-space:nowrap}
+.data-table th[data-sort-key]{cursor:pointer;user-select:none}
+.data-table th.num{text-align:right}
+.data-table td{padding:11px 16px;font-size:13px;color:var(--color-neutral-800);border-bottom:1px solid var(--color-neutral-050);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover{background:var(--color-neutral-100)}
+.data-table td.num{text-align:right;font-family:var(--font-data);font-feature-settings:'tnum'}
+.data-table td.code{font-family:var(--font-data);font-size:12.5px;color:var(--color-primary);font-weight:500}
+.row-action{color:var(--color-primary);font-size:12.5px;text-decoration:none;cursor:pointer;margin-right:10px}
+.row-action:hover{text-decoration:underline}
+.row-action.danger{color:var(--color-error)}
+.modal-overlay{position:fixed;inset:0;background:rgba(28,35,51,.45);backdrop-filter:blur(2px);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;width:520px;max-width:92vw;border-radius:12px;box-shadow:0 24px 64px rgba(0,0,0,.18);overflow:hidden;animation:slideUp .22s cubic-bezier(.4,0,.2,1)}
+.modal.wide{width:560px}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--color-neutral-200);display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--color-neutral-800)}
+.modal-close{background:none;border:none;font-size:18px;color:var(--color-neutral-400);cursor:pointer;padding:0;width:24px;height:24px}
+.modal-body{padding:22px;display:flex;flex-direction:column;gap:14px}
+.form-row{display:flex;flex-direction:column;gap:6px}
+.form-row label{font-size:12px;color:var(--color-neutral-600);font-weight:500}
+.form-row label .req{color:var(--color-error);margin-left:2px}
+.form-row input{font-family:var(--font-body);font-size:13px;padding:8px 11px;border:1px solid var(--color-neutral-200);border-radius:6px;outline:none;background:#fff}
+.form-row input:focus{border-color:var(--color-primary)}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--color-neutral-200);display:flex;justify-content:flex-end;gap:10px;background:var(--color-neutral-100)}
+.dropzone{border:2px dashed var(--color-neutral-200);border-radius:10px;padding:28px;text-align:center;color:var(--color-neutral-400);cursor:pointer;transition:all .15s}
+.dropzone:hover{border-color:var(--color-primary);background:rgba(0,87,184,.04);color:var(--color-primary)}
+.dropzone .dz-icon{font-size:30px;margin-bottom:8px}
+.dropzone .dz-title{font-size:14px;color:var(--color-neutral-800);font-weight:500;margin-bottom:4px}
+.dropzone .dz-sub{font-size:12px;color:var(--color-neutral-400)}
+.tpl-row{padding:10px 14px;background:rgba(0,135,90,.07);border:1px solid rgba(0,135,90,.2);border-radius:8px;font-size:12.5px;color:var(--color-neutral-600);margin-bottom:10px}
+.tpl-row b{color:var(--color-accent)}
+.import-result{padding:10px 14px;background:rgba(0,87,184,.06);border:1px solid rgba(0,87,184,.2);border-radius:6px;font-size:12.5px;color:var(--color-neutral-700);display:none}
+.import-result.show{display:block}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:#3d3f40;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:2000}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">APS</div>
+    <div><div class="logo-text">高级计划排程</div><div class="logo-sub">MANUFACTURING · v1.0</div></div>
+  </div>
+  <div class="nav-group"><div class="nav-group-label">导航</div><a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a></div>
+  <div class="nav-group"><div class="nav-group-label">工作台</div><a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a></div>
+  <div class="nav-group">
+    <div class="nav-group-label">基础数据</div>
+    <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a>
+    <a href="12-equipment-catalog.html" class="nav-item active"><span class="ni">⌘</span>设备清单</a>
+    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
+    <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
+    <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">生产计划</div>
+    <a href="07-plan-calculate.html" class="nav-item"><span class="ni">⚙</span>计划计算</a>
+    <a href="08-plan-result.html" class="nav-item"><span class="ni">▤</span>计划结果</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">能力测算</div>
+    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>工时分析</a>
+    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备分析</a>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="crumb"><a href="index.html">首页</a><span class="sep">/</span><span>基础数据</span><span class="sep">/</span><span class="now">设备清单</span></div>
+    <div class="topbar-right"><span class="version-pill">v1.0 · 2026-05 正式版</span><div class="user-avatar">规</div></div>
+  </div>
+
+  <div class="content">
+    <div class="page-head">
+      <div class="page-title">设备清单</div>
+      <div class="page-sub">维护制造部门下的设备大类、品牌、小类和台数，导入按制造部门全删全导</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">制造部门数</div>
+        <div><span class="stat-value" id="statDeptCount">0</span><span class="stat-unit">个</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">设备小类数</div>
+        <div><span class="stat-value" id="statModelCount">0</span><span class="stat-unit">种</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">总台数</div>
+        <div><span class="stat-value" id="statTotalCount">0</span><span class="stat-unit">台</span></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="field"><label>制造部门</label><input type="text" id="filterDepartment" placeholder="搜索制造部门"></div>
+      <div class="field"><label>设备大类</label><input type="text" id="filterCategory" placeholder="搜索设备大类"></div>
+      <div class="field"><label>设备品牌</label><input type="text" id="filterBrand" placeholder="搜索设备品牌"></div>
+      <div class="field"><label>设备小类</label><input type="text" id="filterModel" placeholder="搜索设备小类"></div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost" onclick="resetFilter()">重置</button>
+      <button class="btn btn-primary" onclick="applyFilter()">查询</button>
+    </div>
+
+    <div class="toolbar" style="margin-bottom:16px">
+      <div style="font-size:13px;color:var(--color-neutral-600)">共 <b id="totalRows" style="font-family:var(--font-data);color:var(--color-neutral-800)">0</b> 条设备记录</div>
+      <div class="spacer"></div>
+      <a class="btn btn-ghost" href="/template-equipment-catalog.xlsx" download>↓ 下载模板</a>
+      <button class="btn btn-ghost" onclick="exportCatalog()">导出</button>
+      <button class="btn btn-primary" onclick="openImportModal()">⬆ 批量导入</button>
+      <button class="btn btn-secondary" onclick="openEditModal(null)">+ 新增</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th data-sort-key="manufacturingDepartment">制造部门</th><th data-sort-key="equipmentCategory">设备大类</th><th data-sort-key="equipmentBrand">设备品牌</th><th data-sort-key="equipmentModel">设备小类</th><th class="num" data-sort-key="equipmentCount">台数</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="dataTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="editModalTitle">新增设备清单</div>
+      <button class="modal-close" onclick="closeModal('editModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="form-row">
+        <label>制造部门<span class="req">*</span></label>
+        <input id="fDepartment" placeholder="如 制造一部">
+      </div>
+      <div class="form-row">
+        <label>设备大类<span class="req">*</span></label>
+        <input id="fCategory" placeholder="如 冲压设备">
+      </div>
+      <div class="form-row">
+        <label>设备品牌<span class="req">*</span></label>
+        <input id="fBrand" placeholder="如 AIDA">
+      </div>
+      <div class="form-row">
+        <label>设备小类<span class="req">*</span></label>
+        <input id="fModel" placeholder="如 aa001">
+      </div>
+      <div class="form-row">
+        <label>台数<span class="req">*</span></label>
+        <input id="fCount" type="number" min="1" step="1" placeholder="如 4">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('editModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveCatalog()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="importModal">
+  <div class="modal wide">
+    <div class="modal-head">
+      <div class="modal-title">批量导入设备清单</div>
+      <button class="modal-close" onclick="closeModal('importModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tpl-row">Sheet 名称：<b>设备清单</b>，列顺序：制造部门/设备大类/设备品牌/设备小类/台数</div>
+      <div class="dropzone" onclick="document.getElementById('importFile').click()">
+        <div class="dz-icon">⬆</div>
+        <div class="dz-title" id="importFileName">点击或拖拽文件到此处</div>
+        <div class="dz-sub">按制造部门全删全导 · 支持 .xlsx</div>
+        <input type="file" id="importFile" hidden accept=".xlsx" onchange="onFileSelected(this)">
+      </div>
+      <div style="font-size:12px;color:var(--color-neutral-400);line-height:1.7;margin-top:8px">
+        · 导入前先完整校验整份文件<br>
+        · 仅覆盖本次文件涉及到的制造部门<br>
+        · 同一文件内不允许重复的“制造部门 + 设备小类”
+      </div>
+      <div class="import-result" id="importResult"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('importModal')">取消</button>
+      <button class="btn btn-primary" onclick="confirmImport()">开始导入</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="table-multisort.js"></script>
+<script>
+const API = location.origin;
+let allRows = [];
+let filteredRows = [];
+const catalogSortState = { sortChain: [] };
+const catalogColumnDefs = {
+  manufacturingDepartment: { type: 'text' },
+  equipmentCategory: { type: 'text' },
+  equipmentBrand: { type: 'text' },
+  equipmentModel: { type: 'text' },
+  equipmentCount: { type: 'number' }
+};
+
+function showToast(message){
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){
+  document.getElementById(id).classList.remove('show');
+  if(id === 'importModal'){
+    document.getElementById('importFile').value = '';
+    document.getElementById('importFileName').textContent = '点击或拖拽文件到此处';
+    document.getElementById('importResult').className = 'import-result';
+    document.getElementById('importResult').innerHTML = '';
+  }
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => overlay.addEventListener('click', event => {
+  if(event.target === overlay) overlay.classList.remove('show');
+}));
+
+async function loadData() {
+  const response = await fetch(`${API}/api/equipment-catalog`);
+  const json = await response.json();
+  allRows = json.data || [];
+  ApsTableMultiSort.bindTable(document.querySelector('.data-table'), catalogSortState, () => renderTable(filteredRows));
+  applyFilter();
+  updateStats(allRows);
+}
+
+function applyFilter() {
+  const department = document.getElementById('filterDepartment').value.trim().toLowerCase();
+  const category = document.getElementById('filterCategory').value.trim().toLowerCase();
+  const brand = document.getElementById('filterBrand').value.trim().toLowerCase();
+  const model = document.getElementById('filterModel').value.trim().toLowerCase();
+
+  filteredRows = allRows.filter(row =>
+    (!department || row.manufacturingDepartment.toLowerCase().includes(department)) &&
+    (!category || row.equipmentCategory.toLowerCase().includes(category)) &&
+    (!brand || row.equipmentBrand.toLowerCase().includes(brand)) &&
+    (!model || row.equipmentModel.toLowerCase().includes(model))
+  );
+  renderTable(filteredRows);
+}
+
+function resetFilter() {
+  ['filterDepartment', 'filterCategory', 'filterBrand', 'filterModel'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  applyFilter();
+}
+
+function renderTable(rows) {
+  const sortedRows = ApsTableMultiSort.sortRows(rows, catalogSortState.sortChain, catalogColumnDefs);
+  document.getElementById('totalRows').textContent = sortedRows.length;
+  const tbody = document.getElementById('dataTbody');
+  if (!sortedRows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
+    return;
+  }
+  tbody.innerHTML = sortedRows.map(row => `
+    <tr>
+      <td>${row.manufacturingDepartment}</td>
+      <td>${row.equipmentCategory}</td>
+      <td>${row.equipmentBrand}</td>
+      <td class="code">${row.equipmentModel}</td>
+      <td class="num">${row.equipmentCount}</td>
+      <td>
+        <a class="row-action" onclick='openEditModal(${JSON.stringify(row)})'>编辑</a>
+        <a class="row-action danger" onclick="deleteRow(${row.id})">删除</a>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateStats(rows) {
+  document.getElementById('statDeptCount').textContent = new Set(rows.map(row => row.manufacturingDepartment)).size;
+  document.getElementById('statModelCount').textContent = new Set(rows.map(row => row.equipmentModel)).size;
+  document.getElementById('statTotalCount').textContent = rows.reduce((sum, row) => sum + Number(row.equipmentCount || 0), 0);
+}
+
+function openEditModal(row) {
+  document.getElementById('editModalTitle').textContent = row ? '编辑设备清单' : '新增设备清单';
+  document.getElementById('editId').value = row ? row.id : '';
+  document.getElementById('fDepartment').value = row ? row.manufacturingDepartment : '';
+  document.getElementById('fCategory').value = row ? row.equipmentCategory : '';
+  document.getElementById('fBrand').value = row ? row.equipmentBrand : '';
+  document.getElementById('fModel').value = row ? row.equipmentModel : '';
+  document.getElementById('fCount').value = row ? row.equipmentCount : '';
+  openModal('editModal');
+}
+
+async function saveCatalog() {
+  const id = document.getElementById('editId').value;
+  const body = {
+    manufacturingDepartment: document.getElementById('fDepartment').value.trim(),
+    equipmentCategory: document.getElementById('fCategory').value.trim(),
+    equipmentBrand: document.getElementById('fBrand').value.trim(),
+    equipmentModel: document.getElementById('fModel').value.trim(),
+    equipmentCount: parseInt(document.getElementById('fCount').value, 10)
+  };
+  if (!body.manufacturingDepartment || !body.equipmentCategory || !body.equipmentBrand || !body.equipmentModel) {
+    showToast('请完整填写必填字段');
+    return;
+  }
+  if (!body.equipmentCount || body.equipmentCount <= 0) {
+    showToast('台数必须大于0');
+    return;
+  }
+
+  const url = id ? `${API}/api/equipment-catalog/${id}` : `${API}/api/equipment-catalog`;
+  const method = id ? 'PUT' : 'POST';
+  const response = await fetch(url, {
+    method,
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  const json = await response.json();
+  if (json.code === 200) {
+    closeModal('editModal');
+    showToast(id ? '修改成功' : '新增成功');
+    loadData();
+    return;
+  }
+  showToast(json.message || '保存失败');
+}
+
+async function deleteRow(id) {
+  if (!confirm('确认删除？')) return;
+  await fetch(`${API}/api/equipment-catalog/${id}`, {method: 'DELETE'});
+  showToast('已删除');
+  loadData();
+}
+
+function openImportModal() {
+  openModal('importModal');
+}
+
+function onFileSelected(input) {
+  document.getElementById('importFileName').textContent = input.files[0] ? input.files[0].name : '点击或拖拽文件到此处';
+}
+
+async function confirmImport() {
+  const file = document.getElementById('importFile').files[0];
+  if (!file) {
+    showToast('请先选择文件');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await fetch(`${API}/api/equipment-catalog/import`, {
+    method: 'POST',
+    body: formData
+  });
+  const json = await response.json();
+  const result = document.getElementById('importResult');
+  result.className = 'import-result show';
+  if (json.code === 200) {
+    result.innerHTML = `导入成功：<b>${json.data.skippedCount || 0}</b> 条设备记录`;
+    loadData();
+    return;
+  }
+  result.innerHTML = json.message || '导入失败';
+}
+
+function exportCatalog() {
+  window.location.href = `${API}/api/equipment-catalog/export`;
+}
+
+loadData();
+</script>
+</body>
+</html>

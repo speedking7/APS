@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 /**
  * 生产计划结果集
@@ -95,4 +96,8 @@ public class ProductionPlan {
     /** 计算版本号 */
     @Column(name = "version", length = 50)
     private String version;
+
+    /** 计算时间 */
+    @Column(name = "calculated_at")
+    private LocalDateTime calculatedAt;
 }

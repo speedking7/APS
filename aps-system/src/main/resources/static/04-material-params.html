@@ -70,6 +70,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .data-panel{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow:hidden}
 .data-table{width:100%;border-collapse:collapse}
 .data-table th{background:var(--color-neutral-100);padding:11px 14px;font-size:11px;font-weight:600;color:var(--color-neutral-400);text-align:left;border-bottom:1px solid var(--color-neutral-200);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.data-table th[data-sort-key]{cursor:pointer;user-select:none}
 .data-table th.num{text-align:right}
 .data-table td{padding:11px 14px;font-size:13px;color:var(--color-neutral-800);border-bottom:1px solid var(--color-neutral-050)}
 .data-table td.num{text-align:right;font-family:var(--font-data);font-feature-settings:'tnum';font-weight:500}
@@ -125,6 +126,9 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <div class="nav-group-label">基础数据</div>
     <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
     <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a>
+    <a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a>
+    <a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
     <a href="04-material-params.html" class="nav-item active"><span class="ni">⊞</span>安全库存</a>
     <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
     <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
@@ -136,8 +140,8 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">能力测算</div>
-    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>人员需求</a>
-    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备负荷</a>
+    <a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>工时分析</a>
+    <a href="11-equipment-load.html" class="nav-item"><span class="ni">⌬</span>设备分析</a>
   </div>
 </aside>
 
@@ -205,12 +209,12 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <table class="data-table">
         <thead>
           <tr>
-            <th>存货编码</th>
-            <th>年月</th>
-            <th class="num">每日当量</th>
-            <th class="num">安全天数</th>
-            <th class="num">最大天数</th>
-            <th>版本号</th>
+            <th data-sort-key="itemCode">存货编码</th>
+            <th data-sort-key="yearMonth">年月</th>
+            <th class="num" data-sort-key="dailyEquivalent">每日当量</th>
+            <th class="num" data-sort-key="safetyDays">安全天数</th>
+            <th class="num" data-sort-key="maxDays">最大天数</th>
+            <th data-sort-key="version">版本号</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -308,9 +312,19 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 
 <div class="toast" id="toast"></div>
 
+<script src="table-multisort.js"></script>
 <script>
 const API = location.origin;
 let allData = [], filteredData = [];
+const safetySortState = { sortChain: [] };
+const safetyColumnDefs = {
+  itemCode: { type: 'text' },
+  yearMonth: { type: 'yearMonth' },
+  dailyEquivalent: { type: 'number' },
+  safetyDays: { type: 'number' },
+  maxDays: { type: 'number' },
+  version: { type: 'text' }
+};
 
 function openModal(id){document.getElementById(id).classList.add('show')}
 function closeModal(id){
@@ -329,6 +343,7 @@ async function loadData(){
     const r = await fetch(`${API}/api/safety-stock`);
     const j = await r.json();
     allData = j.data||[];
+    ApsTableMultiSort.bindTable(document.querySelector('.data-table'), safetySortState, () => renderTable());
     applyFilter();
     updateStats(allData);
   }catch(err){
@@ -376,7 +391,8 @@ function renderPagerBtns(totalPages){
 
 function renderTable(){
   const tbody = document.getElementById('dataTbody');
-  const total = filteredData.length;
+  const sortedData = ApsTableMultiSort.sortRows(filteredData, safetySortState.sortChain, safetyColumnDefs);
+  const total = sortedData.length;
   document.getElementById('totalCount').textContent = total;
   if(total===0){
     tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
@@ -387,7 +403,7 @@ function renderTable(){
   const ps=pageSize===0?total:pageSize;
   const totalPages=Math.ceil(total/ps)||1;
   if(currentPage>totalPages) currentPage=totalPages;
-  const slice=filteredData.slice((currentPage-1)*ps, currentPage*ps);
+  const slice=sortedData.slice((currentPage-1)*ps, currentPage*ps);
   document.getElementById('pageInfo').textContent = ps>=total?`共 ${total} 条`:`共 ${total} 条 · 第 ${currentPage}/${totalPages} 页`;
   const sel=document.getElementById('pageSizeSelect'); if(sel&&sel.value!==String(pageSize)){sel.value=String(pageSize);if(!sel.value)sel.value='20';}
   renderPagerBtns(totalPages);

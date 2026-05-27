@@ -158,6 +158,9 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <div class="nav-group-label">基础数据</div>
     <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
     <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a>
+    <a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a>
+    <a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
     <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
     <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
     <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
@@ -203,13 +206,13 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       </div>
       <div class="kpi-card warn">
         <div class="kpi-label">设备分析超预警</div>
-        <div><span class="kpi-value" style="color:var(--color-warning)">2</span><span class="kpi-unit">台</span></div>
-        <div class="kpi-meta">INJ-02 (95%) · STM-A (112%)</div>
+        <div><span class="kpi-value" style="color:var(--color-warning)">0</span><span class="kpi-unit">台</span></div>
+        <div class="kpi-meta" id="equipmentAlertMeta">按真实设备分析结果统计</div>
       </div>
       <div class="kpi-card danger">
-        <div class="kpi-label">人员缺口预警期间</div>
-        <div><span class="kpi-value" style="color:var(--color-error)">1</span><span class="kpi-unit">期</span></div>
-        <div class="kpi-meta">202505 · 装配工序超编 0.5 人</div>
+        <div class="kpi-label">工时高峰期间</div>
+        <div><span class="kpi-value" style="color:var(--color-error)">0</span><span class="kpi-unit">期</span></div>
+        <div class="kpi-meta" id="workforceAlertMeta">按真实工时小时结果统计</div>
       </div>
     </div>
 
@@ -300,41 +303,13 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
           <a class="panel-action" href="11-equipment-load.html">全部预警 →</a>
         </div>
         <div class="panel-body">
-          <div class="alert-list">
-            <div class="alert-item high">
-              <div>
-                <div class="alert-text"><b>STM-A</b> 设备分析负荷率 <b>112%</b>，超出上限 <b>12%</b></div>
-                <div class="alert-meta">202505 · 冲压机 A · 转向节总成</div>
-              </div>
-              <span class="alert-tag high">超载</span>
-            </div>
-            <div class="alert-item high">
-              <div>
-                <div class="alert-text">装配工序 <b>202505</b> 工时分析折算 <b>6.5 人</b>，编制仅 <b>6 人</b></div>
-                <div class="alert-meta">缺口 0.5 人 · 建议加班或外协</div>
-              </div>
-              <span class="alert-tag high">缺口</span>
-            </div>
-            <div class="alert-item mid">
-              <div>
-                <div class="alert-text"><b>INJ-02</b> 设备分析负荷率 <b>95%</b>，接近预警线</div>
-                <div class="alert-meta">202505 · 注塑机 2 号 · 制动盘总成</div>
-              </div>
-              <span class="alert-tag mid">预警</span>
-            </div>
-            <div class="alert-item mid">
-              <div>
-                <div class="alert-text">物料 <b>21201A022</b> 报废率上升至 <b>5%</b>，建议复核</div>
-                <div class="alert-meta">来自计划计算 · 较上月 +1pp</div>
-              </div>
-              <span class="alert-tag mid">关注</span>
-            </div>
+          <div class="alert-list" id="alertList">
             <div class="alert-item low">
               <div>
-                <div class="alert-text">2026 年 7-12 月稼动天数 <b>未维护</b></div>
-                <div class="alert-meta">下月计划计算前需完成</div>
+                <div class="alert-text">正在加载真实预警数据…</div>
+                <div class="alert-meta">来源：工时分析 / 设备分析 / 稼动天数</div>
               </div>
-              <span class="alert-tag low">提醒</span>
+              <span class="alert-tag low">加载中</span>
             </div>
           </div>
         </div>
@@ -348,11 +323,19 @@ const API = location.origin;
 
 async function loadDashboard() {
   try {
+    const versionsRes = await fetch(`${API}/api/production-plan/versions`).then(r => r.json());
+    const versions = versionsRes.data || [];
+    const latestVersion = versions.length ? versions[versions.length - 1] : '';
+
     const [f, pp, wf, el] = await Promise.all([
       fetch(`${API}/api/forecast`).then(r=>r.json()),
       fetch(`${API}/api/production-plan`).then(r=>r.json()),
-      fetch(`${API}/api/workforce-report`).then(r=>r.json()),
-      fetch(`${API}/api/equipment-load`).then(r=>r.json()),
+      latestVersion
+        ? fetch(`${API}/api/workforce-report/details?version=${encodeURIComponent(latestVersion)}`).then(r=>r.json())
+        : Promise.resolve({ data: [] }),
+      latestVersion
+        ? fetch(`${API}/api/equipment-load?version=${encodeURIComponent(latestVersion)}`).then(r=>r.json())
+        : Promise.resolve({ data: [] }),
     ]);
 
     const forecasts = f.data || [];
@@ -363,10 +346,45 @@ async function loadDashboard() {
     // KPI 卡片
     const products = new Set(forecasts.map(d=>d.itemCode));
     const overloaded = elRows.filter(r=>r.status==='OVERLOADED');
+    const tight = elRows.filter(r=>r.status==='TIGHT');
+    const workforceByPeriod = new Map();
+    wfRows.forEach(row => {
+      const period = String(row.yearMonth || '');
+      workforceByPeriod.set(period, (workforceByPeriod.get(period) || 0) + (Number(row.requiredHours || 0)));
+    });
+    const workforceAlerts = [...workforceByPeriod.entries()]
+      .filter(([, demand]) => demand > 0)
+      .sort((a, b) => b[1] - a[1]);
     const statVals = document.querySelectorAll('.stat-value');
     if (statVals[0]) statVals[0].textContent = products.size;
     if (statVals[1]) statVals[1].textContent = plans.length;
     if (statVals[2]) statVals[2].textContent = overloaded.length;
+    if (statVals[3]) statVals[3].textContent = workforceAlerts.length ? 1 : 0;
+
+    const equipmentAlertMeta = document.getElementById('equipmentAlertMeta');
+    if (equipmentAlertMeta) {
+      if (overloaded.length) {
+        equipmentAlertMeta.textContent = overloaded.slice(0, 2)
+          .map(r => `${r.equipmentModel || r.equipment} (${(r.utilizationRate * 100).toFixed(1)}%)`)
+          .join(' · ');
+      } else if (tight.length) {
+        equipmentAlertMeta.textContent = tight.slice(0, 2)
+          .map(r => `${r.equipmentModel || r.equipment} (${(r.utilizationRate * 100).toFixed(1)}%)`)
+          .join(' · ');
+      } else {
+        equipmentAlertMeta.textContent = '当前版本暂无超负荷设备';
+      }
+    }
+
+    const workforceAlertMeta = document.getElementById('workforceAlertMeta');
+    if (workforceAlertMeta) {
+      if (workforceAlerts.length) {
+        const [period, demand] = workforceAlerts[0];
+        workforceAlertMeta.textContent = `${period} · 工时 ${demand.toFixed(1)}h`;
+      } else {
+        workforceAlertMeta.textContent = '当前版本暂无工时高峰预警';
+      }
+    }
 
     // 计划量趋势表
     const trendTbody = document.getElementById('trendTbody') || document.querySelector('.trend-table tbody');
@@ -382,14 +400,56 @@ async function loadDashboard() {
       }).join('');
     }
 
-    // 设备分析预警
-    const alertTbody = document.getElementById('alertTbody') || document.querySelector('.alert-table tbody, .alert-list');
-    if (alertTbody && overloaded.length > 0) {
-      alertTbody.innerHTML = overloaded.slice(0,5).map(r => `
-        <tr>
-          <td>设备 ${r.equipment} ${r.yearMonth} 负荷 ${(r.utilizationRate*100).toFixed(1)}%</td>
-          <td><span style="padding:2px 8px;border-radius:4px;font-size:11px;background:#f4433622;color:#f44339">超载</span></td>
-        </tr>`).join('');
+    // 真实预警列表
+    const alertList = document.getElementById('alertList');
+    if (alertList) {
+      const items = [];
+
+      overloaded.slice(0, 3).forEach(r => {
+        items.push({
+          level: 'high',
+          tag: '超载',
+          text: `<b>${r.equipmentModel || r.equipment}</b> 设备分析负荷率 <b>${(r.utilizationRate * 100).toFixed(1)}%</b>`,
+          meta: `${r.yearMonth} · ${r.manufacturingDepartment || '—'} · ${r.equipmentCategory || r.process || '—'}`
+        });
+      });
+
+      if (!items.length) {
+        tight.slice(0, 2).forEach(r => {
+          items.push({
+            level: 'mid',
+            tag: '预警',
+            text: `<b>${r.equipmentModel || r.equipment}</b> 设备分析负荷率 <b>${(r.utilizationRate * 100).toFixed(1)}%</b>，接近上限`,
+            meta: `${r.yearMonth} · ${r.manufacturingDepartment || '—'} · ${r.equipmentCategory || r.process || '—'}`
+          });
+        });
+      }
+
+      workforceAlerts.slice(0, 2).forEach(([period, demand]) => {
+        items.push({
+          level: 'mid',
+          tag: '工时',
+          text: `期间 <b>${period}</b> 工时分析总需求 <b>${demand.toFixed(1)}h</b>`,
+          meta: latestVersion ? `来源：工时分析明细接口 · 版本 ${latestVersion}` : '来源：工时分析明细接口'
+        });
+      });
+
+      items.push({
+        level: 'low',
+        tag: '提醒',
+        text: `当前版本覆盖 <b>${products.size}</b> 个完成品，已生成 <b>${plans.length}</b> 行计划结果`,
+        meta: latestVersion ? `来源：预测与计划结果接口 · 版本 ${latestVersion}` : '来源：预测与计划结果接口'
+      });
+
+      alertList.innerHTML = items.slice(0, 5).map(item => `
+        <div class="alert-item ${item.level}">
+          <div>
+            <div class="alert-text">${item.text}</div>
+            <div class="alert-meta">${item.meta}</div>
+          </div>
+          <span class="alert-tag ${item.level}">${item.tag}</span>
+        </div>
+      `).join('');
     }
   } catch(e) { console.warn('dashboard load error', e); }
 }

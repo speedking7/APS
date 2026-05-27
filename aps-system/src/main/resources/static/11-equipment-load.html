@@ -49,12 +49,28 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .table-wrap{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow:hidden;overflow-x:auto}
 .matrix{width:100%;border-collapse:collapse}
 .matrix th{background:var(--color-neutral-100);padding:11px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-800);text-align:left;border-bottom:1px solid var(--color-neutral-200);white-space:nowrap;letter-spacing:.04em;text-transform:uppercase}
+.matrix th[data-sort-key]{cursor:pointer;user-select:none}
 .matrix td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--color-neutral-050);white-space:nowrap}
 .matrix td.num{text-align:right;font-family:var(--font-data);font-feature-settings:'tnum'}
+.matrix tbody tr{cursor:pointer}
 .matrix tbody tr:hover td{background:#f6f9fc}.matrix tbody tr:last-child td{border-bottom:none}
 .rate{display:inline-flex;min-width:72px;justify-content:center;padding:3px 8px;border-radius:5px;font-family:var(--font-data);font-size:12px;font-weight:700}
 .rate-normal{background:rgba(0,87,184,.08);color:#0057b8}.rate-warn{background:rgba(251,192,45,.18);color:#b26a00}.rate-over{background:rgba(244,67,57,.12);color:#c62828}
 .empty{padding:40px;text-align:center;color:var(--color-neutral-400);font-size:13px}
+.modal-overlay{position:fixed;inset:0;background:rgba(28,35,51,.45);backdrop-filter:blur(2px);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;width:640px;max-width:92vw;border-radius:12px;box-shadow:0 24px 64px rgba(0,0,0,.18);overflow:hidden}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--color-neutral-200);display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-family:var(--font-display);font-size:16px;font-weight:700}
+.modal-close{background:none;border:none;font-size:18px;color:var(--color-neutral-400);cursor:pointer}
+.modal-body{padding:22px;font-size:13px;line-height:1.7}
+.calc-step{padding:11px 14px;border:1px solid var(--color-neutral-200);border-radius:8px;margin-bottom:10px;background:var(--color-neutral-100);font-family:var(--font-data);font-size:13px;color:var(--color-neutral-800)}
+.calc-step .ck{display:inline-block;padding:1px 7px;border-radius:4px;background:#fff;border:1px solid var(--color-neutral-200);font-weight:600;margin:0 2px}
+.calc-step .res{color:var(--color-primary);font-weight:700}
+.detail-toggle{margin-top:16px;color:var(--color-primary);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.detail-box{margin-top:10px;border:1px solid var(--color-neutral-200);border-radius:8px;overflow:hidden;max-height:240px;overflow:auto;display:none}
+.detail-box.show{display:block}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--color-neutral-200);display:flex;justify-content:flex-end;gap:10px;background:var(--color-neutral-100)}
 </style>
 </head>
 <body>
@@ -62,21 +78,21 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   <div class="sidebar-logo"><div class="logo-mark">APS</div><div><div class="logo-text">高级计划排程</div><div class="logo-sub">MANUFACTURING · v1.0</div></div></div>
   <div class="nav-group"><div class="nav-group-label">导航</div><a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a></div>
   <div class="nav-group"><div class="nav-group-label">工作台</div><a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a></div>
-  <div class="nav-group"><div class="nav-group-label">基础数据</div><a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a><a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a><a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a><a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a><a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a></div>
+  <div class="nav-group"><div class="nav-group-label">基础数据</div><a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a><a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a><a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a><a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a><a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a><a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a><a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a><a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a></div>
   <div class="nav-group"><div class="nav-group-label">生产计划</div><a href="07-plan-calculate.html" class="nav-item"><span class="ni">⚙</span>计划计算</a><a href="08-plan-result.html" class="nav-item"><span class="ni">▤</span>计划结果</a></div>
   <div class="nav-group"><div class="nav-group-label">能力测算</div><a href="10-workforce-report.html" class="nav-item"><span class="ni">⚐</span>工时分析</a><a href="11-equipment-load.html" class="nav-item active"><span class="ni">⌬</span>设备分析</a></div>
 </aside>
 <div class="main">
   <div class="topbar"><div class="crumb"><a href="index.html">首页</a><span class="sep">/</span><span>能力测算</span><span class="sep">/</span><span class="now">设备分析</span></div><div class="topbar-right"><span class="version-pill">v1.0 · 2026-05 正式版</span><div class="user-avatar">规</div></div></div>
   <div class="content">
-    <div class="page-head"><div class="page-title">设备</div><div class="page-sub">贴近 Excel 原型的设备能力分析，基于生产计划结果按期间测算所需台数与负荷率。</div></div>
+  <div class="page-head"><div class="page-title">设备</div><div class="page-sub">贴近 Excel 原型的设备能力分析，基于设备分析接口按期间测算所需台数与负荷率。</div></div>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-label">分析版本</div><div class="stat-value" id="statVersion">—</div><div class="stat-meta">当前选中的计划版本</div></div>
       <div class="stat-card"><div class="stat-label">分析行数</div><div class="stat-value" id="statRows">0<span class="stat-unit">行</span></div><div class="stat-meta">设备 × 月份明细</div></div>
       <div class="stat-card"><div class="stat-label">平均负荷率</div><div class="stat-value" id="statAvgRate">0<span class="stat-unit">%</span></div><div class="stat-meta">按过滤结果平均</div></div>
       <div class="stat-card warn"><div class="stat-label">超负荷行数</div><div class="stat-value" id="statOverRows">0<span class="stat-unit">行</span></div><div class="stat-meta">负荷率超过 100%</div></div>
     </div>
-    <div class="note-row">说明：当前系统没有设备主数据台账，设备品牌先显示为 “—”，设备名称（大类）默认取工序，设备型号（小类）默认取设备编码，台数默认按 1 台测算。</div>
+    <div class="note-row">说明：设备分析优先匹配设备清单主数据；未命中设备台账时，设备品牌显示为“—”，设备大类默认取工序，设备小类默认取设备编码，台数按 1 台测算。当前页面按版本直接读取设备分析接口。</div>
     <div class="toolbar">
       <div class="field"><label>计划版本</label><select id="versionSel"></select></div>
       <div class="field"><label>月份</label><select id="monthSel"></select></div>
@@ -88,65 +104,52 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     </div>
     <div class="table-wrap">
       <table class="matrix">
-        <thead><tr><th>制造部门</th><th>设备名称（大类）</th><th>设备品牌</th><th>设备型号（小类）</th><th>台数</th><th>月份</th><th>天数</th><th>所需台数</th><th>差异</th><th>负荷率</th></tr></thead>
+        <thead><tr><th data-sort-key="manufacturingDepartment">制造部门</th><th data-sort-key="equipmentCategory">设备名称（大类）</th><th data-sort-key="equipmentBrand">设备品牌</th><th data-sort-key="equipmentModel">设备型号（小类）</th><th data-sort-key="equipmentCount">台数</th><th data-sort-key="yearMonth">月份</th><th data-sort-key="workDays">天数</th><th data-sort-key="requiredMachineCount">所需台数</th><th data-sort-key="difference">差异</th><th data-sort-key="loadRate">负荷率</th></tr></thead>
         <tbody id="dataTbody"></tbody>
       </table>
     </div>
   </div>
 </div>
+
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">设备负荷计算明细 · <span id="elTitle">—</span></div>
+      <button class="modal-close" onclick="closeDetailModal()">×</button>
+    </div>
+    <div class="modal-body" id="detailModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeDetailModal()">关闭</button>
+    </div>
+  </div>
+</div>
+<script src="table-multisort.js"></script>
 <script>
 const API = location.origin;
-let planData = [];
-let odData = [];
 let rows = [];
+const loadSortState = { sortChain: [] };
+const loadColumnDefs = {
+  manufacturingDepartment: { type: 'text' },
+  equipmentCategory: { type: 'text' },
+  equipmentBrand: { type: 'text' },
+  equipmentModel: { type: 'text' },
+  equipmentCount: { type: 'number' },
+  yearMonth: { type: 'yearMonth' },
+  workDays: { type: 'number' },
+  requiredMachineCount: { type: 'number' },
+  difference: { type: 'number' },
+  loadRate: { type: 'number' }
+};
 
 function toNumber(value) { return Number.isFinite(Number(value)) ? Number(value) : 0; }
 function formatNumber(value, digits = 2) { return toNumber(value).toLocaleString('zh-CN', {maximumFractionDigits: digits, minimumFractionDigits: 0}); }
-function getDailyHours() { return parseFloat(localStorage.getItem('aps.dailyEffectiveHours') || '10.5'); }
-
+function closeDetailModal() { document.getElementById('detailModal').classList.remove('show'); }
 function setOptions(elementId, values, placeholder) {
   const el = document.getElementById(elementId);
   if (!el) return;
   const current = el.value;
   el.innerHTML = `<option value="">${placeholder}</option>` + values.map(v => `<option value="${v}">${v}</option>`).join('');
   if (values.includes(current)) el.value = current;
-}
-
-function buildRows(data, workDaysMap) {
-  const grouped = new Map();
-  data.forEach(item => {
-    if (!item.yearMonth || !item.equipment) return;
-    const key = [item.manufacturingDepartment || '—', item.process || item.equipment || '—', item.equipment || '—', item.yearMonth].join('|');
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        manufacturingDepartment: item.manufacturingDepartment || '—',
-        equipmentCategory: item.process || item.equipment || '—',
-        equipmentBrand: '—',
-        equipmentModel: item.equipment || '—',
-        equipmentCount: 1,
-        yearMonth: String(item.yearMonth),
-        workDays: toNumber(workDaysMap[String(item.yearMonth)]),
-        requiredMachineCount: 0
-      });
-    }
-    const row = grouped.get(key);
-    const moldCavity = Math.max(toNumber(item.moldCavity), 1);
-    const cycleTime = toNumber(item.cycleTime);
-    const planQty = toNumber(item.planQty);
-    const availableSeconds = row.workDays * getDailyHours() * 3600;
-    const requiredSeconds = moldCavity > 0 ? (planQty * cycleTime) / moldCavity : 0;
-    row.requiredMachineCount += availableSeconds > 0 ? requiredSeconds / availableSeconds : 0;
-  });
-  return [...grouped.values()].map(row => ({
-    ...row,
-    difference: row.equipmentCount - row.requiredMachineCount,
-    loadRate: row.equipmentCount > 0 ? row.requiredMachineCount / row.equipmentCount : 0
-  })).sort((a, b) =>
-    a.yearMonth.localeCompare(b.yearMonth) ||
-    a.manufacturingDepartment.localeCompare(b.manufacturingDepartment) ||
-    a.equipmentCategory.localeCompare(b.equipmentCategory) ||
-    a.equipmentModel.localeCompare(b.equipmentModel)
-  );
 }
 
 function rateClass(rate) {
@@ -172,15 +175,16 @@ function applyFilters() {
 function renderTable(data) {
   const tbody = document.getElementById('dataTbody');
   if (!tbody) return;
-  if (!data.length) {
+  const sortedData = ApsTableMultiSort.sortRows(data, loadSortState.sortChain, loadColumnDefs);
+  if (!sortedData.length) {
     tbody.innerHTML = '<tr><td class="empty" colspan="10">暂无匹配数据，请调整筛选条件或先执行计划计算。</td></tr>';
     return;
   }
-  tbody.innerHTML = data.map(row => `
-    <tr>
+  tbody.innerHTML = sortedData.map(row => `
+    <tr onclick='showEquipmentDetail(${JSON.stringify(row).replace(/'/g,"&apos;")})'>
       <td>${row.manufacturingDepartment}</td>
       <td>${row.equipmentCategory}</td>
-      <td>${row.equipmentBrand}</td>
+      <td>${row.equipmentBrand}${row.matchedCatalog ? '' : '<span style="margin-left:6px;color:#f57c00;font-size:11px">未匹配</span>'}</td>
       <td>${row.equipmentModel}</td>
       <td class="num">${formatNumber(row.equipmentCount, 0)}</td>
       <td class="num">${row.yearMonth}</td>
@@ -191,6 +195,74 @@ function renderTable(data) {
     </tr>
   `).join('');
 }
+
+window.showEquipmentDetail = function (row) {
+  if (typeof row === 'string') { try { row = JSON.parse(row); } catch (e) { return; } }
+  document.getElementById('elTitle').textContent = `${row.equipmentModel || '—'} / ${row.yearMonth || '—'}`;
+  document.getElementById('detailModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;margin-bottom:14px">
+      <div><span style="color:var(--color-neutral-400)">制造部门</span><br><b>${row.manufacturingDepartment}</b></div>
+      <div><span style="color:var(--color-neutral-400)">设备大类</span><br><b>${row.equipmentCategory}</b></div>
+      <div><span style="color:var(--color-neutral-400)">设备品牌</span><br><b>${row.equipmentBrand}</b></div>
+      <div><span style="color:var(--color-neutral-400)">设备型号</span><br><b>${row.equipmentModel}</b></div>
+      <div><span style="color:var(--color-neutral-400)">台数</span><br><b>${formatNumber(row.equipmentCount, 0)}</b></div>
+      <div><span style="color:var(--color-neutral-400)">命中设备台账</span><br><b>${row.matchedCatalog ? '是' : '否'}</b></div>
+    </div>
+    ${row.sharedMoldAdjusted ? `<div class="calc-step">${row.sharedMoldSuppressed ? `共模规则已命中：组 <span class="ck">${row.sharedMoldGroupKey || '—'}</span> 在同月份同设备/工序/模腔/部门下，另一产品计划生产数更大，因此本行设备负荷按 <span class="res">0</span> 计算。` : `共模规则已命中：组 <span class="ck">${row.sharedMoldGroupKey || '—'}</span> 在同月份同设备/工序/模腔/部门下，本行计划生产数较大，因此本行设备负荷正常参与计算。`}</div>` : ''}
+    <div class="calc-step">
+      所需秒数 = 计划生产数 × 制造周期 ÷ 模腔数 = <span class="ck">${formatNumber(row.planQty, 3)}</span> × <span class="ck">${formatNumber(row.cycleTime, 3)}</span> ÷ <span class="ck">${formatNumber(row.moldCavity, 0)}</span> = <span class="res">${formatNumber(row.requiredSeconds, 3)}</span>
+    </div>
+    <div class="calc-step">
+      单台可用秒数 = 工作日 × 日工时 × 3600 = <span class="ck">${formatNumber(row.workDays, 3)}</span> × <span class="ck">${formatNumber(row.dailyHours, 3)}</span> × <span class="ck">3600</span> = <span class="res">${formatNumber(row.availableSecondsPerMachine, 3)}</span>
+    </div>
+    <div class="calc-step">
+      总可用秒数 = 单台可用秒数 × 台数 = <span class="ck">${formatNumber(row.availableSecondsPerMachine, 3)}</span> × <span class="ck">${formatNumber(row.equipmentCount, 0)}</span> = <span class="res">${formatNumber(row.availableSecondsTotal, 3)}</span>
+    </div>
+    <div class="calc-step">
+      所需台数 = 所需秒数 ÷ 单台可用秒数 = <span class="ck">${formatNumber(row.requiredSeconds, 3)}</span> ÷ <span class="ck">${formatNumber(row.availableSecondsPerMachine, 3)}</span> = <span class="res">${formatNumber(row.requiredMachineCount, 6)}</span>
+    </div>
+    <div class="calc-step">
+      负荷率 = 所需台数 ÷ 台数 = <span class="ck">${formatNumber(row.requiredMachineCount, 6)}</span> ÷ <span class="ck">${formatNumber(row.equipmentCount, 0)}</span> = <span class="res">${formatNumber(row.loadRate * 100, 3)}%</span>
+    </div>
+    <div class="detail-toggle" onclick="toggleDetailRows()">
+      <span>查看参与明细（${(row.detailRows || []).length}）</span>
+    </div>
+    <div class="detail-box" id="detailRowsBox">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:var(--color-neutral-100)">
+              <th style="padding:8px 10px;text-align:left">产品编码</th>
+              <th style="padding:8px 10px;text-align:left">完成品</th>
+              <th style="padding:8px 10px;text-align:right">计划数</th>
+              <th style="padding:8px 10px;text-align:right">原始秒数</th>
+              <th style="padding:8px 10px;text-align:right">生效秒数</th>
+              <th style="padding:8px 10px;text-align:left">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(row.detailRows || []).map(detail => `
+              <tr>
+                <td style="padding:8px 10px;border-top:1px solid var(--color-neutral-050)">${detail.itemCode || '—'}</td>
+                <td style="padding:8px 10px;border-top:1px solid var(--color-neutral-050)">${detail.finishedProductCode || '—'}</td>
+                <td style="padding:8px 10px;border-top:1px solid var(--color-neutral-050);text-align:right">${formatNumber(detail.planQty, 3)}</td>
+                <td style="padding:8px 10px;border-top:1px solid var(--color-neutral-050);text-align:right">${formatNumber(detail.requiredSecondsRaw, 3)}</td>
+                <td style="padding:8px 10px;border-top:1px solid var(--color-neutral-050);text-align:right">${formatNumber(detail.requiredSecondsEffective, 3)}</td>
+                <td style="padding:8px 10px;border-top:1px solid var(--color-neutral-050)">${detail.sharedMoldSuppressed ? `共模抑制，${detail.sharedMoldPeerItemCode || '另一产品'} 计划数更大` : (detail.sharedMoldAdjusted ? '共模保留行' : '正常参与')}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+    </div>`;
+  document.getElementById('detailModal').classList.add('show');
+};
+
+window.toggleDetailRows = function () {
+  const box = document.getElementById('detailRowsBox');
+  if (box) box.classList.toggle('show');
+};
+
+document.getElementById('detailModal').addEventListener('click', (event) => {
+  if (event.target.id === 'detailModal') closeDetailModal();
+});
 
 function updateStats(data) {
   const version = document.getElementById('versionSel')?.value || '—';
@@ -227,17 +299,42 @@ async function loadData() {
     updateStats([]);
     return;
   }
-  const [planRes, odRes] = await Promise.all([
-    fetch(`${API}/api/production-plan/by-version/${encodeURIComponent(version)}`).then(r => r.json()),
-    fetch(`${API}/api/operating-days`).then(r => r.json())
-  ]);
-  planData = planRes.data || [];
-  odData = odRes.data || [];
-  const workDaysMap = {};
-  odData.forEach(item => {
-    if (item.yearMonth != null) workDaysMap[String(item.yearMonth)] = item.workDays || 0;
-  });
-  rows = buildRows(planData, workDaysMap);
+  const res = await fetch(`${API}/api/equipment-load?version=${encodeURIComponent(version)}`);
+  const json = await res.json();
+  rows = (json.data || []).map(row => ({
+    manufacturingDepartment: row.manufacturingDepartment || '—',
+    equipmentCategory: row.equipmentCategory || '—',
+    equipmentBrand: row.equipmentBrand || '—',
+    equipmentModel: row.equipmentModel || '—',
+    equipmentCount: toNumber(row.equipmentCount),
+    yearMonth: String(row.yearMonth),
+    workDays: toNumber(row.workDays),
+    dailyHours: toNumber(row.dailyHours),
+    planQty: toNumber(row.planQty),
+    cycleTime: toNumber(row.cycleTime),
+    moldCavity: toNumber(row.moldCavity),
+    requiredSeconds: toNumber(row.requiredSeconds),
+    availableSecondsPerMachine: toNumber(row.availableSecondsPerMachine),
+    availableSecondsTotal: toNumber(row.availableSecondsTotal),
+    requiredMachineCount: toNumber(row.requiredMachineCount),
+    difference: toNumber(row.difference),
+    loadRate: toNumber(row.loadRate),
+    matchedCatalog: !!row.matchedCatalog,
+    sharedMoldAdjusted: !!row.sharedMoldAdjusted,
+    sharedMoldSuppressed: !!row.sharedMoldSuppressed,
+    sharedMoldGroupKey: row.sharedMoldGroupKey || '—',
+    detailRows: (row.detailRows || []).map(detail => ({
+      itemCode: detail.itemCode || '—',
+      finishedProductCode: detail.finishedProductCode || '—',
+      planQty: toNumber(detail.planQty),
+      requiredSecondsRaw: toNumber(detail.requiredSecondsRaw),
+      requiredSecondsEffective: toNumber(detail.requiredSecondsEffective),
+      sharedMoldAdjusted: !!detail.sharedMoldAdjusted,
+      sharedMoldSuppressed: !!detail.sharedMoldSuppressed,
+      sharedMoldPeerItemCode: detail.sharedMoldPeerItemCode || null
+    }))
+  }));
+  ApsTableMultiSort.bindTable(document.querySelector('.matrix'), loadSortState, () => applyFilters());
   setOptions('monthSel', [...new Set(rows.map(row => row.yearMonth))], '全部月份');
   setOptions('deptSel', [...new Set(rows.map(row => row.manufacturingDepartment))], '全部部门');
   applyFilters();

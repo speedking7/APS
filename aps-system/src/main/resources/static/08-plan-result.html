@@ -76,8 +76,9 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 
 /* table */
 .table-wrap{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow:hidden;overflow-x:auto}
-.data-table{width:100%;border-collapse:collapse;min-width:1100px}
+.data-table{width:100%;border-collapse:collapse;min-width:900px}
 .data-table th{background:var(--color-neutral-100);padding:11px 14px;font-size:11.5px;font-weight:700;color:var(--color-neutral-800);text-align:left;border-bottom:1px solid var(--color-neutral-200);letter-spacing:.02em;white-space:nowrap;text-transform:uppercase}
+.data-table th[data-sort-key]{cursor:pointer;user-select:none}
 .data-table th.num{text-align:right}
 .data-table td{padding:10px 14px;font-size:12.5px;color:var(--color-neutral-800);border-bottom:1px solid var(--color-neutral-050);white-space:nowrap;vertical-align:middle}
 .data-table tr:last-child td{border-bottom:none}
@@ -139,7 +140,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   <div class="nav-group">
     <div class="nav-group-label">基础数据</div>
     <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
-    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a><a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a><a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a><a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
     <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
     <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
     <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
@@ -179,8 +180,8 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <div class="stat-grid">
       <div class="stat-card">
         <div class="stat-label">当前版本</div>
-        <div><span class="stat-value" style="font-size:18px;font-weight:600">2026-05 正式版</span></div>
-        <div class="stat-meta">2026-05-10 14:32 计算</div>
+        <div><span class="stat-value" id="statVersion" style="font-size:18px;font-weight:600">—</span></div>
+        <div class="stat-meta" id="statCalculatedAt">—</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">计划行数</div>
@@ -220,8 +221,6 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <div class="toolbar" style="margin-bottom:16px">
       <div class="toolbar-left" style="font-size:13px;color:var(--color-neutral-600)">显示 <b style="font-family:var(--font-data);color:var(--color-neutral-800)">0</b> 行</div>
       <div class="spacer"></div>
-      <button class="btn btn-ghost">⇆ 切换版本</button>
-      <button class="btn btn-secondary">✎ 手工调整</button>
       <button class="btn btn-primary">⬇ 导出 Excel</button>
     </div>
 
@@ -230,26 +229,23 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <table class="data-table">
         <thead>
           <tr>
-            <th>完成品</th>
-            <th>完成品名称</th>
-            <th>完成品番号</th>
-            <th>完成品项目</th>
-            <th>自制件编码</th>
-            <th>自制件名称</th>
-            <th>自制件番号</th>
-            <th>自制件项目</th>
-            <th>年月</th>
-            <th>工序</th>
-            <th>设备</th>
-            <th>制造部门</th>
-            <th>制造单元</th>
-            <th class="num">需求(毛)</th>
-            <th class="num">计划数量</th>
-            <th class="num">报废率</th>
-            <th class="num">安全天数</th>
-            <th class="num">当前库存</th>
-            <th>版本</th>
-            <th>是否生产</th>
+            <th data-sort-key="finishedProductCode">完成品</th>
+            <th data-sort-key="itemCode">自制件编码</th>
+            <th data-sort-key="itemProductName">自制件名称</th>
+            <th data-sort-key="itemProductNo">自制件番号</th>
+            <th data-sort-key="itemProjectName">自制件项目</th>
+            <th data-sort-key="yearMonth">年月</th>
+            <th data-sort-key="process">工序</th>
+            <th data-sort-key="equipment">设备</th>
+            <th data-sort-key="manufacturingDepartment">制造部门</th>
+            <th data-sort-key="manufacturingUnit">制造单元</th>
+            <th class="num" data-sort-key="forecast">需求(毛)</th>
+            <th class="num" data-sort-key="planQty">计划数量</th>
+            <th class="num" data-sort-key="scrapRate">报废率</th>
+            <th class="num" data-sort-key="safetyDays">安全天数</th>
+            <th class="num" data-sort-key="currentInventory">当前库存</th>
+            <th data-sort-key="version">版本</th>
+            <th data-sort-key="isProduce">是否生产</th>
           </tr>
         </thead>
         <tbody id="dataTbody">
@@ -305,7 +301,29 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
 </div>
 
+<script src="table-multisort.js"></script>
 <script>
+const planSortState = { sortChain: [] };
+const planColumnDefs = {
+  finishedProductCode: { type: 'text' },
+  itemCode: { type: 'text' },
+  itemProductName: { type: 'text' },
+  itemProductNo: { type: 'text' },
+  itemProjectName: { type: 'text' },
+  yearMonth: { type: 'yearMonth' },
+  process: { type: 'text' },
+  equipment: { type: 'text' },
+  manufacturingDepartment: { type: 'text' },
+  manufacturingUnit: { type: 'text' },
+  forecast: { type: 'number' },
+  planQty: { type: 'number' },
+  scrapRate: { type: 'number' },
+  safetyDays: { type: 'number' },
+  currentInventory: { type: 'number' },
+  version: { type: 'text' },
+  isProduce: { type: 'text' }
+};
+
 function fmt(v,d=2){return v==null?'—':Number(v).toFixed(d)}
 
 function showDetail(layer,period,code,inv,demand,safe,days,scrap,qty,endInv){
@@ -342,6 +360,40 @@ let planData = [];
 let filteredData = [];
 let pageSize = parseInt(localStorage.getItem('aps.pageSize')||'20');
 let currentPage = 1;
+const presetVersion = new URLSearchParams(location.search).get('version') || '';
+
+function formatDateTime(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const yyyy = date.getFullYear();
+  const MM = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+  return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
+}
+
+function getLatestRunForData(data) {
+  if (!Array.isArray(data) || data.length === 0) return null;
+  const rowsWithCalculatedAt = data.filter(d => d.calculatedAt);
+  if (rowsWithCalculatedAt.length === 0) return null;
+  const latestRow = rowsWithCalculatedAt.reduce((latest, row) => {
+    if (!latest) return row;
+    const latestAt = new Date(latest.calculatedAt).getTime();
+    const rowAt = new Date(row.calculatedAt).getTime();
+    if (rowAt !== latestAt) return rowAt > latestAt ? row : latest;
+    const latestId = Number(latest.id ?? -1);
+    const rowId = Number(row.id ?? -1);
+    return rowId > latestId ? row : latest;
+  }, null);
+  if (!latestRow) return null;
+  return {
+    version: latestRow.version || '—',
+    calculatedAt: latestRow.calculatedAt,
+  };
+}
 
 function changePageSize(val){pageSize=parseInt(val);localStorage.setItem('aps.pageSize',String(pageSize));currentPage=1;renderTable(filteredData);}
 
@@ -367,18 +419,25 @@ async function loadData() {
     if (vSel) {
       vSel.innerHTML = '<option value="">全部版本</option>' +
         versions.map(v => `<option value="${v}">${v}</option>`).join('');
+      if (presetVersion && versions.includes(presetVersion)) {
+        vSel.value = presetVersion;
+      }
     }
 
     const r = await fetch(`${API}/api/production-plan`);
     const j = await r.json();
     planData = j.data || [];
     filteredData = planData;
+    ApsTableMultiSort.bindTable(document.querySelector('.data-table'), planSortState, () => renderTable(filteredData));
     renderTable(filteredData);
     updateStats(filteredData);
     populateFilters(planData);
+    if (presetVersion) {
+      applyFilters();
+    }
   } catch(e) {
     const tbody = document.getElementById('dataTbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:32px;color:var(--color-error)">加载失败，请确认后端服务已启动</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:32px;color:var(--color-error)">加载失败，请确认后端服务已启动</td></tr>';
     console.error('loadData failed', e);
   }
 }
@@ -413,9 +472,10 @@ function resetFilters() {
 function renderTable(data) {
   const tbody = document.getElementById('dataTbody');
   if (!tbody) return;
-  const total = data.length;
+  const sortedData = ApsTableMultiSort.sortRows(data, planSortState.sortChain, planColumnDefs);
+  const total = sortedData.length;
   if (total === 0) {
-    tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
     const tl = document.querySelector('.toolbar-left');
     if (tl) tl.innerHTML = '共 <b>0</b> 条计划记录';
     const pi = document.getElementById('pagerInfo'); if(pi) pi.textContent='共 0 条';
@@ -425,7 +485,7 @@ function renderTable(data) {
   const ps = pageSize===0 ? total : pageSize;
   const totalPages = Math.ceil(total/ps)||1;
   if(currentPage>totalPages) currentPage=totalPages;
-  const slice = data.slice((currentPage-1)*ps, currentPage*ps);
+  const slice = sortedData.slice((currentPage-1)*ps, currentPage*ps);
   const pi = document.getElementById('pagerInfo');
   if(pi) pi.textContent = ps>=total ? `共 ${total} 条` : `共 ${total} 条 · 第 ${currentPage}/${totalPages} 页`;
   const sel = document.getElementById('pageSizeSelect'); if(sel&&sel.value!==String(pageSize)){sel.value=String(pageSize);if(!sel.value)sel.value='20';}
@@ -435,9 +495,6 @@ function renderTable(data) {
   tbody.innerHTML = slice.map(d => `
     <tr style="cursor:pointer" onclick='showDetailFromData(${JSON.stringify(d).replace(/'/g,"&apos;")})'>
       <td class="code">${d.finishedProductCode||'—'}</td>
-      <td>${d.finishedProductName||'—'}</td>
-      <td>${d.finishedProductNo||'—'}</td>
-      <td>${d.finishedProjectName||'—'}</td>
       <td class="code">${d.itemCode||'—'}</td>
       <td>${d.itemProductName||'—'}</td>
       <td>${d.itemProductNo||'—'}</td>
@@ -466,6 +523,12 @@ function updateStats(data) {
   if (statVals[1]) statVals[1].textContent = data.length;
   if (statVals[2]) statVals[2].textContent = needProduce;
   if (statVals[3]) statVals[3].textContent = data.length - needProduce;
+  const latestRun = getLatestRunForData(data);
+  const versionText = document.getElementById('filterVersion')?.value || latestRun?.version || '全部版本';
+  const statVersion = document.getElementById('statVersion');
+  const statCalculatedAt = document.getElementById('statCalculatedAt');
+  if (statVersion) statVersion.textContent = versionText || '全部版本';
+  if (statCalculatedAt) statCalculatedAt.textContent = latestRun ? `最近计算：${formatDateTime(latestRun.calculatedAt)}` : '最近计算：—';
 }
 
 function populateFilters(data) {

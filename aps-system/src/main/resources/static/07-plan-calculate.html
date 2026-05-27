@@ -131,7 +131,7 @@ input[type=text]:focus,select:focus,textarea:focus{border-color:var(--color-prim
   <div class="nav-group">
     <div class="nav-group-label">基础数据</div>
     <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
-    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a><a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a><a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a><a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
     <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
     <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
     <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
@@ -252,6 +252,7 @@ input[type=text]:focus,select:focus,textarea:focus{border-color:var(--color-prim
           <div class="last-run" id="lastRun">
             <div class="lr-title">上次计算记录</div>
             <div class="lr-row"><span>结果版本</span><b id="lrVersion">—</b></div>
+            <div class="lr-row"><span>计算时间</span><b id="lrCalculatedAt">—</b></div>
             <div class="lr-row"><span>结果行数</span><b id="lrRows">—</b></div>
             <div class="lr-row"><span>需生产</span><b id="lrProduce">—</b></div>
             <div class="lr-row"><span>状态</span><b id="lrStatus" style="color:var(--color-neutral-400)">—</b></div>
@@ -301,6 +302,48 @@ function syncResultVersion() {
     rv.value = bv;
     _lastAutoVersion = bv;
   }
+}
+
+function getLatestPlanRun(planData) {
+  if (!Array.isArray(planData) || planData.length === 0) {
+    return null;
+  }
+  const rowsWithCalculatedAt = planData.filter(d => d.calculatedAt);
+  const latestRow = (rowsWithCalculatedAt.length > 0 ? rowsWithCalculatedAt : planData).reduce((latest, row) => {
+    if (!latest) return row;
+    const latestAt = latest.calculatedAt ? new Date(latest.calculatedAt).getTime() : -1;
+    const rowAt = row.calculatedAt ? new Date(row.calculatedAt).getTime() : -1;
+    if (rowAt !== latestAt) {
+      return rowAt > latestAt ? row : latest;
+    }
+    const latestId = Number(latest.id ?? -1);
+    const rowId = Number(row.id ?? -1);
+    return rowId > latestId ? row : latest;
+  }, null);
+  const latestVersion = latestRow?.version;
+  if (!latestVersion) {
+    return null;
+  }
+  const rows = planData.filter(d => d.version === latestVersion);
+  return {
+    version: latestVersion,
+    rows,
+    produceCount: rows.filter(d => d.isProduce === 'Y').length,
+    calculatedAt: latestRow?.calculatedAt || null,
+  };
+}
+
+function formatDateTime(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const yyyy = date.getFullYear();
+  const MM = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+  return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
 }
 
 // 检查基础数据就绪状态
@@ -368,18 +411,19 @@ async function checkReadiness() {
 
     // 上次计算记录
     const planData = plan.data || [];
-    const planVers = [...new Set(planData.map(d=>d.version).filter(Boolean))].sort();
-    const produceCount = planData.filter(d=>d.isProduce==='Y').length;
+    const latestRun = getLatestPlanRun(planData);
     const lrVersion = document.getElementById('lrVersion');
+    const lrCalculatedAt = document.getElementById('lrCalculatedAt');
     const lrRows    = document.getElementById('lrRows');
     const lrProduce = document.getElementById('lrProduce');
     const lrStatus  = document.getElementById('lrStatus');
-    if (lrVersion) lrVersion.textContent = planVers.length ? planVers.join(' / ') : '无';
-    if (lrRows)    lrRows.textContent    = planData.length ? `${planData.length} 行` : '无';
-    if (lrProduce) lrProduce.textContent = planData.length ? `${produceCount} 行` : '—';
+    if (lrVersion) lrVersion.textContent = latestRun ? latestRun.version : '无';
+    if (lrCalculatedAt) lrCalculatedAt.textContent = latestRun ? formatDateTime(latestRun.calculatedAt) : '—';
+    if (lrRows)    lrRows.textContent    = latestRun ? `${latestRun.rows.length} 行` : '无';
+    if (lrProduce) lrProduce.textContent = latestRun ? `${latestRun.produceCount} 行` : '—';
     if (lrStatus) {
-      lrStatus.textContent  = planData.length ? '已有结果' : '暂无结果';
-      lrStatus.style.color  = planData.length ? 'var(--color-accent)' : 'var(--color-neutral-400)';
+      lrStatus.textContent  = latestRun ? '已有结果' : '暂无结果';
+      lrStatus.style.color  = latestRun ? 'var(--color-accent)' : 'var(--color-neutral-400)';
     }
   } catch(e) {
     console.warn('readiness check failed', e);
@@ -424,6 +468,7 @@ window.runCalc = async function() {
   try {
     const version       = document.getElementById('baseVersion')?.value?.trim() || null;
     const resultVersion = document.getElementById('resultVersion')?.value?.trim() || null;
+    const finalResultVersion = resultVersion || version;
     if (!version) {
       btn.classList.remove('loading'); btn.disabled = false; txt.textContent = '▶ 执行计算';
       progArea.classList.remove('show');
@@ -445,18 +490,18 @@ window.runCalc = async function() {
     const pr = await fetch(`${API}/api/production-plan`).then(r=>r.json());
     const count = (pr.data||[]).length;
 
-    logBox.innerHTML += `<div><span class="log-time">[${ts}]</span> <span class="log-ok">✓ 计算完成，共生成 ${count} 条计划结果</span></div>`;
+    logBox.innerHTML += `<div><span class="log-time">[${ts}]</span> <span class="log-ok">✓ 计算完成，共生成 ${count} 条计划结果，结果版本：${finalResultVersion}</span></div>`;
     logBox.scrollTop = logBox.scrollHeight;
 
     btn.classList.remove('loading'); txt.textContent = '✓ 已完成'; btn.style.background = 'var(--color-success)';
     goResult.classList.add('show');
-    goResult.querySelector('a').textContent = `→ 查看 ${count} 行计划结果`;
-    goResult.querySelector('a').href = '08-plan-result.html';
+    goResult.querySelector('a').textContent = `→ 查看 ${count} 行计划结果（${finalResultVersion}）`;
+    goResult.querySelector('a').href = `08-plan-result.html?version=${encodeURIComponent(finalResultVersion)}`;
 
     if (calcResult) {
       calcResult.innerHTML = `<div style="padding:16px;background:rgba(0,135,90,.08);border:1px solid rgba(0,135,90,.2);border-radius:8px;color:var(--color-accent);font-size:13px">
-        ✓ 计算完成，共生成 <b style="font-family:var(--font-data)">${count}</b> 条计划结果
-        <a href="08-plan-result.html" style="margin-left:12px;color:var(--color-primary);text-decoration:none">查看结果 →</a>
+        ✓ 计算完成，共生成 <b style="font-family:var(--font-data)">${count}</b> 条计划结果，结果版本为 <b style="font-family:var(--font-data)">${finalResultVersion}</b>
+        <a href="08-plan-result.html?version=${encodeURIComponent(finalResultVersion)}" style="margin-left:12px;color:var(--color-primary);text-decoration:none">查看结果 →</a>
       </div>`;
       calcResult.style.display = 'block';
     }

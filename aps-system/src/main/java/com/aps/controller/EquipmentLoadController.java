@@ -23,10 +23,12 @@ public class EquipmentLoadController {
      * 获取设备负荷报表
      *
      * @param periods 期间列表（YYYYMM，可选，不传则查询全部）
+     * @param version 版本号（可选，传入时优先按版本查询）
      */
     @GetMapping
     public ApiResponse<List<EquipmentLoadRow>> getReport(
-            @RequestParam(required = false) List<Integer> periods) {
-        return ApiResponse.success(equipmentLoadService.calculateEquipmentLoad(periods));
+            @RequestParam(required = false) List<Integer> periods,
+            @RequestParam(required = false) String version) {
+        return ApiResponse.success(equipmentLoadService.calculateEquipmentLoad(periods, version));
     }
 }
