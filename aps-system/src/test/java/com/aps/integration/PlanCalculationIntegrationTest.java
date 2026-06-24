@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -34,9 +36,13 @@ class PlanCalculationIntegrationTest {
     @Autowired private ProductionPlanRepository productionPlanRepository;
 
     private CalculateRequest request(String version) {
+        return request(version, "result-" + version);
+    }
+
+    private CalculateRequest request(String version, String resultVersion) {
         CalculateRequest req = new CalculateRequest();
         req.setVersion(version);
-        req.setResultVersion("result-" + version);
+        req.setResultVersion(resultVersion);
         return req;
     }
 
@@ -83,6 +89,7 @@ class PlanCalculationIntegrationTest {
         // 辅助字段
         assertThat(plan.getScrapRate()).isEqualTo(0.0);
         assertThat(plan.getSafetyDays()).isEqualTo(0.0);
+        assertThat(plan.getCalculatedAt()).isNotNull();
     }
 
     // =========================================================================
@@ -138,6 +145,60 @@ class PlanCalculationIntegrationTest {
         assertThat(p2.getPlanQty()).isEqualTo(120.0);
     }
 
+    @Test
+    void childForecastInNextPeriod_reflectsPreviousPeriodCarryoverDeduction() {
+        String version = "202601";
+        demandRepository.save(new Demand(null, "AAA", "P007", 202606, 100.0, null, null, 100.0, version));
+        demandRepository.save(new Demand(null, "AAA", "P007", 202607, 464.0, null, null, 464.0, version));
+        inventoryCountRepository.save(new InventoryCount(null, "C007", 202606, 150.0, version));
+
+        bomRepository.save(new Bom(null, "P007", "P007", "C007", 1.0, null, null, "制造一部", "单元A", null, null, null, null, null, version));
+        bomRepository.save(new Bom(null, "P007", "C007", null, 0.0, "PROC-C", "EQ-C", "制造一部", "单元A", null, null, null, null, null, version));
+
+        planCalculationService.calculate(request(version));
+
+        List<ProductionPlan> childPlans = productionPlanRepository.findByFinishedProductCode("P007").stream()
+                .filter(plan -> "C007".equals(plan.getItemCode()))
+                .sorted((left, right) -> left.getYearMonth() - right.getYearMonth())
+                .collect(Collectors.toList());
+
+        assertThat(childPlans).hasSize(2);
+        assertThat(childPlans.get(0).getYearMonth()).isEqualTo(202606);
+        assertThat(childPlans.get(0).getForecast()).isEqualTo(100.0);
+        assertThat(childPlans.get(0).getPlanQty()).isEqualTo(0.0);
+
+        assertThat(childPlans.get(1).getYearMonth()).isEqualTo(202607);
+        assertThat(childPlans.get(1).getCurrentInventory()).isEqualTo(50.0);
+        assertThat(childPlans.get(1).getForecast()).isEqualTo(414.0);
+        assertThat(childPlans.get(1).getPlanQty()).isEqualTo(414.0);
+    }
+
+    @Test
+    void finishedProductNextPeriod_usesPreviousTheoreticalCarryoverInsteadOfImportedNetDemand() {
+        String version = "202601";
+        demandRepository.save(new Demand(null, "AAA", "P008", 202606, 537.0, 1152.0, 120.0, 0.0, version));
+        demandRepository.save(new Demand(null, "AAA", "P008", 202607, 374.0, 0.0, 90.0, 464.0, version));
+
+        planCalculationService.calculate(request(version));
+
+        List<ProductionPlan> plans = productionPlanRepository.findByFinishedProductCode("P008");
+        assertThat(plans).hasSize(2);
+
+        plans.sort((a, b) -> a.getYearMonth() - b.getYearMonth());
+        ProductionPlan june = plans.get(0);
+        ProductionPlan july = plans.get(1);
+
+        assertThat(june.getYearMonth()).isEqualTo(202606);
+        assertThat(june.getForecast()).isEqualTo(0.0);
+        assertThat(june.getPlanQty()).isEqualTo(0.0);
+
+        assertThat(july.getYearMonth()).isEqualTo(202607);
+        assertThat(july.getCurrentInventory()).isEqualTo(615.0);
+        assertThat(july.getForecast()).isEqualTo(0.0);
+        assertThat(july.getPlanQty()).isEqualTo(0.0);
+        assertThat(july.getIsProduce()).isEqualTo("N");
+    }
+
     // =========================================================================
     // 场景 4：父件 + 子件（BOM 两层）
     // =========================================================================
@@ -153,9 +214,9 @@ class PlanCalculationIntegrationTest {
         inventoryCountRepository.save(new InventoryCount(null, "P004", 202512, 0.0, version));
         inventoryCountRepository.save(new InventoryCount(null, "C004", 202512, 0.0, version));
         // P004→C004 的用量关系（工序信息不放在此行）
-        bomRepository.save(new Bom(null, "P004", "C004", 2.0, null, null, "制造一部", "单元A", null, null, null, null, null, version));
+        bomRepository.save(new Bom(null, "P004", "P004", "C004", 2.0, null, null, "制造一部", "单元A", null, null, null, null, null, version));
         // C004 作为"父零件"的叶节点行（childCode=null）：存储 C004 自身的工序信息
-        bomRepository.save(new Bom(null, "C004", null, 0.0, "PROC-A", "EQ-A", "制造一部", "单元A", 2, 20.0, 1.0, 10.0, null, version));
+        bomRepository.save(new Bom(null, "P004", "C004", null, 0.0, "PROC-A", "EQ-A", "制造一部", "单元A", 2, 20.0, 1.0, 10.0, null, version));
 
         planCalculationService.calculate(request(version));
 
@@ -180,6 +241,8 @@ class PlanCalculationIntegrationTest {
         assertThat(childPlan.getEquipment()).isEqualTo("EQ-A");
         assertThat(childPlan.getManufacturingDepartment()).isEqualTo("制造一部");
         assertThat(childPlan.getManufacturingUnit()).isEqualTo("单元A");
+        assertThat(plans).extracting(ProductionPlan::getCalculatedAt).doesNotContainNull();
+        assertThat(plans).extracting(ProductionPlan::getCalculatedAt).containsOnly(parentPlan.getCalculatedAt());
     }
 
     // =========================================================================
@@ -204,5 +267,27 @@ class PlanCalculationIntegrationTest {
         assertThat(period1Plans).allMatch(p -> p.getYearMonth() == 202601);
         assertThat(period2Plans).isNotEmpty();
         assertThat(period2Plans).allMatch(p -> p.getYearMonth() == 202602);
+    }
+
+    @Test
+    void explicitResultVersion_replacesPreviousRowsOfSameResultVersion() {
+        String version = "202601";
+        String resultVersion = "manual-result-v1";
+        demandRepository.save(new Demand(null, "AAA", "P006", 202601, 100.0, null, null, 100.0, version));
+        operatingDaysRepository.save(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0));
+        inventoryCountRepository.save(new InventoryCount(null, "P006", 202512, 0.0, version));
+
+        planCalculationService.calculate(request(version, resultVersion));
+        assertThat(productionPlanRepository.findByVersion(resultVersion)).hasSize(1);
+
+        demandRepository.deleteAllInBatch();
+        demandRepository.save(new Demand(null, "AAA", "P006", 202601, 200.0, null, null, 200.0, version));
+
+        planCalculationService.calculate(request(version, resultVersion));
+
+        List<ProductionPlan> plans = productionPlanRepository.findByVersion(resultVersion);
+        assertThat(plans).hasSize(1);
+        assertThat(plans.get(0).getPlanQty()).isEqualTo(200.0);
+        assertThat(plans.get(0).getCalculatedAt()).isNotNull();
     }
 }

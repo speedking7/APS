@@ -6,6 +6,9 @@ import com.aps.service.WorkforceDetailService;
 import com.aps.service.WorkforceReportService;
 import com.aps.service.WorkforceRow;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,5 +47,20 @@ public class WorkforceReportController {
     public ApiResponse<List<WorkforceDetailRow>> getDetails(
             @RequestParam String version) {
         return ApiResponse.success(workforceDetailService.findDetailsByVersion(version));
+    }
+
+    @GetMapping("/details/export")
+    public ResponseEntity<byte[]> exportDetails(
+            @RequestParam String version,
+            @RequestParam(required = false) String month,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String unit,
+            @RequestParam(required = false) String process,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "detail") String viewMode) throws Exception {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=workforce-report.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(workforceDetailService.exportWorkbook(version, month, department, unit, process, keyword, viewMode));
     }
 }

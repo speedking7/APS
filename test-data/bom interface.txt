@@ -1,0 +1,9 @@
+SELECT b3.erp_code, b1.erp_code, CONCAT(b3.erp_code,'@',b1.gridorder), 
+b2.erp_code, CONCAT(b3.erp_code,'@',b2.gridorder), b1.qty, b1.`process`, 
+b1.manufature_equip, b1.manufacture_var2, b1.manufacture_var3, 
+b1.color_config, b1.manufacture_report, 
+b1.cavities, b1.production_cycle, b1.holding_number, b1.single_piece, b1.nonperform_rate/100
+FROM bom_det b1, bom_det b2, bom_det b3 
+WHERE b1.project_bom_id = b2.project_bom_id AND b1.gridorder = b2.parent_gridorder AND b1.part_type = 'M'
+AND b1.project_bom_id = b3.project_bom_id AND b3.lever_number = 1
+ORDER BY b3.project_bom_id, b1.lever_number, b1.gridorder, b2.gridorder

@@ -111,17 +111,21 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <div class="logo-mark">APS</div>
     <div><div class="logo-text">高级计划排程</div><div class="logo-sub">MANUFACTURING · v1.0</div></div>
   </div>
-  <div class="nav-group"><div class="nav-group-label">导航</div><a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a></div>
-  <div class="nav-group"><div class="nav-group-label">工作台</div><a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a></div>
+  <div class="nav-group">
+    <div class="nav-group-label">导航</div>
+    <a href="index.html" class="nav-item"><span class="ni">◉</span>总览</a>
+    <a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a>
+  </div>
   <div class="nav-group">
     <div class="nav-group-label">基础数据</div>
     <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
-    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
+    <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM主数据</a>
     <a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a>
     <a href="12-equipment-catalog.html" class="nav-item active"><span class="ni">⌘</span>设备清单</a>
-    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
+    <a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
     <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
-    <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
   </div>
   <div class="nav-group">
     <div class="nav-group-label">生产计划</div>
@@ -144,7 +148,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   <div class="content">
     <div class="page-head">
       <div class="page-title">设备清单</div>
-      <div class="page-sub">维护制造部门下的设备大类、品牌、小类和台数，导入按制造部门全删全导</div>
+        <div class="page-sub">维护制造部门下的设备大类、品牌、小类和台数</div>
     </div>
 
     <div class="stat-grid">
@@ -176,7 +180,6 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <div style="font-size:13px;color:var(--color-neutral-600)">共 <b id="totalRows" style="font-family:var(--font-data);color:var(--color-neutral-800)">0</b> 条设备记录</div>
       <div class="spacer"></div>
       <a class="btn btn-ghost" href="/template-equipment-catalog.xlsx" download>↓ 下载模板</a>
-      <button class="btn btn-ghost" onclick="exportCatalog()">导出</button>
       <button class="btn btn-primary" onclick="openImportModal()">⬆ 批量导入</button>
       <button class="btn btn-secondary" onclick="openEditModal(null)">+ 新增</button>
     </div>
@@ -438,10 +441,6 @@ async function confirmImport() {
     return;
   }
   result.innerHTML = json.message || '导入失败';
-}
-
-function exportCatalog() {
-  window.location.href = `${API}/api/equipment-catalog/export`;
 }
 
 loadData();

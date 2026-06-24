@@ -21,7 +21,7 @@ public class OperatingDays {
     private Long id;
 
     /** 年月，例如 202604 */
-    @Column(name = "`year_month`", nullable = false, unique = true)
+    @Column(name = "year_month", nullable = false, unique = true)
     private Integer yearMonth;
 
     /** 总出勤天数 */

@@ -25,7 +25,7 @@ public class InventoryCount {
     private String itemCode;
 
     /** 年月（期末） */
-    @Column(name = "`year_month`", nullable = false)
+    @Column(name = "year_month", nullable = false)
     private Integer yearMonth;
 
     /** 可用量 */

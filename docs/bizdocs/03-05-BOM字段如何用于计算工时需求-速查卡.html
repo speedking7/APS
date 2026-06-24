@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BOM 字段如何用于计算工时需求（速查卡）</title>
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=satoshi:500,700,900|instrument-sans:400,500,600|geist:400,500,600,700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --paper:#f4f1ea;
+  --ink:#1e2329;
+  --muted:#5f6b78;
+  --line:#d6d0c5;
+  --panel:#fffdf8;
+  --accent:#0b5d4b;
+  --accent-soft:#dff3ea;
+  --warn:#8a5a00;
+  --warn-soft:#fff1cf;
+  --code:#203449;
+  --shadow:0 18px 42px rgba(24,32,40,.10);
+  --font-display:'Satoshi',sans-serif;
+  --font-body:'Instrument Sans',sans-serif;
+  --font-data:'Geist',monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:var(--font-body);
+  color:var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(11,93,75,.08), transparent 30%),
+    linear-gradient(180deg, #f8f6f0 0%, var(--paper) 100%);
+}
+.page{
+  max-width:1120px;
+  margin:0 auto;
+  padding:40px 24px 56px;
+}
+.hero{
+  background:linear-gradient(135deg, #133c33 0%, #0b5d4b 62%, #2b8672 100%);
+  color:#f8fffc;
+  border-radius:28px;
+  padding:30px 32px 28px;
+  box-shadow:var(--shadow);
+  position:relative;
+  overflow:hidden;
+}
+.hero::after{
+  content:"";
+  position:absolute;
+  inset:auto -60px -80px auto;
+  width:260px;
+  height:260px;
+  border-radius:50%;
+  background:rgba(255,255,255,.08);
+}
+.eyebrow{
+  font-family:var(--font-data);
+  font-size:12px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  opacity:.82;
+  margin-bottom:12px;
+}
+.hero h1{
+  margin:0;
+  font-family:var(--font-display);
+  font-size:34px;
+  line-height:1.08;
+  letter-spacing:-.03em;
+}
+.hero p{
+  margin:14px 0 0;
+  max-width:760px;
+  font-size:15px;
+  line-height:1.6;
+  color:rgba(248,255,252,.88);
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  gap:18px;
+  margin-top:22px;
+}
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:22px 22px 20px;
+  box-shadow:0 10px 24px rgba(18,26,34,.05);
+}
+.span-12{grid-column:span 12}
+.span-7{grid-column:span 7}
+.span-5{grid-column:span 5}
+.span-6{grid-column:span 6}
+.span-4{grid-column:span 4}
+.title{
+  margin:0 0 14px;
+  font-family:var(--font-display);
+  font-size:20px;
+  letter-spacing:-.02em;
+}
+.formula{
+  background:#142433;
+  color:#f3f8fe;
+  border-radius:18px;
+  padding:20px 22px;
+}
+.formula .label{
+  font-family:var(--font-data);
+  font-size:12px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:#9eb6cf;
+  margin-bottom:12px;
+}
+.formula .expr{
+  font-family:var(--font-data);
+  font-size:27px;
+  line-height:1.35;
+  font-weight:700;
+  word-break:break-word;
+}
+.mini{
+  margin-top:14px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.pill{
+  padding:8px 12px;
+  border-radius:999px;
+  font-size:12px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.12);
+}
+.list{
+  margin:0;
+  padding-left:18px;
+  line-height:1.7;
+  color:var(--muted);
+}
+.list li+li{margin-top:6px}
+.list b{color:var(--ink)}
+.matrix{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.tile{
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:14px 15px;
+  background:#fff;
+}
+.tile h3{
+  margin:0 0 6px;
+  font-size:15px;
+}
+.tile p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.55;
+  font-size:13.5px;
+}
+.accent{
+  background:var(--accent-soft);
+  border-color:#b8e0d2;
+}
+.warn{
+  background:var(--warn-soft);
+  border-color:#f0d89c;
+}
+.flow{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+.step{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px;
+}
+.step-no{
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--accent);
+  color:#fff;
+  font-family:var(--font-data);
+  font-size:13px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+.step h3{
+  margin:0 0 6px;
+  font-size:15px;
+}
+.step p{
+  margin:0;
+  color:var(--muted);
+  font-size:13.5px;
+  line-height:1.58;
+}
+.example{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+.table th,.table td{
+  border-bottom:1px solid var(--line);
+  padding:10px 8px;
+  text-align:left;
+}
+.table th{
+  font-size:12px;
+  color:var(--muted);
+  font-family:var(--font-data);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.table td.code{
+  font-family:var(--font-data);
+  color:var(--code);
+}
+.result{
+  border-radius:18px;
+  background:#fff;
+  border:1px solid var(--line);
+  padding:18px;
+}
+.result-line{
+  font-family:var(--font-data);
+  font-size:16px;
+  line-height:1.7;
+  color:var(--code);
+}
+.result strong{
+  color:var(--accent);
+}
+.mistakes{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.mistake{
+  border-left:4px solid var(--warn);
+  background:#fff;
+  border-radius:14px;
+  padding:14px 16px;
+  border:1px solid var(--line);
+}
+.mistake h3{
+  margin:0 0 5px;
+  font-size:15px;
+}
+.mistake p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.55;
+  font-size:13.5px;
+}
+.footer{
+  margin-top:18px;
+  color:var(--muted);
+  font-size:12.5px;
+  text-align:right;
+}
+@media (max-width: 900px){
+  .hero h1{font-size:28px}
+  .span-7,.span-5,.span-6,.span-4{grid-column:span 12}
+  .flow,.example,.matrix{grid-template-columns:1fr}
+  .formula .expr{font-size:22px}
+}
+</style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">APS · Workforce Formula Card</div>
+      <h1>BOM 字段如何用于计算工时需求</h1>
+      <p>这是给开发、测试、业务对口径时快速查看的速查卡。只保留当前系统真实实现里最关键的公式、字段和判断规则。</p>
+    </section>
+
+    <section class="grid">
+      <article class="card span-7 formula">
+        <div class="label">核心公式</div>
+        <div class="expr">工时需求(小时) = planQty × staffCount × taktTime ÷ 3600</div>
+        <div class="mini">
+          <span class="pill">planQty = 计划生产数</span>
+          <span class="pill">staffCount = 持台人数</span>
+          <span class="pill">taktTime = 单件节拍(秒)</span>
+        </div>
+      </article>
+
+      <article class="card span-5">
+        <h2 class="title">最短记忆版</h2>
+        <ul class="list">
+          <li>先算 <b>planQty</b></li>
+          <li>再算 <b>工时 = planQty × staffCount × taktTime ÷ 3600</b></li>
+          <li>人工工时重点只看 <b>staffCount</b>、<b>taktTime</b></li>
+          <li><b>cycleTime</b>、<b>moldCavity</b> 当前不进人工工时公式</li>
+        </ul>
+      </article>
+
+      <article class="card span-6">
+        <h2 class="title">直接参与工时公式的字段</h2>
+        <div class="matrix">
+          <div class="tile accent">
+            <h3><code>staffCount</code></h3>
+            <p>持台人数。直接乘进工时公式，改动后工时会立刻变化。</p>
+          </div>
+          <div class="tile accent">
+            <h3><code>taktTime</code></h3>
+            <p>单件节拍，单位秒。直接乘进工时公式，改动后工时会立刻变化。</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="card span-6">
+        <h2 class="title">间接影响工时的字段</h2>
+        <ul class="list">
+          <li><b><code>usageQty</code></b>：影响子件需求和子件 <code>planQty</code></li>
+          <li><b><code>scrapRate</code></b>：影响投产数量，从而影响 <code>planQty</code></li>
+          <li><b><code>rootProductCode / parentCode / childCode</code></b>：决定 BOM 展开路径</li>
+        </ul>
+      </article>
+
+      <article class="card span-12">
+        <h2 class="title">完整计算链路</h2>
+        <div class="flow">
+          <div class="step">
+            <div class="step-no">01</div>
+            <h3>BOM 展开</h3>
+            <p>先用 <code>usageQty</code>、<code>scrapRate</code>、层级关系展开，得到每条计划结果的 <code>planQty</code>。</p>
+          </div>
+          <div class="step">
+            <div class="step-no">02</div>
+            <h3>工艺字段带入</h3>
+            <p>计划计算阶段把 BOM 上的 <code>staffCount</code>、<code>taktTime</code> 等字段写入生产计划结果。</p>
+          </div>
+          <div class="step">
+            <div class="step-no">03</div>
+            <h3>逐行算工时</h3>
+            <p>按 <code>planQty × staffCount × taktTime</code> 算出秒数，再除以 <code>3600</code> 转小时。</p>
+          </div>
+          <div class="step">
+            <div class="step-no">04</div>
+            <h3>按维度汇总</h3>
+            <p>最后再按部门、单元、工序、月份、产品等维度做筛选、汇总和展示。</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="card span-6">
+        <h2 class="title">一眼判断规则</h2>
+        <div class="matrix">
+          <div class="tile">
+            <h3>改了 <code>staffCount</code></h3>
+            <p>工时会直接变化。</p>
+          </div>
+          <div class="tile">
+            <h3>改了 <code>taktTime</code></h3>
+            <p>工时会直接变化。</p>
+          </div>
+          <div class="tile">
+            <h3>改了 <code>usageQty</code></h3>
+            <p>子件 <code>planQty</code> 可能变化，子件工时通常会变化。</p>
+          </div>
+          <div class="tile">
+            <h3>改了 <code>scrapRate</code></h3>
+            <p><code>planQty</code> 可能变化，工时通常会变化。</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="card span-6 warn">
+        <h2 class="title">当前不用于人工工时公式</h2>
+        <ul class="list">
+          <li><b><code>cycleTime</code></b>：主要用于设备负荷</li>
+          <li><b><code>moldCavity</code></b>：主要用于设备负荷</li>
+          <li><b><code>equipment</code></b>：主要用于设备侧归属与展示</li>
+        </ul>
+      </article>
+
+      <article class="card span-12">
+        <h2 class="title">例子</h2>
+        <div class="example">
+          <div>
+            <table class="table">
+              <thead>
+                <tr><th>字段</th><th>值</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="code">planQty</td><td>120</td></tr>
+                <tr><td class="code">staffCount</td><td>2</td></tr>
+                <tr><td class="code">taktTime</td><td>45 秒</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="result">
+            <div class="result-line">requiredSeconds = 120 × 2 × 45 = 10800</div>
+            <div class="result-line">requiredHours = 10800 ÷ 3600 = <strong>3 小时</strong></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card span-12">
+        <h2 class="title">常见误区</h2>
+        <div class="mistakes">
+          <div class="mistake">
+            <h3>误区 1：<code>cycleTime</code> 参与人工工时计算</h3>
+            <p>当前不是。人工工时用的是 <code>taktTime</code>，不是 <code>cycleTime</code>。</p>
+          </div>
+          <div class="mistake">
+            <h3>误区 2：<code>moldCavity</code> 会折减人工工时</h3>
+            <p>当前不会。<code>moldCavity</code> 主要用于设备负荷，不参与人工工时公式。</p>
+          </div>
+          <div class="mistake">
+            <h3>误区 3：<code>scrapRate</code> 需要单独再乘一遍工时</h3>
+            <p>当前不需要。它是先影响 <code>planQty</code>，再间接影响工时。</p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="footer">文档口径：当前 APS 系统真实实现</div>
+  </main>
+</body>
+</html>

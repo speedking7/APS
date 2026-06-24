@@ -1,0 +1,18 @@
+{
+  "version": "20260331-1",
+  "months": [
+    202606,
+    202607,
+    202608
+  ],
+  "bom_rows": 405,
+  "demand_rows": 63,
+  "part_rows": 386,
+  "equipment_rows": 13,
+  "operating_days_rows": 3,
+  "safety_rows": 345,
+  "inventory_rows": 115,
+  "shared_mold_rows": 10,
+  "root_count": 21,
+  "semi_count": 115
+}

@@ -1,5 +1,6 @@
 # Maven
 aps-system/target/
+aps-system/.local-run/
 
 # IDE
 .idea/
@@ -10,9 +11,27 @@ aps-system/target/
 test-results/
 *.webm
 *.png
+node_modules/
+scripts/__pycache__/
+*.pyc
 
 # OS
 .DS_Store
 
 # OMC internal
 .omc/
+.gstack/
+
+# Local runtime logs and scratch files
+aps-system/server.log*
+aps-system/server.err.log*
+*.bak-force
+;; esac; done
+
+# AI scaffold runtime and generated/cache outputs
+.omx/
+.codex/tasks/tmp/
+.codex/worktrees/*
+!.codex/worktrees/README.md
+tools/ai-scaffold/node_modules/
+tools/ai-scaffold/dist/

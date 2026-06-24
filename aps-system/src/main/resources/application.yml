@@ -10,12 +10,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
     database-platform: org.hibernate.dialect.MySQL8Dialect
     defer-datasource-initialization: true   # 确保 JPA 建表后再执行 schema.sql
     properties:
       hibernate:
         format_sql: false
+        auto_quote_keyword: true
   sql:
     init:
       mode: ${SPRING_SQL_INIT_MODE:never}   # Docker 启动时由环境变量设为 always

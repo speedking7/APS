@@ -115,18 +115,21 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <div class="logo-mark">APS</div>
     <div><div class="logo-text">高级计划排程</div><div class="logo-sub">MANUFACTURING · v1.0</div></div>
   </div>
-  <div class="nav-group"><div class="nav-group-label">导航</div><a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a></div>
-  <div class="nav-group"><div class="nav-group-label">工作台</div><a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a></div>
+  <div class="nav-group">
+    <div class="nav-group-label">导航</div>
+    <a href="index.html" class="nav-item"><span class="ni">◉</span>总览</a>
+    <a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a>
+  </div>
   <div class="nav-group">
     <div class="nav-group-label">基础数据</div>
     <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
-    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a>
+    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
+    <a href="06-inventory-count.html" class="nav-item active"><span class="ni">▦</span>盘点数</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM主数据</a>
     <a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a>
     <a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a>
     <a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
-    <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
     <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
-    <a href="06-inventory-count.html" class="nav-item active"><span class="ni">▦</span>盘点数</a>
   </div>
   <div class="nav-group">
     <div class="nav-group-label">生产计划</div>
@@ -175,7 +178,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
         <input type="text" id="filterYearMonth" placeholder="如 202603" maxlength="6">
       </div>
       <div class="field"><label>版本号</label>
-        <input type="text" id="filterVersion" placeholder="如 20260331-1">
+        <select id="filterVersion"><option value="">全部版本</option></select>
       </div>
       <div class="spacer"></div>
       <button class="btn btn-ghost" onclick="resetFilter()">重置</button>
@@ -185,10 +188,9 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <div class="toolbar" style="margin-bottom:16px">
       <div style="font-size:13px;color:var(--color-neutral-600)">共 <b id="totalCount" style="font-family:var(--font-data);color:var(--color-neutral-800)">0</b> 条盘点记录</div>
       <div class="spacer"></div>
-      <button class="btn btn-ghost">导出</button>
-      <button class="btn btn-secondary" onclick="openEditModal(null)">+ 新增</button>
       <a class="btn btn-ghost" href="/template-inventory.xlsx" download>↓ 下载模板</a>
       <button class="btn btn-primary" onclick="openImportModal()">⬆ 批量导入</button>
+      <button class="btn btn-secondary" onclick="openEditModal(null)">+ 新增</button>
     </div>
 
     <div class="table-wrap">
@@ -307,27 +309,36 @@ async function loadData(){
   const r=await fetch(`${API}/api/inventory-count`);
   const j=await r.json();
   allData=j.data||[];
+  populateVersionFilter(allData);
   ApsTableMultiSort.bindTable(document.querySelector('.data-table'), inventorySortState, () => renderTable());
   applyFilter();
-  updateStats(allData);
+}
+
+function populateVersionFilter(data){
+  const select=document.getElementById('filterVersion');
+  if(!select) return;
+  const previousValue=select.value;
+  const versions=[...new Set((data||[]).map(d=>d.version).filter(Boolean))].sort();
+  select.innerHTML='<option value=\"\">全部版本</option>'+versions.map(version=>`<option value="${version}">${version}</option>`).join('');
+  if(versions.includes(previousValue)) select.value=previousValue;
 }
 
 function applyFilter(){
   const ic=document.getElementById('filterItemCode').value.trim().toLowerCase();
   const ym=document.getElementById('filterYearMonth').value.trim();
-  const ver=document.getElementById('filterVersion').value.trim().toLowerCase();
+  const ver=document.getElementById('filterVersion').value.trim();
   filteredData=allData.filter(d=>
     (!ic  ||d.itemCode.toLowerCase().includes(ic))&&
     (!ym  ||String(d.yearMonth).includes(ym))&&
-    (!ver ||(d.version||'').toLowerCase().includes(ver))
+    (!ver ||(d.version||'')===ver)
   );
   currentPage = 1;
+  updateStats(filteredData);
   renderTable();
 }
 
 function resetFilter(){
   ['filterItemCode','filterYearMonth','filterVersion'].forEach(id=>document.getElementById(id).value='');
-  applyFilter();
 }
 
 let pageSize=parseInt(localStorage.getItem('aps.pageSize')||'20');
@@ -383,9 +394,10 @@ function updateStats(data){
   const periods=data.map(d=>d.yearMonth).sort();
   const latest=periods.length?periods[periods.length-1]:'—';
   const versions=[...new Set(data.map(d=>d.version).filter(Boolean))];
+  const selectedVersion=document.getElementById('filterVersion')?.value?.trim()||'';
   document.getElementById('statLatest').textContent=latest;
   document.getElementById('statCount').textContent=codes.size;
-  document.getElementById('statVersion').textContent=versions.length?versions[versions.length-1]:'—';
+  document.getElementById('statVersion').textContent=selectedVersion||(versions.length?'全部版本':'—');
 }
 
 function openEditModal(d){

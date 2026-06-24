@@ -122,19 +122,19 @@ input[type=text]:focus,select:focus,textarea:focus{border-color:var(--color-prim
   </div>
   <div class="nav-group">
     <div class="nav-group-label">导航</div>
-    <a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a>
-  </div>
-  <div class="nav-group">
-    <div class="nav-group-label">工作台</div>
+    <a href="index.html" class="nav-item"><span class="ni">◉</span>总览</a>
     <a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a>
   </div>
   <div class="nav-group">
     <div class="nav-group-label">基础数据</div>
     <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
-    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a><a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a><a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a><a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
     <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
-    <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
     <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM主数据</a>
+    <a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a>
+    <a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a>
+    <a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
+    <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
   </div>
   <div class="nav-group">
     <div class="nav-group-label">生产计划</div>
@@ -195,7 +195,7 @@ input[type=text]:focus,select:focus,textarea:focus{border-color:var(--color-prim
               <option value="">加载中…</option>
             </select>
             <div style="margin-top:6px;font-size:11px;color:var(--color-neutral-400)">
-              版本列表从入库需求数、BOM、安全库存、稼动天数、盘点数中动态加载
+              版本列表从入库需求数、BOM、安全库存、盘点数中动态加载
             </div>
           </div>
 
@@ -235,11 +235,6 @@ input[type=text]:focus,select:focus,textarea:focus{border-color:var(--color-prim
             <div class="check-item">
               <div class="check-icon ok">✓</div>
               <div class="check-name">库存天数</div>
-              <div class="check-detail">加载中…</div>
-            </div>
-            <div class="check-item">
-              <div class="check-icon ok">✓</div>
-              <div class="check-name">稼动天数</div>
               <div class="check-detail">加载中…</div>
             </div>
             <div class="check-item">
@@ -370,7 +365,6 @@ async function checkReadiness() {
       ...(dem.data||[]).map(d=>d.version),
       ...(bom.data||[]).map(d=>d.version),
       ...(ss.data||[]).map(d=>d.version),
-      ...(od.data||[]).map(d=>d.version),
       ...(ic.data||[]).map(d=>d.version),
     ].filter(Boolean))].sort();
     const vSel = document.getElementById('baseVersion');
@@ -390,7 +384,6 @@ async function checkReadiness() {
       { name:'入库需求数', data: dem.data||[], unit:'条' },
       { name:'BOM 结构',   data: bom.data||[], unit:'条' },
       { name:'安全库存',   data: ss.data||[],  unit:'条' },
-      { name:'稼动天数',   data: od.data||[],  unit:'个期间' },
       { name:'盘点数',     data: ic.data||[],  unit:'条' },
     ];
 
@@ -442,6 +435,7 @@ window.runCalc = async function() {
   const logBox = document.getElementById('logBox');
   const goResult = document.getElementById('goResult');
   const calcResult = document.getElementById('calcResult');
+  let finalResultVersion = '';
 
   btn.classList.add('loading'); btn.disabled = true; txt.textContent = '计算中…';
   progArea.classList.add('show'); logBox.innerHTML = ''; goResult.classList.remove('show');
@@ -468,7 +462,7 @@ window.runCalc = async function() {
   try {
     const version       = document.getElementById('baseVersion')?.value?.trim() || null;
     const resultVersion = document.getElementById('resultVersion')?.value?.trim() || null;
-    const finalResultVersion = resultVersion || version;
+    finalResultVersion = resultVersion || version;
     if (!version) {
       btn.classList.remove('loading'); btn.disabled = false; txt.textContent = '▶ 执行计算';
       progArea.classList.remove('show');
@@ -482,12 +476,45 @@ window.runCalc = async function() {
       body: JSON.stringify(calcReq)
     });
     const j = await resp.json();
+    const taskId = j?.data?.taskId;
+    if (!taskId) {
+      throw new Error(j?.message || '未获取到任务编号');
+    }
+
+    const queueTs = new Date().toTimeString().slice(0, 8);
+    logBox.innerHTML += `<div><span class="log-time">[${queueTs}]</span> <span class="log-info">任务已提交，任务号 ${taskId}</span></div>`;
+    logBox.scrollTop = logBox.scrollHeight;
+
+    fill.style.width = `${Math.max(0, j?.data?.progressPercent ?? 0)}%`;
+    pct.textContent = `${Math.max(0, j?.data?.progressPercent ?? 0)}%`;
+    stage.textContent = j?.data?.stage || '排队执行';
+
+    const task = await pollTask(taskId, (taskState) => {
+      const ts = new Date().toTimeString().slice(0, 8);
+      const status = taskState?.status || 'UNKNOWN';
+      const message = taskState?.message || '';
+      const progress = Number(taskState?.progressPercent ?? 0);
+      if (!Number.isNaN(progress)) {
+        fill.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+        pct.textContent = `${Math.max(0, Math.min(100, progress))}%`;
+      }
+      const stageText = taskState?.stage || status;
+      const periodText = taskState?.currentPeriod ? ` · 期间 ${taskState.currentPeriod}${taskState.totalPeriods ? ` / 共 ${taskState.totalPeriods} 期` : ''}` : '';
+      stage.textContent = stageText;
+      logBox.innerHTML += `<div><span class="log-time">[${ts}]</span> <span class="log-info">任务状态：${status} · 阶段：${stageText}${periodText}${message ? ' · ' + message : ''}</span></div>`;
+      logBox.scrollTop = logBox.scrollHeight;
+    });
+
+    if (task.status !== 'SUCCEEDED') {
+      throw new Error(task.message || `任务执行失败：${task.status}`);
+    }
+    finalResultVersion = task.resultVersion || finalResultVersion;
 
     fill.style.width = '100%'; pct.textContent = '100%'; stage.textContent = '完成';
     const ts = new Date().toTimeString().slice(0, 8);
 
-    // 查询结果行数
-    const pr = await fetch(`${API}/api/production-plan`).then(r=>r.json());
+    // 查询本次结果行数
+    const pr = await fetch(`${API}/api/production-plan/by-version/${encodeURIComponent(finalResultVersion)}`).then(r=>r.json());
     const count = (pr.data||[]).length;
 
     logBox.innerHTML += `<div><span class="log-time">[${ts}]</span> <span class="log-ok">✓ 计算完成，共生成 ${count} 条计划结果，结果版本：${finalResultVersion}</span></div>`;
@@ -515,6 +542,28 @@ window.runCalc = async function() {
     btn.style.background = '';
   }
 };
+
+async function pollTask(taskId, onTick) {
+  const maxAttempts = 240;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    const resp = await fetch(`${API}/api/production-plan/tasks/${encodeURIComponent(taskId)}`);
+    const body = await resp.json();
+    const task = body?.data;
+    if (!task) {
+      throw new Error(body?.message || '任务状态读取失败');
+    }
+    if (onTick && (attempt === 0 || task.status !== 'PENDING')) {
+      onTick(task);
+    }
+    if (task.status === 'SUCCEEDED' || task.status === 'FAILED') {
+      return task;
+    }
+  }
+  throw new Error('任务执行超时，请稍后在结果页按版本查看');
+}
 
 checkReadiness();
 </script>

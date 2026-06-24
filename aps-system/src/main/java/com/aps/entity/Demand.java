@@ -28,7 +28,7 @@ public class Demand {
     private String itemCode;
 
     /** 年月，YYYYMM */
-    @Column(name = "`year_month`", nullable = false)
+    @Column(name = "year_month", nullable = false)
     private Integer yearMonth;
 
     /** 需求数量（客户原始需求） */

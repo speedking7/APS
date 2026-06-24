@@ -157,16 +157,18 @@ public class ExcelImportService {
             Row row = sheet.getRow(i);
             if (row == null || isBlankRow(row)) continue;
 
-            String parentCode = str(row, 0);
-            String childCode  = str(row, 1);   // 叶节点工艺行允许为空
-            Double usageQty   = numOrNull(row, 2);
-            String manufacturingDepartment = str(row, 5);
-            String manufacturingUnit = str(row, 6);
-            Double scrapRate  = numOrNull(row, 11);
-            String version    = str(row, 12);
+            String rootProductCode = str(row, 0);
+            String parentCode = str(row, 1);
+            String childCode  = str(row, 2);   // 叶节点工艺行允许为空
+            Double usageQty   = numOrNull(row, 3);
+            String manufacturingDepartment = str(row, 6);
+            String manufacturingUnit = str(row, 7);
+            Double scrapRate  = numOrNull(row, 12);
+            String version    = str(row, 13);
 
             String err = null;
-            if (!isValidCode(parentCode))      err = "父零件编码无效: " + parentCode;
+            if (!isValidCode(rootProductCode)) err = "根完成品编码无效: " + rootProductCode;
+            else if (!isValidCode(parentCode))      err = "父零件编码无效: " + parentCode;
             // 有子零件时才校验子零件编码和用量；无子零件表示叶节点工艺行
             else if (childCode != null && !isValidCode(childCode))
                                                 err = "子零件编码无效: " + childCode;
@@ -183,18 +185,19 @@ public class ExcelImportService {
             if (err != null) { result.addError(SN, i + 1, err); continue; }
 
             Bom b = new Bom();
+            b.setRootProductCode(rootProductCode);
             b.setParentCode(parentCode);
             b.setChildCode(childCode);
             b.setUsageQty(usageQty);
-            b.setProcess(str(row, 3));
-            b.setEquipment(str(row, 4));
+            b.setProcess(str(row, 4));
+            b.setEquipment(str(row, 5));
             b.setManufacturingDepartment(manufacturingDepartment);
             b.setManufacturingUnit(manufacturingUnit);
-            Double moldRaw = numOrNull(row, 7);
+            Double moldRaw = numOrNull(row, 8);
             b.setMoldCavity(moldRaw != null ? moldRaw.intValue() : null);
-            b.setCycleTime(numOrNull(row, 8));
-            b.setStaffCount(numOrNull(row, 9));
-            b.setTaktTime(numOrNull(row, 10));
+            b.setCycleTime(numOrNull(row, 9));
+            b.setStaffCount(numOrNull(row, 10));
+            b.setTaktTime(numOrNull(row, 11));
             b.setScrapRate(scrapRate);
             b.setVersion(version);
             list.add(b);

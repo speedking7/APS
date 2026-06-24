@@ -13,6 +13,7 @@ public class WorkforceDetailRow {
     private String finishedProductCode;
     private Integer yearMonth;
     private Double planQty;
+    private Double rawPlanQty;
     private String process;
     private Double staffCount;
     private Double taktTime;

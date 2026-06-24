@@ -30,7 +30,7 @@ public class ProductionPlan {
     private String itemCode;
 
     /** 年月 */
-    @Column(name = "`year_month`", nullable = false)
+    @Column(name = "year_month", nullable = false)
     private Integer yearMonth;
 
     /** 工序 */
@@ -92,6 +92,10 @@ public class ProductionPlan {
     /** 计划数量 */
     @Column(name = "plan_qty")
     private Double planQty;
+
+    /** 共模拉齐前的原始计划数量 */
+    @Column(name = "raw_plan_qty")
+    private Double rawPlanQty;
 
     /** 计算版本号 */
     @Column(name = "version", length = 50)

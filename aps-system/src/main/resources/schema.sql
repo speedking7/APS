@@ -48,6 +48,12 @@ INSERT IGNORE INTO t_part_master (part_no, product_name, product_no, project_nam
 ('11201A022', '总成B', 'P-11201A022', '项目B'),
 ('21201A022', '半成品B1', 'P-21201A022', '项目B');
 
+-- 设备清单
+INSERT IGNORE INTO t_equipment_catalog (manufacturing_department, equipment_category, equipment_brand, equipment_model, equipment_count) VALUES
+('制造一部', '冲压设备', 'AIDA', 'aa001', 4),
+('制造二部', '焊接设备', 'Panasonic', 'bb001', 2),
+('制造三部', '检测设备', 'Keyence', 'ff001', 1);
+
 -- 稼动天数
 INSERT IGNORE INTO t_operating_days (`year_month`, total_days, work_days, weekend_days, holiday_days) VALUES
 (202604, 26, 21, 5, 0),

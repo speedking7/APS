@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1440">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>APS · 计划结果</title>
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=satoshi:400,500,700,900|instrument-sans:400,500,600|geist:400,500,600,700&display=swap" rel="stylesheet"/>
@@ -36,8 +36,8 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .nav-item .ni{width:16px;flex-shrink:0;text-align:center;font-size:13px;opacity:.75}
 .nav-item.active .ni{opacity:1}
 
-.main{flex:1;margin-left:240px;display:flex;flex-direction:column;min-height:100vh}
-.topbar{height:52px;background:#fff;border-bottom:1px solid var(--color-neutral-200);display:flex;align-items:center;padding:0 28px;gap:14px;flex-shrink:0}
+.main{flex:1;margin-left:240px;display:flex;flex-direction:column;min-height:100vh;min-width:0}
+.topbar{height:52px;background:#fff;border-bottom:1px solid var(--color-neutral-200);display:flex;align-items:center;padding:0 22px;gap:14px;flex-shrink:0}
 .crumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-400)}
 .crumb a{color:var(--color-primary);text-decoration:none}.crumb a:hover{text-decoration:underline}
 .crumb .sep{opacity:.4}
@@ -46,13 +46,13 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .version-pill{font-size:11px;font-family:var(--font-data);padding:3px 9px;border-radius:99px;background:rgba(0,135,90,.1);color:var(--color-accent);font-weight:600}
 .user-avatar{width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;font-family:var(--font-display)}
 
-.content{padding:32px 36px;flex:1}
+.content{padding:24px 24px 28px;flex:1;min-width:0}
 .page-head{margin-bottom:22px}
 .page-title{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--color-neutral-800);letter-spacing:-.4px}
 .page-sub{font-size:13px;color:var(--color-neutral-400);margin-top:4px}
 
 /* stat 4 */
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px}
 .stat-card{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:16px 20px;position:relative}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--color-accent);border-radius:10px 10px 0 0}
 .stat-card.green::before{background:var(--color-success)}
@@ -63,10 +63,10 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .stat-meta{font-size:11px;color:var(--color-neutral-400);margin-top:4px;font-family:var(--font-data)}
 
 /* toolbar */
-.toolbar{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.field{display:flex;align-items:center;gap:7px}
+.toolbar{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.field{display:flex;align-items:center;gap:7px;min-width:0}
 .field label{font-size:12px;color:var(--color-neutral-600);font-weight:500}
-.field input,.field select{font-family:var(--font-body);font-size:12.5px;border:1px solid var(--color-neutral-200);border-radius:6px;padding:6px 10px;color:var(--color-neutral-800);background:#fff;outline:none;min-width:120px}
+.field input,.field select{font-family:var(--font-body);font-size:12.5px;border:1px solid var(--color-neutral-200);border-radius:6px;padding:6px 10px;color:var(--color-neutral-800);background:#fff;outline:none;min-width:96px;max-width:100%}
 .field input:focus,.field select:focus{border-color:var(--color-primary)}
 .toolbar .spacer{flex:1}
 .btn{font-family:var(--font-body);font-size:13px;font-weight:500;padding:7px 14px;border-radius:6px;border:none;cursor:pointer;transition:all .15s}
@@ -75,20 +75,20 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .btn-ghost{background:#fff;color:var(--color-neutral-600);border:1px solid var(--color-neutral-200)}.btn-ghost:hover{border-color:var(--color-primary);color:var(--color-primary)}
 
 /* table */
-.table-wrap{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow:hidden;overflow-x:auto}
-.data-table{width:100%;border-collapse:collapse;min-width:900px}
+.table-wrap{background:#fff;border:1px solid var(--color-neutral-200);border-radius:10px;overflow-x:auto;overflow-y:hidden}
+.data-table{width:max-content;min-width:1700px;border-collapse:collapse}
 .data-table th{background:var(--color-neutral-100);padding:11px 14px;font-size:11.5px;font-weight:700;color:var(--color-neutral-800);text-align:left;border-bottom:1px solid var(--color-neutral-200);letter-spacing:.02em;white-space:nowrap;text-transform:uppercase}
 .data-table th[data-sort-key]{cursor:pointer;user-select:none}
 .data-table th.num{text-align:right}
-.data-table td{padding:10px 14px;font-size:12.5px;color:var(--color-neutral-800);border-bottom:1px solid var(--color-neutral-050);white-space:nowrap;vertical-align:middle}
+.data-table td{padding:10px 12px;font-size:12.5px;color:var(--color-neutral-800);border-bottom:1px solid var(--color-neutral-050);vertical-align:middle;white-space:nowrap}
 .data-table tr:last-child td{border-bottom:none}
 .data-table tbody tr{cursor:pointer;transition:background .12s}
 .data-table tr:hover{background:rgba(0,87,184,.04)}
-.data-table td.num{text-align:right;font-family:var(--font-data);font-feature-settings:'tnum'}
-.data-table td.code{font-family:var(--font-data);color:var(--color-primary);font-weight:500}
+.data-table td.num{text-align:right;font-family:var(--font-data);font-feature-settings:'tnum';white-space:nowrap}
+.data-table td.code{font-family:var(--font-data);color:var(--color-primary);font-weight:500;white-space:nowrap}
 .data-table td.parent{font-weight:600}
-.data-table td.dim{color:var(--color-neutral-400);font-family:var(--font-data)}
-.data-table td.qty{font-family:var(--font-data);font-weight:700;color:var(--color-neutral-800)}
+.data-table td.dim{color:var(--color-neutral-400);font-family:var(--font-data);white-space:nowrap}
+.data-table td.qty{font-family:var(--font-data);font-weight:700;color:var(--color-neutral-800);white-space:nowrap}
 .data-table td.qty.high{color:var(--color-secondary)}
 .data-table tr.parent-row{background:rgba(0,87,184,.025)}
 .data-table tr.parent-row:hover{background:rgba(0,87,184,.06)}
@@ -120,6 +120,37 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
 .calc-step .res{color:var(--color-primary);font-weight:700}
 .calc-formula{background:#0f1623;color:#a8c7ff;padding:14px 16px;border-radius:8px;font-family:var(--font-data);font-size:12.5px;line-height:1.9}
 .modal-foot{padding:14px 22px;border-top:1px solid var(--color-neutral-200);display:flex;justify-content:flex-end;gap:10px;background:var(--color-neutral-100)}
+
+@media (max-width: 1400px){
+  .sidebar{width:240px}
+  .main{margin-left:240px}
+  .content{padding:20px 18px 24px}
+  .topbar{padding:0 18px}
+  .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .field{flex:1 1 180px}
+}
+
+@media (max-width: 1100px){
+  .sidebar{width:240px}
+  .main{margin-left:240px}
+  .page-title{font-size:24px}
+  .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .toolbar{gap:8px}
+  .field{flex:1 1 160px}
+  .data-table th,.data-table td{padding:9px 10px}
+}
+
+@media (max-width: 900px){
+  .sidebar{width:240px}
+  .main{margin-left:240px}
+  .content{padding:16px 14px 20px}
+  .stat-grid{grid-template-columns:1fr}
+  .field{flex:1 1 100%}
+  .field input,.field select{width:100%}
+  .toolbar .spacer{display:none}
+  .data-table th{font-size:11px}
+  .data-table td{font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -131,19 +162,19 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
   </div>
   <div class="nav-group">
     <div class="nav-group-label">导航</div>
-    <a href="index.html" class="nav-item"><span class="ni">◉</span>原型总览</a>
-  </div>
-  <div class="nav-group">
-    <div class="nav-group-label">工作台</div>
+    <a href="index.html" class="nav-item"><span class="ni">◉</span>总览</a>
     <a href="01-dashboard.html" class="nav-item"><span class="ni">◐</span>工作台</a>
   </div>
   <div class="nav-group">
     <div class="nav-group-label">基础数据</div>
     <a href="02-forecast-list.html" class="nav-item"><span class="ni">◇</span>入库需求数</a>
-    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM 管理</a><a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a><a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a><a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
     <a href="04-material-params.html" class="nav-item"><span class="ni">⊞</span>安全库存</a>
-    <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
     <a href="06-inventory-count.html" class="nav-item"><span class="ni">▦</span>盘点数</a>
+    <a href="03-bom-list.html" class="nav-item"><span class="ni">▣</span>BOM主数据</a>
+    <a href="13-part-master.html" class="nav-item"><span class="ni">◈</span>零件主数据</a>
+    <a href="12-equipment-catalog.html" class="nav-item"><span class="ni">⌘</span>设备清单</a>
+    <a href="14-shared-mold-rules.html" class="nav-item"><span class="ni">⇄</span>共模规则</a>
+    <a href="05-operating-days.html" class="nav-item"><span class="ni">◫</span>稼动天数</a>
   </div>
   <div class="nav-group">
     <div class="nav-group-label">生产计划</div>
@@ -221,7 +252,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     <div class="toolbar" style="margin-bottom:16px">
       <div class="toolbar-left" style="font-size:13px;color:var(--color-neutral-600)">显示 <b style="font-family:var(--font-data);color:var(--color-neutral-800)">0</b> 行</div>
       <div class="spacer"></div>
-      <button class="btn btn-primary">⬇ 导出 Excel</button>
+      <button class="btn btn-primary" onclick="exportExcel()">⬇ 导出 Excel</button>
     </div>
 
     <!-- table -->
@@ -274,29 +305,10 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div class="modal-body">
-      <div class="calc-step">
-        日均需求 = 预测/需求 ÷ 稼动天数 = <span class="ck" id="d_demand">—</span> ÷ <span class="ck" id="d_days">—</span> = <span class="res" id="d_dailyDemand">—</span>
-      </div>
-      <div class="calc-step">
-        含安全库存需求 = 日均需求 ×（稼动天数 + 安全天数）= <span class="ck" id="d_dailyDemand2">—</span> × (<span class="ck" id="d_days2">—</span>+<span class="ck" id="d_safe">—</span>) = <span class="res" id="d_grossDemand">—</span>
-      </div>
-      <div class="calc-step">
-        净需求 = 含安全库存需求 − 当前库存 = <span class="ck" id="d_gross2">—</span> − <span class="ck" id="d_inv">—</span> = <span class="res" id="d_net">—</span>
-      </div>
-      <div class="calc-step">
-        计划数量 = 净需求 ÷（1 − 报废率）= <span class="ck" id="d_net2">—</span> ÷ (1−<span class="ck" id="d_scrap">—</span>) = <span class="res" id="d_qty">—</span>
-      </div>
-      <div class="calc-formula">
-        // 库存递推（用于下一期）<br>
-        期末库存 = 当前库存(<span style="color:#ffcb70" id="d_inv2">—</span>)<br>
-        &nbsp;&nbsp;+ 计划产出(<span style="color:#ffcb70" id="d_qty2">—</span> × (1−<span style="color:#ffcb70" id="d_scrap2">—</span>))<br>
-        &nbsp;&nbsp;− 需求(<span style="color:#ffcb70" id="d_demand2">—</span>)<br>
-        &nbsp;&nbsp;= <span style="color:#7be3a8;font-weight:700" id="d_endInv">—</span>
-      </div>
+      <div id="detailFormula"></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">关闭</button>
-      <button class="btn btn-primary">查看完整 BOM 路径</button>
     </div>
   </div>
 </div>
@@ -326,32 +338,6 @@ const planColumnDefs = {
 
 function fmt(v,d=2){return v==null?'—':Number(v).toFixed(d)}
 
-function showDetail(layer,period,code,inv,demand,safe,days,scrap,qty,endInv){
-  const dailyDemand = demand/days
-  const grossDemand = dailyDemand*(days+safe)
-  const net = grossDemand-inv
-  document.getElementById('dCode').textContent=code
-  document.getElementById('dPeriod').textContent=period
-  document.getElementById('d_demand').textContent=fmt(demand,2)
-  document.getElementById('d_demand2').textContent=fmt(demand,2)
-  document.getElementById('d_days').textContent=days
-  document.getElementById('d_days2').textContent=days
-  document.getElementById('d_dailyDemand').textContent=fmt(dailyDemand,3)
-  document.getElementById('d_dailyDemand2').textContent=fmt(dailyDemand,3)
-  document.getElementById('d_safe').textContent=safe
-  document.getElementById('d_grossDemand').textContent=fmt(grossDemand,2)
-  document.getElementById('d_gross2').textContent=fmt(grossDemand,2)
-  document.getElementById('d_inv').textContent=fmt(inv,2)
-  document.getElementById('d_inv2').textContent=fmt(inv,2)
-  document.getElementById('d_net').textContent=fmt(net,2)
-  document.getElementById('d_net2').textContent=fmt(net,2)
-  document.getElementById('d_scrap').textContent=(scrap/100).toFixed(2)
-  document.getElementById('d_scrap2').textContent=(scrap/100).toFixed(2)
-  document.getElementById('d_qty').textContent=fmt(qty,2)
-  document.getElementById('d_qty2').textContent=fmt(qty,2)
-  document.getElementById('d_endInv').textContent=fmt(endInv,2)
-  document.getElementById('detailModal').classList.add('show')
-}
 function closeModal(){document.getElementById('detailModal').classList.remove('show')}
 document.getElementById('detailModal').addEventListener('click',e=>{if(e.target.id==='detailModal')closeModal()})
 
@@ -464,9 +450,20 @@ function resetFilters() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  filteredData = planData;
-  renderTable(filteredData);
-  updateStats(filteredData);
+}
+
+function exportExcel() {
+  const params = new URLSearchParams();
+  const version = document.getElementById('filterVersion')?.value?.trim();
+  const period = document.getElementById('filterPeriod')?.value?.trim();
+  const product = document.getElementById('filterProduct')?.value?.trim();
+  const itemCode = document.getElementById('filterItemCode')?.value?.trim();
+  if (version) params.set('version', version);
+  if (period) params.set('yearMonth', period);
+  if (product) params.set('finishedProductCode', product);
+  if (itemCode) params.set('itemCode', itemCode);
+  const query = params.toString();
+  window.location.href = `${API}/api/production-plan/export${query ? `?${query}` : ''}`;
 }
 
 function renderTable(data) {
@@ -524,7 +521,8 @@ function updateStats(data) {
   if (statVals[2]) statVals[2].textContent = needProduce;
   if (statVals[3]) statVals[3].textContent = data.length - needProduce;
   const latestRun = getLatestRunForData(data);
-  const versionText = document.getElementById('filterVersion')?.value || latestRun?.version || '全部版本';
+  const selectedVersion = document.getElementById('filterVersion')?.value?.trim() || '';
+  const versionText = selectedVersion || (data.length ? '全部版本' : '—');
   const statVersion = document.getElementById('statVersion');
   const statCalculatedAt = document.getElementById('statCalculatedAt');
   if (statVersion) statVersion.textContent = versionText || '全部版本';
@@ -543,23 +541,74 @@ function populateFilters(data) {
 window.showDetailFromData = function(d) {
   if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) { return; } }
   const isFP      = d.finishedProductCode === d.itemCode;
-  const gross     = d.forecast || 0;           // 毛需求（完成品即净需求）
+  const gross     = d.forecast || 0;
   const inv       = d.currentInventory || 0;   // 期初现存量
   const safeStock = d.safetyDays || 0;         // 安全库存量
   const scrap     = d.scrapRate || 0;
-  const netDemand = isFP ? gross : Math.max(0, gross - inv + safeStock);
-  const endInv    = Math.max(0, inv - gross) + d.planQty * (1 - scrap);
+  const rawDemand = d.demandQty || 0;
+  const minSafetyStock = d.minSafetyStock || 0;
+  const previousEndingInventory = d.previousPeriodEndingInventory;
+  const availableInventory = inv;
+  const rawPlanQty = d.rawPlanQty == null ? d.planQty || 0 : d.rawPlanQty;
+  const netDemand = isFP ? Math.max(0, rawDemand + minSafetyStock - availableInventory) : Math.max(0, gross - inv + safeStock);
+  const plannedOutput = (d.planQty || 0) * (1 - scrap);
+  const endInv = Math.max(0, inv - (isFP ? rawDemand : gross)) + plannedOutput;
+  const sharedMoldAdjusted = rawPlanQty !== (d.planQty || 0);
 
   const overlay = document.getElementById('detailModal');
   if (overlay) {
     const body = overlay.querySelector('.modal-body');
     if (body) {
-      const fpRow = isFP ? '' : `
+      const sharedMoldHtml = sharedMoldAdjusted ? `
+        <div class="calc-step" style="border-color:rgba(0,87,184,.22);background:rgba(0,87,184,.05)">
+          共模调整：原始计划量 = <span class="ck">${fmt(rawPlanQty,0)}</span>，共模后计划量 = <span class="ck">${fmt(d.planQty,0)}</span>。
+          当前按 1:1 共模规则取同组较大者，差额产出进入理论结余并参与后续递推。
+        </div>` : '';
+      const formulaHtml = isFP ? `
+        ${sharedMoldHtml}
         <div class="calc-step">
-          毛需求 = <span class="ck">${fmt(gross,2)}</span>，现存量 = <span class="ck">${fmt(inv,2)}</span>，安全库存 = <span class="ck">${fmt(safeStock,2)}</span>
+          原始需求 = <span class="ck">${fmt(rawDemand,2)}</span>，最小安全库存 = <span class="ck">${fmt(minSafetyStock,2)}</span>
         </div>
         <div class="calc-step">
-          净需求 = 毛需求 − 现存量 + 安全库存 = <span class="ck">${fmt(gross,2)}</span> − <span class="ck">${fmt(inv,2)}</span> + <span class="ck">${fmt(safeStock,2)}</span> = <span class="res">${fmt(netDemand,2)}</span>
+          ${previousEndingInventory == null
+            ? `首月可用库存 = 需求表期末库存 = <span class="ck">${fmt(availableInventory,2)}</span>`
+            : `本月可用库存 = 上月理论结余 = <span class="ck">${fmt(previousEndingInventory,2)}</span>`}
+        </div>
+        <div class="calc-step">
+          净需求 = max(0, 原始需求 + 最小安全库存 − 本月可用库存)
+          = max(0, <span class="ck">${fmt(rawDemand,2)}</span> + <span class="ck">${fmt(minSafetyStock,2)}</span> − <span class="ck">${fmt(availableInventory,2)}</span>)
+          = <span class="res">${fmt(netDemand,2)}</span>
+        </div>
+        <div class="calc-step">
+          计划数量 = ⌈净需求 ÷ (1 − 报废率)⌉
+          = ⌈<span class="ck">${fmt(netDemand,2)}</span> ÷ (1−<span class="ck">${(scrap*100).toFixed(1)}%</span>)⌉
+          = <span class="res">${fmt(rawPlanQty,0)}</span>
+        </div>
+        <div class="calc-formula">
+          // 下月理论结余<br>
+          理论结余 = max(0, 本月可用库存 − 原始需求) + 计划产出<br>
+          &nbsp;&nbsp;= max(0, <span style="color:#ffcb70">${fmt(availableInventory,2)}</span> − <span style="color:#ffcb70">${fmt(rawDemand,2)}</span>) + <span style="color:#ffcb70">${fmt(d.planQty,0)}</span> × (1−<span style="color:#ffcb70">${(scrap*100).toFixed(1)}%</span>)<br>
+          &nbsp;&nbsp;= <span style="color:#7be3a8;font-weight:700">${fmt(endInv,2)}</span>
+        </div>` : `
+        ${sharedMoldHtml}
+        <div class="calc-step">
+          毛需求 = <span class="ck">${fmt(gross,2)}</span>，当前库存 = <span class="ck">${fmt(inv,2)}</span>，安全库存 = <span class="ck">${fmt(safeStock,2)}</span>
+        </div>
+        <div class="calc-step">
+          净需求 = 毛需求 − 当前库存 + 安全库存
+          = <span class="ck">${fmt(gross,2)}</span> − <span class="ck">${fmt(inv,2)}</span> + <span class="ck">${fmt(safeStock,2)}</span>
+          = <span class="res">${fmt(netDemand,2)}</span>
+        </div>
+        <div class="calc-step">
+          计划数量 = ⌈净需求 ÷ (1 − 报废率)⌉
+          = ⌈<span class="ck">${fmt(netDemand,2)}</span> ÷ (1−<span class="ck">${(scrap*100).toFixed(1)}%</span>)⌉
+          = <span class="res">${fmt(rawPlanQty,0)}</span>
+        </div>
+        <div class="calc-formula">
+          // 下月理论结余<br>
+          理论结余 = max(0, 当前库存 − 毛需求) + 计划产出<br>
+          &nbsp;&nbsp;= max(0, <span style="color:#ffcb70">${fmt(inv,2)}</span> − <span style="color:#ffcb70">${fmt(gross,2)}</span>) + <span style="color:#ffcb70">${fmt(d.planQty,0)}</span> × (1−<span style="color:#ffcb70">${(scrap*100).toFixed(1)}%</span>)<br>
+          &nbsp;&nbsp;= <span style="color:#7be3a8;font-weight:700">${fmt(endInv,2)}</span>
         </div>`;
       body.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;margin-bottom:14px">
@@ -575,16 +624,7 @@ window.showDetailFromData = function(d) {
           <div><span style="color:var(--color-neutral-400)">工序/设备</span><br><b>${d.process||'—'} / ${d.equipment||'—'}</b></div>
           <div><span style="color:var(--color-neutral-400)">制造部门/单元</span><br><b>${d.manufacturingDepartment||'—'} / ${d.manufacturingUnit||'—'}</b></div>
         </div>
-        ${isFP ? `<div class="calc-step">净需求 = 入库需求数 = <span class="res">${fmt(gross,2)}</span>（已含库存与安全库存调整）</div>` : fpRow}
-        <div class="calc-step">
-          计划数量 = ⌈净需求 ÷ (1 − 报废率)⌉ = ⌈<span class="ck">${fmt(netDemand,2)}</span> ÷ (1−<span class="ck">${(scrap*100).toFixed(1)}%</span>)⌉ = <span class="res">${fmt(d.planQty,0)}</span>
-        </div>
-        <div class="calc-formula">
-          // 期末库存递推（供下月使用）<br>
-          期末库存 = max(0, 现存量−毛需求) + 计划产出<br>
-          &nbsp;&nbsp;= max(0, <span style="color:#ffcb70">${fmt(inv,2)}</span>−<span style="color:#ffcb70">${fmt(gross,2)}</span>) + <span style="color:#ffcb70">${fmt(d.planQty,0)}</span>×(1−<span style="color:#ffcb70">${(scrap*100).toFixed(1)}%</span>)<br>
-          &nbsp;&nbsp;= <span style="color:#7be3a8;font-weight:700">${fmt(endInv,2)}</span>
-        </div>`;
+        ${formulaHtml}`;
     }
     overlay.classList.add('show');
   }

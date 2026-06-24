@@ -18,6 +18,8 @@ public interface SafetyStockRepository extends JpaRepository<SafetyStock, Long> 
 
     Optional<SafetyStock> findFirstByItemCodeAndVersion(String itemCode, String version);
 
+    List<SafetyStock> findAllByVersion(String version);
+
     @Modifying
     @Query("DELETE FROM SafetyStock s WHERE s.version = :version")
     void deleteByVersion(String version);

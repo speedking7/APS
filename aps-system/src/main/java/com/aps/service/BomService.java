@@ -30,6 +30,7 @@ public class BomService {
 
     public Bom update(Long id, Bom entity) {
         Bom existing = findById(id);
+        existing.setRootProductCode(entity.getRootProductCode());
         existing.setParentCode(entity.getParentCode());
         existing.setChildCode(entity.getChildCode());
         existing.setUsageQty(entity.getUsageQty());

@@ -1,6 +1,8 @@
 package com.aps.controller;
 
 import com.aps.service.WorkforceReportService;
+import com.aps.service.WorkforceDetailService;
+import com.aps.service.WorkforceDetailRow;
 import com.aps.service.WorkforceRow;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,9 @@ class WorkforceReportControllerTest {
 
     @MockBean
     private WorkforceReportService workforceReportService;
+
+    @MockBean
+    private WorkforceDetailService workforceDetailService;
 
     // -------------------------------------------------------------------------
     // GET /api/workforce-report  （无 period 参数 → 全量查询）
@@ -75,5 +80,26 @@ class WorkforceReportControllerTest {
         mockMvc.perform(get("/api/workforce-report"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(0)));
+    }
+
+    @Test
+    void exportDetails_returnsExcelAttachmentAndPassesFilters() throws Exception {
+        when(workforceDetailService.exportWorkbook("v1", "202601", "制造一部", "单元A", "冲压", "abc", "summary"))
+                .thenReturn(new byte[]{1, 2, 3});
+
+        mockMvc.perform(get("/api/workforce-report/details/export")
+                        .param("version", "v1")
+                        .param("month", "202601")
+                        .param("department", "制造一部")
+                        .param("unit", "单元A")
+                        .param("process", "冲压")
+                        .param("keyword", "abc")
+                        .param("viewMode", "summary"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", containsString("attachment; filename=workforce-report.xlsx")))
+                .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .andExpect(content().bytes(new byte[]{1, 2, 3}));
+
+        verify(workforceDetailService).exportWorkbook("v1", "202601", "制造一部", "单元A", "冲压", "abc", "summary");
     }
 }

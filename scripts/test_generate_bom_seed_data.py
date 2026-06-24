@@ -49,6 +49,7 @@ class BuildSeedBundleTests(unittest.TestCase):
 
         demand_item_codes = {row["item_code"] for row in bundle["demand_rows"]}
         self.assertEqual({"FP100"}, demand_item_codes)
+        self.assertTrue(all(row["net_demand"] == row["demand_qty"] - row["ending_inventory"] for row in bundle["demand_rows"]))
 
         part_codes = {row["part_no"] for row in bundle["part_rows"]}
         self.assertIn("FP100-1", part_codes)
@@ -74,20 +75,41 @@ class BuildSeedBundleTests(unittest.TestCase):
         self.assertEqual(1, len(inventory_rows))
         self.assertEqual(202605, inventory_rows[0]["year_month"])
 
+        operating_months = [row["year_month"] for row in bundle["operating_days_rows"]]
+        self.assertEqual([202606, 202607, 202608], operating_months)
+
+        shared_pairs = {
+            (row["product_a_code"], row["product_b_code"])
+            for row in bundle["shared_mold_rows"]
+        }
+        self.assertEqual(set(), shared_pairs)
+
+        bom_pairs = {
+            (row["parent_code"], row["child_code"])
+            for row in bundle["bom_rows"]
+        }
+        self.assertIn(("FP100", "FP100-1"), bom_pairs)
+
     def test_write_sql_defaults_to_non_destructive_mode(self):
         bundle = {
+            "bom_rows": [{"parent_code": "FP100", "child_code": "FP100-1", "usage_qty": 1.0, "process": "焊接", "equipment": "EQ-01", "manufacturing_department": "制造一课", "manufacturing_unit": "焊接", "mold_cavity": 1, "cycle_time": 10.0, "staff_count": 1.0, "takt_time": 10.0, "scrap_rate": 0.0, "version": "V1"}],
             "demand_rows": [{"customer": "测试客户", "item_code": "FP100", "year_month": 202606, "demand_qty": 100.0, "ending_inventory": 10.0, "min_safety_stock": 5.0, "net_demand": 95.0, "version": "V1"}],
             "part_rows": [{"part_no": "FP100", "product_name": "完成品-FP100", "product_no": "P-FP100", "project_name": "项目-FP10"}],
             "equipment_rows": [{"manufacturing_department": "制造一课", "equipment_category": "焊接设备", "equipment_brand": "TEST", "equipment_model": "EQ-01", "equipment_count": 1}],
+            "operating_days_rows": [{"year_month": 202606, "total_days": 26.0, "work_days": 21.0, "weekend_days": 5.0, "holiday_days": 0.0}],
             "safety_rows": [{"item_code": "SEMI200", "year_month": 202606, "daily_equivalent": 10.0, "safety_days": 3.0, "max_days": 7.0, "version": "V1"}],
             "inventory_rows": [{"item_code": "SEMI200", "year_month": 202605, "available_qty": 30.0, "version": "V1"}],
+            "shared_mold_rows": [{"product_a_code": "FP100", "product_b_code": "FP200", "equipment_code": None, "mold_code": None, "enabled": 1, "remark": "自动生成测试规则"}],
         }
         with tempfile.TemporaryDirectory() as tmp_dir:
             output = Path(tmp_dir) / "seed.sql"
             write_sql(bundle, output)
             sql = output.read_text(encoding="utf-8")
         self.assertNotIn("DELETE FROM t_demand;", sql)
+        self.assertIn("INSERT INTO t_bom", sql)
         self.assertIn("INSERT INTO t_demand", sql)
+        self.assertIn("INSERT INTO t_operating_days", sql)
+        self.assertIn("INSERT INTO t_shared_mold_rule", sql)
 
 
 if __name__ == "__main__":

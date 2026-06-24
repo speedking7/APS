@@ -1,6 +1,5 @@
 package com.aps.entity;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,12 +12,15 @@ import javax.persistence.*;
 @Table(name = "t_bom")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class Bom {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** 父零件 */
+    @Column(name = "root_product_code", length = 50, nullable = false)
+    private String rootProductCode;
 
     /** 父零件 */
     @Column(name = "parent_code", length = 50, nullable = false)
@@ -71,4 +73,56 @@ public class Bom {
     /** 版本号 */
     @Column(name = "version", length = 50)
     private String version;
+
+    public Bom(
+            Long id,
+            String parentCode,
+            String childCode,
+            Double usageQty,
+            String process,
+            String equipment,
+            String manufacturingDepartment,
+            String manufacturingUnit,
+            Integer moldCavity,
+            Double cycleTime,
+            Double staffCount,
+            Double taktTime,
+            Double scrapRate,
+            String version) {
+        this.id = id;
+        this.parentCode = parentCode;
+        this.childCode = childCode;
+        this.usageQty = usageQty;
+        this.process = process;
+        this.equipment = equipment;
+        this.manufacturingDepartment = manufacturingDepartment;
+        this.manufacturingUnit = manufacturingUnit;
+        this.moldCavity = moldCavity;
+        this.cycleTime = cycleTime;
+        this.staffCount = staffCount;
+        this.taktTime = taktTime;
+        this.scrapRate = scrapRate;
+        this.version = version;
+    }
+
+    public Bom(
+            Long id,
+            String rootProductCode,
+            String parentCode,
+            String childCode,
+            Double usageQty,
+            String process,
+            String equipment,
+            String manufacturingDepartment,
+            String manufacturingUnit,
+            Integer moldCavity,
+            Double cycleTime,
+            Double staffCount,
+            Double taktTime,
+            Double scrapRate,
+            String version) {
+        this(id, parentCode, childCode, usageQty, process, equipment, manufacturingDepartment,
+                manufacturingUnit, moldCavity, cycleTime, staffCount, taktTime, scrapRate, version);
+        this.rootProductCode = rootProductCode;
+    }
 }

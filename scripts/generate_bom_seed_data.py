@@ -25,11 +25,14 @@ DEFAULT_CUSTOMER = "测试客户"
 DEFAULT_BRAND = "TEST-BRAND"
 DEFAULT_MONTHS = 3
 TARGET_TABLES = [
+    "t_bom",
     "t_demand",
     "t_part_master",
     "t_equipment_catalog",
+    "t_operating_days",
     "t_safety_stock",
     "t_inventory_count",
+    "t_shared_mold_rule",
 ]
 
 
@@ -183,7 +186,7 @@ def build_seed_bundle(
             demand_qty = base_qty + month_index * 12
             ending_inventory = round(demand_qty * 0.12, 2)
             min_safety_stock = round(demand_qty * 0.08, 2)
-            net_demand = round(demand_qty - ending_inventory + min_safety_stock, 2)
+            net_demand = round(demand_qty - ending_inventory, 2)
             demand_rows.append(
                 {
                     "customer": customer,
@@ -245,12 +248,39 @@ def build_seed_bundle(
             }
         )
 
+    operating_days_rows = [
+        {
+            "year_month": month,
+            "total_days": 26.0,
+            "work_days": 21.0,
+            "weekend_days": 5.0,
+            "holiday_days": 0.0,
+        }
+        for month in months
+    ]
+
+    shared_mold_rows: list[dict[str, object]] = []
+    for index in range(0, len(root_codes) - 1, 2):
+        shared_mold_rows.append(
+            {
+                "product_a_code": root_codes[index],
+                "product_b_code": root_codes[index + 1],
+                "equipment_code": None,
+                "mold_code": None,
+                "enabled": 1,
+                "remark": "自动生成测试规则",
+            }
+        )
+
     return {
+        "bom_rows": bom_rows,
         "demand_rows": demand_rows,
         "part_rows": part_rows,
         "equipment_rows": equipment_rows,
+        "operating_days_rows": operating_days_rows,
         "safety_rows": safety_rows,
         "inventory_rows": inventory_rows,
+        "shared_mold_rows": shared_mold_rows,
         "root_codes": [{"item_code": code} for code in root_codes],
         "semi_codes": [{"item_code": code} for code in semi_codes],
     }
@@ -336,11 +366,28 @@ def write_sql(
     replace_existing: bool = False,
 ) -> None:
     sections = [
+        ("t_bom", [
+            "parent_code",
+            "child_code",
+            "usage_qty",
+            "process",
+            "equipment",
+            "manufacturing_department",
+            "manufacturing_unit",
+            "mold_cavity",
+            "cycle_time",
+            "staff_count",
+            "takt_time",
+            "scrap_rate",
+            "version",
+        ], bundle["bom_rows"]),
         ("t_demand", ["customer", "item_code", "year_month", "demand_qty", "ending_inventory", "min_safety_stock", "net_demand", "version"], bundle["demand_rows"]),
         ("t_part_master", ["part_no", "product_name", "product_no", "project_name"], bundle["part_rows"]),
         ("t_equipment_catalog", ["manufacturing_department", "equipment_category", "equipment_brand", "equipment_model", "equipment_count"], bundle["equipment_rows"]),
+        ("t_operating_days", ["year_month", "total_days", "work_days", "weekend_days", "holiday_days"], bundle["operating_days_rows"]),
         ("t_safety_stock", ["item_code", "year_month", "daily_equivalent", "safety_days", "max_days", "version"], bundle["safety_rows"]),
         ("t_inventory_count", ["item_code", "year_month", "available_qty", "version"], bundle["inventory_rows"]),
+        ("t_shared_mold_rule", ["product_a_code", "product_b_code", "equipment_code", "mold_code", "enabled", "remark"], bundle["shared_mold_rows"]),
     ]
 
     lines = [
@@ -451,11 +498,14 @@ def apply_sql(db: DbConfig, sql_path: Path) -> None:
 
 def summarize_bundle(bundle: dict[str, list[dict[str, object]]]) -> dict[str, int]:
     return {
+        "bom_rows": len(bundle["bom_rows"]),
         "demand_rows": len(bundle["demand_rows"]),
         "part_rows": len(bundle["part_rows"]),
         "equipment_rows": len(bundle["equipment_rows"]),
+        "operating_days_rows": len(bundle["operating_days_rows"]),
         "safety_rows": len(bundle["safety_rows"]),
         "inventory_rows": len(bundle["inventory_rows"]),
+        "shared_mold_rows": len(bundle["shared_mold_rows"]),
         "root_count": len(bundle["root_codes"]),
         "semi_count": len(bundle["semi_codes"]),
     }

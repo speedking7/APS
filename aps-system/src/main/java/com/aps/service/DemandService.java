@@ -17,13 +17,30 @@ public class DemandService {
 
     public List<Demand> findAll() { return repository.findAll(); }
     public Demand findById(Long id) { return repository.findById(id).orElseThrow(); }
-    public Demand save(Demand e) { return repository.save(e); }
-    public List<Demand> saveAll(List<Demand> list) { return repository.saveAll(list); }
+    public Demand save(Demand e) {
+        normalizeDemand(e);
+        return repository.save(e);
+    }
+    public List<Demand> saveAll(List<Demand> list) {
+        list.forEach(this::normalizeDemand);
+        return repository.saveAll(list);
+    }
 
     public Demand update(Long id, Demand e) {
         e.setId(id);
+        normalizeDemand(e);
         return repository.save(e);
     }
 
     public void delete(Long id) { repository.deleteById(id); }
+
+    private void normalizeDemand(Demand demand) {
+        if (demand == null) {
+            return;
+        }
+        double demandQty = demand.getDemandQty() != null ? demand.getDemandQty() : 0.0;
+        double endingInventory = demand.getEndingInventory() != null ? demand.getEndingInventory() : 0.0;
+        double minSafetyStock = demand.getMinSafetyStock() != null ? demand.getMinSafetyStock() : 0.0;
+        demand.setNetDemand(Math.max(0.0, demandQty - endingInventory + minSafetyStock));
+    }
 }

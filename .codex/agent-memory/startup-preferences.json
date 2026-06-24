@@ -1,0 +1,18 @@
+{
+  "default_startup_preference": {
+    "database": "docker",
+    "note": "用户要求：以后如果没有特殊说明，启动服务器时默认数据库放在 Docker 里。当前 aps-system 使用 docker-compose.yml 中 mysql 服务（container aps-mysql, db aps_db, root/root, port 3306），应用可本地 mvn spring-boot:run 连接 localhost:3306。"
+  },
+  "master_data_seed_preference": {
+    "overwrite_behavior": "do_not_overwrite_by_default",
+    "note": "用户要求：按 BOM 模拟补齐主数据时，以后默认不要覆盖已有主数据；只有用户明确要求时，才允许全量替换 t_demand / t_part_master / t_equipment_catalog / t_safety_stock / t_inventory_count。"
+  },
+  "test_baseline_preference": {
+    "baseline_name": "2026-05-27-aps-test-baseline",
+    "baseline_version": "20260331-1",
+    "baseline_sql": "docs/superpowers/generated/2026-05-27-aps-test-baseline.sql",
+    "seed_sql": "docs/superpowers/generated/2026-05-27-bom-seed-master-data.sql",
+    "seed_xlsx": "docs/superpowers/generated/2026-05-27-bom-seed-master-data.xlsx",
+    "note": "用户要求：以后测试默认一直使用这套数据，包含当前 BOM 与配套模拟主数据，以及默认共模规则：203000324D/203000326D、203000328D/203000330D。恢复测试基线后，如缺少共模规则，需同步恢复 t_shared_mold_rule。"
+  }
+}

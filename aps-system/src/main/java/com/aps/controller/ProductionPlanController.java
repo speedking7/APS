@@ -2,10 +2,14 @@ package com.aps.controller;
 
 import com.aps.common.ApiResponse;
 import com.aps.dto.CalculateRequest;
+import com.aps.dto.CalculationTaskResponse;
 import com.aps.dto.ProductionPlanView;
-import com.aps.service.PlanCalculationService;
+import com.aps.service.CalculationTaskService;
 import com.aps.service.ProductionPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,13 +23,17 @@ public class ProductionPlanController {
     private ProductionPlanService service;
 
     @Autowired
-    private PlanCalculationService planCalculationService;
+    private CalculationTaskService calculationTaskService;
 
     /** 触发计算（必须指定单一基础数据版本） */
     @PostMapping("/calculate")
-    public ApiResponse<String> calculate(@RequestBody CalculateRequest req) {
-        planCalculationService.calculate(req);
-        return ApiResponse.success("calculation completed");
+    public ApiResponse<CalculationTaskResponse> calculate(@RequestBody CalculateRequest req) {
+        return ApiResponse.success(calculationTaskService.submit(req));
+    }
+
+    @GetMapping("/tasks/{taskId}")
+    public ApiResponse<CalculationTaskResponse> getTask(@PathVariable String taskId) {
+        return ApiResponse.success(calculationTaskService.getTask(taskId));
     }
 
     @GetMapping("/versions")
@@ -58,5 +66,17 @@ public class ProductionPlanController {
             @PathVariable String code,
             @PathVariable Integer yearMonth) {
         return ApiResponse.success(service.findViewsByFinishedProductCodeAndYearMonth(code, yearMonth));
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportWorkbook(
+            @RequestParam(required = false) String version,
+            @RequestParam(required = false) Integer yearMonth,
+            @RequestParam(required = false) String finishedProductCode,
+            @RequestParam(required = false) String itemCode) throws Exception {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=production-plan.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(service.exportWorkbook(version, yearMonth, finishedProductCode, itemCode));
     }
 }

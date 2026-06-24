@@ -10,6 +10,7 @@ import com.aps.repository.DemandRepository;
 import com.aps.repository.InventoryCountRepository;
 import com.aps.repository.OperatingDaysRepository;
 import com.aps.repository.SafetyStockRepository;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -24,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,6 +69,7 @@ class ExcelImportServiceTest {
     private ArgumentCaptor<List<SafetyStock>> safetyCaptor;
 
     private byte[] buildWorkbookWithBomRow(
+            String rootProductCode,
             String manufacturingDepartment,
             String manufacturingUnit) throws Exception {
         Workbook wb = new XSSFWorkbook();
@@ -80,7 +83,7 @@ class ExcelImportServiceTest {
         addRow(bomSheet, 0);
         addRow(bomSheet, 1);
         addRow(bomSheet, 2,
-                "P001", "C001", 1.0, "冲压", "EQ-01",
+                rootProductCode, "P001", "C001", 1.0, "STAMP", "EQ-01",
                 manufacturingDepartment, manufacturingUnit,
                 2, 30.0, 1.0, 15.0, 0.02, "v1");
 
@@ -127,7 +130,7 @@ class ExcelImportServiceTest {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
         ImportResult result = service.importFromExcel(
-                new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", "单元A")));
+                new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A")));
 
         assertThat(result.getDemandCount()).isEqualTo(1);
         assertThat(result.getBomCount()).isEqualTo(1);
@@ -138,15 +141,28 @@ class ExcelImportServiceTest {
     }
 
     @Test
-    void importFromExcel_savesManufacturingDepartmentAndUnit() throws Exception {
+    void importFromExcel_savesRootProductCodeAndManufacturingFields() throws Exception {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", "单元A")));
+        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A")));
 
         verify(bomRepository).saveAll(bomsCaptor.capture());
         Bom saved = bomsCaptor.getValue().get(0);
+        assertThat(saved.getRootProductCode()).isEqualTo("P001");
         assertThat(saved.getManufacturingDepartment()).isEqualTo("制造一部");
         assertThat(saved.getManufacturingUnit()).isEqualTo("单元A");
+    }
+
+    @Test
+    void importFromExcel_missingRootProductCode_isRejected() throws Exception {
+        when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
+
+        ImportResult result = service.importFromExcel(
+                new ByteArrayInputStream(buildWorkbookWithBomRow(null, "制造一部", "单元A")));
+
+        assertThat(result.getBomCount()).isEqualTo(0);
+        assertThat(result.getErrors()).anyMatch(msg -> msg.contains("根完成品编码无效"));
+        verify(bomRepository, never()).saveAll(any());
     }
 
     @Test
@@ -154,7 +170,7 @@ class ExcelImportServiceTest {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
         ImportResult result = service.importFromExcel(
-                new ByteArrayInputStream(buildWorkbookWithBomRow(null, "单元A")));
+                new ByteArrayInputStream(buildWorkbookWithBomRow("P001", null, "单元A")));
 
         assertThat(result.getBomCount()).isEqualTo(0);
         assertThat(result.getErrors()).anyMatch(msg -> msg.contains("制造部门必填"));
@@ -166,7 +182,7 @@ class ExcelImportServiceTest {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
         ImportResult result = service.importFromExcel(
-                new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", null)));
+                new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", null)));
 
         assertThat(result.getBomCount()).isEqualTo(0);
         assertThat(result.getErrors()).anyMatch(msg -> msg.contains("制造单元必填"));
@@ -177,7 +193,7 @@ class ExcelImportServiceTest {
     void importFromExcel_savesOtherSheetsUsingCurrentRepositories() throws Exception {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", "单元A")));
+        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A")));
 
         verify(demandRepository).saveAll(demandsCaptor.capture());
         verify(inventoryCountRepository).saveAll(inventoryCaptor.capture());
@@ -203,12 +219,26 @@ class ExcelImportServiceTest {
         OperatingDays existing = new OperatingDays(1L, 202601, 30.0, 20.0, 8.0, 2.0);
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.of(existing));
 
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("制造一部", "单元A")));
+        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A")));
 
         assertThat(existing.getTotalDays()).isEqualTo(31.0);
         assertThat(existing.getWorkDays()).isEqualTo(22.0);
         assertThat(existing.getWeekendDays()).isEqualTo(8.0);
         assertThat(existing.getHolidayDays()).isEqualTo(1.0);
         verify(operatingDaysRepository).save(existing);
+    }
+
+    @Test
+    void bomTemplate_firstRowTitle_isHorizontallyCentered() throws Exception {
+        try (InputStream inputStream = ExcelImportServiceTest.class.getResourceAsStream("/static/template-bom.xlsx")) {
+            assertThat(inputStream).isNotNull();
+
+            try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+                Sheet sheet = workbook.getSheet("BOM");
+                assertThat(sheet).isNotNull();
+                assertThat(sheet.getRow(0).getCell(0).getCellStyle().getAlignment())
+                        .isEqualTo(HorizontalAlignment.CENTER);
+            }
+        }
     }
 }

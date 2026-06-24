@@ -24,7 +24,7 @@ public class SafetyStock {
     private String itemCode;
 
     /** 年月，格式 YYYYMM */
-    @Column(name = "`year_month`", nullable = false)
+    @Column(name = "year_month", nullable = false)
     private Integer yearMonth;
 
     /** 每日当量 */

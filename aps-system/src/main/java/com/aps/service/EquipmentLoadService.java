@@ -187,13 +187,18 @@ public class EquipmentLoadService {
                 continue;
             }
             adjustedKeys.add(entry.getKey());
+            boolean alreadyAdjustedInPlanLayer = groupRows.stream().anyMatch(plan -> plan.getRawPlanQty() != null);
+            if (alreadyAdjustedInPlanLayer) {
+                activePeerByKey.put(entry.getKey(), null);
+                continue;
+            }
             ProductionPlan activePlan = groupRows.stream()
-                    .max(Comparator.comparingDouble(plan -> toNumber(plan.getPlanQty())))
+                    .max(Comparator.comparingDouble(plan -> rawOrAdjustedPlanQty(plan)))
                     .orElse(null);
-            double maxPlanQty = activePlan == null ? 0.0 : toNumber(activePlan.getPlanQty());
+            double maxPlanQty = activePlan == null ? 0.0 : rawOrAdjustedPlanQty(activePlan);
             activePeerByKey.put(entry.getKey(), activePlan != null ? activePlan.getItemCode() : null);
             for (ProductionPlan plan : groupRows) {
-                if (toNumber(plan.getPlanQty()) < maxPlanQty) {
+                if (rawOrAdjustedPlanQty(plan) < maxPlanQty) {
                     suppressedPlans.add(plan);
                 }
             }
@@ -229,6 +234,14 @@ public class EquipmentLoadService {
 
     private double toNumber(Double value) {
         return Objects.requireNonNullElse(value, 0.0);
+    }
+
+    private double rawOrAdjustedPlanQty(ProductionPlan plan) {
+        if (plan == null) return 0.0;
+        if (plan.getRawPlanQty() != null) {
+            return plan.getRawPlanQty();
+        }
+        return toNumber(plan.getPlanQty());
     }
 
     private EquipmentLoadDetailRow buildDetailRow(

@@ -2,6 +2,8 @@ package com.aps.dto;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class ProductionPlanView {
 
@@ -24,7 +26,9 @@ public class ProductionPlanView {
     private Double scrapRate;
     private String isProduce;
     private Double planQty;
+    private Double rawPlanQty;
     private String version;
+    private LocalDateTime calculatedAt;
 
     private String itemProductName;
     private String itemProductNo;
@@ -33,4 +37,9 @@ public class ProductionPlanView {
     private String finishedProductName;
     private String finishedProductNo;
     private String finishedProjectName;
+
+    private Double demandQty;
+    private Double endingInventory;
+    private Double minSafetyStock;
+    private Double previousPeriodEndingInventory;
 }

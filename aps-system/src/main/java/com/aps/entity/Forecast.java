@@ -25,7 +25,7 @@ public class Forecast {
     private String itemCode;
 
     /** 年月，例如 202604 */
-    @Column(name = "`year_month`", nullable = false)
+    @Column(name = "year_month", nullable = false)
     private Integer yearMonth;
 
     /** 数量 */

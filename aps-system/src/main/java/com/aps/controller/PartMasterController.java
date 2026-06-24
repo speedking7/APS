@@ -2,9 +2,14 @@ package com.aps.controller;
 
 import com.aps.common.ApiResponse;
 import com.aps.entity.PartMaster;
+import com.aps.service.ImportResult;
 import com.aps.service.PartMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -50,5 +55,21 @@ public class PartMasterController {
     @PostMapping("/batch")
     public ApiResponse<List<PartMaster>> batchUpsert(@RequestBody List<PartMaster> list) {
         return ApiResponse.success(service.saveAllUpsert(list));
+    }
+
+    @PostMapping("/import")
+    public ApiResponse<ImportResult> importWorkbook(@RequestParam("file") MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("请选择要导入的 Excel 文件");
+        }
+        return ApiResponse.success(service.importWorkbook(file.getInputStream()));
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportWorkbook() throws Exception {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=template-part-master.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(service.exportWorkbook());
     }
 }

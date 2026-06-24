@@ -1,12 +1,16 @@
 package com.aps.service;
 
 import com.aps.dto.ProductionPlanView;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayInputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -164,5 +168,44 @@ class WorkforceDetailServiceTest {
         assertThat(suppressed.getRequiredHours()).isEqualTo(0.0);
         assertThat(active.getSharedMoldSuppressed()).isFalse();
         assertThat(active.getRequiredSeconds()).isGreaterThan(0.0);
+    }
+
+    @Test
+    void exportWorkbook_detail_writesDetailColumns() throws Exception {
+        when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(
+                makePlan("v1", "制造一部", "单元A", "P-100", "P-100", 202601, 120.0, "冲压", 2.0, 30.0)
+        ));
+
+        byte[] bytes = service.exportWorkbook("v1", null, null, null, null, null, "detail");
+
+        try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+            Sheet sheet = workbook.getSheet("工时分析");
+            assertThat(sheet).isNotNull();
+            assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("制造部门");
+            assertThat(sheet.getRow(0).getCell(9).getStringCellValue()).isEqualTo("所需工时");
+            assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("制造一部");
+            assertThat(sheet.getRow(1).getCell(8).getStringCellValue()).isEqualTo("冲压");
+        }
+    }
+
+    @Test
+    void exportWorkbook_summary_aggregatesHoursAndUsesSummaryColumns() throws Exception {
+        when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(
+                makePlan("v1", "制造一部", "单元A", "P-100", "P-100", 202601, 120.0, "冲压", 2.0, 30.0),
+                makePlan("v1", "制造一部", "单元A", "P-200", "P-200", 202601, 60.0, "冲压", 1.0, 30.0)
+        ));
+
+        byte[] bytes = service.exportWorkbook("v1", null, null, null, null, null, "summary");
+
+        try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+            Sheet sheet = workbook.getSheet("工时分析汇总");
+            assertThat(sheet).isNotNull();
+            assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("制造部门");
+            assertThat(sheet.getRow(0).getCell(4).getStringCellValue()).isEqualTo("所需工时");
+            assertThat(sheet.getLastRowNum()).isEqualTo(1);
+            assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("制造一部");
+            assertThat(sheet.getRow(1).getCell(2).getStringCellValue()).isEqualTo("冲压");
+            assertThat(sheet.getRow(1).getCell(4).getNumericCellValue()).isCloseTo(2.5, within(0.000001));
+        }
     }
 }

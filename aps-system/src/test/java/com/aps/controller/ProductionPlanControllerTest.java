@@ -1,7 +1,8 @@
 package com.aps.controller;
 
+import com.aps.dto.CalculationTaskResponse;
 import com.aps.dto.ProductionPlanView;
-import com.aps.service.PlanCalculationService;
+import com.aps.service.CalculationTaskService;
 import com.aps.service.ProductionPlanService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
@@ -26,7 +28,7 @@ class ProductionPlanControllerTest {
     private ProductionPlanService productionPlanService;
 
     @MockBean
-    private PlanCalculationService planCalculationService;
+    private CalculationTaskService calculationTaskService;
 
     private ProductionPlanView makePlan(Long id, String product, String item, int period, double qty) {
         ProductionPlanView p = new ProductionPlanView();
@@ -36,6 +38,7 @@ class ProductionPlanControllerTest {
         p.setYearMonth(period);
         p.setPlanQty(qty);
         p.setIsProduce("Y");
+        p.setCalculatedAt(LocalDateTime.of(2026, 5, 26, 22, 30, 0));
         return p;
     }
 
@@ -45,16 +48,45 @@ class ProductionPlanControllerTest {
 
     @Test
     void calculate_triggersServiceAndReturnsSuccess() throws Exception {
-        doNothing().when(planCalculationService).calculate(any());
+        CalculationTaskResponse task = new CalculationTaskResponse();
+        task.setTaskId("task-123");
+        task.setStatus("PENDING");
+        task.setResultVersion("20260331-1");
+        task.setProgressPercent(0);
+        task.setStage("PENDING");
+        when(calculationTaskService.submit(any())).thenReturn(task);
 
         mockMvc.perform(post("/api/production-plan/calculate")
                         .contentType("application/json")
                         .content("{\"version\":\"20260331-1\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data").value("calculation completed"));
+                .andExpect(jsonPath("$.data.taskId").value("task-123"))
+                .andExpect(jsonPath("$.data.status").value("PENDING"))
+                .andExpect(jsonPath("$.data.progressPercent").value(0))
+                .andExpect(jsonPath("$.data.stage").value("PENDING"))
+                .andExpect(jsonPath("$.data.resultVersion").value("20260331-1"));
 
-        verify(planCalculationService).calculate(any());
+        verify(calculationTaskService).submit(any());
+    }
+
+    @Test
+    void getTaskStatus_returnsTaskDetails() throws Exception {
+        CalculationTaskResponse task = new CalculationTaskResponse();
+        task.setTaskId("task-123");
+        task.setStatus("SUCCEEDED");
+        task.setResultVersion("20260331-1");
+        task.setProgressPercent(100);
+        task.setStage("SUCCEEDED");
+        when(calculationTaskService.getTask("task-123")).thenReturn(task);
+
+        mockMvc.perform(get("/api/production-plan/tasks/task-123"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.taskId").value("task-123"))
+                .andExpect(jsonPath("$.data.status").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.data.progressPercent").value(100))
+                .andExpect(jsonPath("$.data.stage").value("SUCCEEDED"));
     }
 
     // -------------------------------------------------------------------------
@@ -71,7 +103,8 @@ class ProductionPlanControllerTest {
         mockMvc.perform(get("/api/production-plan"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data", hasSize(2)));
+                .andExpect(jsonPath("$.data", hasSize(2)))
+                .andExpect(jsonPath("$.data[0].calculatedAt").value("2026-05-26T22:30:00"));
     }
 
     // -------------------------------------------------------------------------
@@ -146,5 +179,23 @@ class ProductionPlanControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].itemProductName").value("支架"))
                 .andExpect(jsonPath("$.data[0].finishedProductName").value("总成A"));
+    }
+
+    @Test
+    void exportWorkbook_returnsExcelAttachmentAndPassesFilters() throws Exception {
+        when(productionPlanService.exportWorkbook("v1", 202601, "P001", "C001"))
+                .thenReturn(new byte[]{1, 2, 3});
+
+        mockMvc.perform(get("/api/production-plan/export")
+                        .param("version", "v1")
+                        .param("yearMonth", "202601")
+                        .param("finishedProductCode", "P001")
+                        .param("itemCode", "C001"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", containsString("attachment; filename=production-plan.xlsx")))
+                .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .andExpect(content().bytes(new byte[]{1, 2, 3}));
+
+        verify(productionPlanService).exportWorkbook("v1", 202601, "P001", "C001");
     }
 }

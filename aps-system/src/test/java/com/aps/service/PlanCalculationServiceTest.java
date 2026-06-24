@@ -44,11 +44,17 @@ class PlanCalculationServiceTest {
     @Mock private BomRepository bomRepository;
     @Mock private InventoryCountRepository inventoryCountRepository;
     @Mock private ProductionPlanRepository productionPlanRepository;
+    @Mock private ProductionPlanBatchRepository productionPlanBatchRepository;
+    @Mock private SharedMoldRuleService sharedMoldRuleService;
 
     private CalculateRequest request(String version) {
+        return request(version, "result-" + version);
+    }
+
+    private CalculateRequest request(String version, String resultVersion) {
         CalculateRequest req = new CalculateRequest();
         req.setVersion(version);
-        req.setResultVersion("result-" + version);
+        req.setResultVersion(resultVersion);
         return req;
     }
 
@@ -75,8 +81,7 @@ class PlanCalculationServiceTest {
                 .thenReturn(Optional.empty());
         when(inventoryCountRepository.findFirstByItemCodeAndVersion(itemCode, version))
                 .thenReturn(Optional.of(new InventoryCount(null, itemCode, period, inventory, version)));
-        when(bomRepository.findFirstByParentCodeAndVersion(itemCode, version)).thenReturn(Optional.empty());
-        when(bomRepository.findByParentCodeAndVersion(itemCode, version)).thenReturn(Collections.emptyList());
+        when(bomRepository.findByVersion(version)).thenReturn(Collections.emptyList());
     }
 
     @Test
@@ -98,8 +103,7 @@ class PlanCalculationServiceTest {
                 .thenReturn(Optional.empty());
         when(inventoryCountRepository.findFirstByItemCodeAndVersion("P001", version))
                 .thenReturn(Optional.of(new InventoryCount(null, "P001", 202512, 0.0, version)));
-        when(bomRepository.findFirstByParentCodeAndVersion("P001", version)).thenReturn(Optional.empty());
-        when(bomRepository.findByParentCodeAndVersion("P001", version)).thenReturn(Collections.emptyList());
+        when(bomRepository.findByVersion(version)).thenReturn(Collections.emptyList());
 
         service.calculate(request(version));
 
@@ -110,7 +114,38 @@ class PlanCalculationServiceTest {
     }
 
     @Test
-    void calculate_resultVersionMatchesBaseVersion() {
+    void calculate_usesExplicitResultVersionForDeleteAndSave() {
+        String version = "20260331-1";
+        String resultVersion = "manual-result-v1";
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of("P001"));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(202601));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion("P001", 202601, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", "P001", 202601, 100.0, null, null, 100.0, version)));
+        when(operatingDaysRepository.findByYearMonth(202601))
+                .thenReturn(Optional.of(new OperatingDays(null, 202601, 22.0, 22.0, 0.0, 0.0)));
+        when(scrapRateRepository.findByItemCode("P001"))
+                .thenReturn(Optional.of(new ScrapRate(null, "P001", 0.1)));
+        when(inventoryDaysRepository.findByItemCode("P001"))
+                .thenReturn(Optional.of(new InventoryDays(null, "P001", 7.0, null)));
+        when(safetyStockRepository.findByItemCodeAndYearMonthAndVersion("P001", 202601, version))
+                .thenReturn(Optional.empty());
+        when(safetyStockRepository.findFirstByItemCodeAndVersion("P001", version))
+                .thenReturn(Optional.empty());
+        when(inventoryCountRepository.findFirstByItemCodeAndVersion("P001", version))
+                .thenReturn(Optional.of(new InventoryCount(null, "P001", 202512, 0.0, version)));
+        when(bomRepository.findByVersion(version)).thenReturn(Collections.emptyList());
+
+        service.calculate(request(version, resultVersion));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
+        assertThat(batchCaptor.getValue()).allMatch(p -> resultVersion.equals(p.getVersion()));
+        assertThat(batchCaptor.getValue()).allMatch(p -> p.getCalculatedAt() != null);
+        verify(productionPlanRepository).deleteByVersion(resultVersion);
+    }
+
+    @Test
+    void calculate_fallsBackToBaseVersionWhenResultVersionBlank() {
         String version = "20260331-1";
         when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of("P001"));
         when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(202601));
@@ -128,14 +163,14 @@ class PlanCalculationServiceTest {
                 .thenReturn(Optional.empty());
         when(inventoryCountRepository.findFirstByItemCodeAndVersion("P001", version))
                 .thenReturn(Optional.of(new InventoryCount(null, "P001", 202512, 0.0, version)));
-        when(bomRepository.findFirstByParentCodeAndVersion("P001", version)).thenReturn(Optional.empty());
-        when(bomRepository.findByParentCodeAndVersion("P001", version)).thenReturn(Collections.emptyList());
+        when(bomRepository.findByVersion(version)).thenReturn(Collections.emptyList());
 
-        service.calculate(request(version));
+        service.calculate(request(version, "   "));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         assertThat(batchCaptor.getValue()).allMatch(p -> version.equals(p.getVersion()));
+        assertThat(batchCaptor.getValue()).allMatch(p -> p.getCalculatedAt() != null);
         verify(productionPlanRepository).deleteByVersion(version);
     }
 
@@ -154,7 +189,7 @@ class PlanCalculationServiceTest {
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         ProductionPlan plan = batchCaptor.getValue().get(0);
 
         assertThat(plan.getItemCode()).isEqualTo("P001");
@@ -177,7 +212,7 @@ class PlanCalculationServiceTest {
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         ProductionPlan plan = batchCaptor.getValue().get(0);
 
         assertThat(plan.getPlanQty()).isEqualTo(10.0);
@@ -195,7 +230,7 @@ class PlanCalculationServiceTest {
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         assertThat(batchCaptor.getValue().get(0).getIsProduce()).isEqualTo("Y");
     }
 
@@ -206,13 +241,13 @@ class PlanCalculationServiceTest {
     void testScrapRateHundredPercent_planQtyForcedToZero() {
         String version = "202601";
         setupSingleProductSinglePeriod("P001", 202601, 100.0, 0.0, 7.0, 22.0, 0.0, version);
-        when(bomRepository.findFirstByParentCodeAndVersion("P001", version))
-                .thenReturn(Optional.of(new Bom(null, "P001", null, 0.0, null, null, null, null, null, null, null, null, 1.0, version)));
+        when(bomRepository.findByVersion(version))
+                .thenReturn(List.of(new Bom(null, "P001", null, 0.0, null, null, null, null, null, null, null, null, 1.0, version)));
 
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         assertThat(batchCaptor.getValue().get(0).getPlanQty()).isEqualTo(0.0);
     }
 
@@ -227,7 +262,7 @@ class PlanCalculationServiceTest {
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         assertThat(batchCaptor.getValue().get(0).getPlanQty()).isEqualTo(100.0);
     }
 
@@ -255,13 +290,12 @@ class PlanCalculationServiceTest {
         when(safetyStockRepository.findFirstByItemCodeAndVersion(item, version)).thenReturn(Optional.empty());
         when(inventoryCountRepository.findFirstByItemCodeAndVersion(item, version))
                 .thenReturn(Optional.empty());
-        when(bomRepository.findByParentCodeAndVersion(item, version)).thenReturn(Collections.emptyList());
-        when(bomRepository.findFirstByParentCodeAndVersion(item, version)).thenReturn(Optional.empty());
+        when(bomRepository.findByVersion(version)).thenReturn(Collections.emptyList());
 
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         ProductionPlan plan = batchCaptor.getValue().get(0);
         assertThat(plan.getPlanQty()).isEqualTo(100.0);
         assertThat(plan.getCurrentInventory()).isEqualTo(0.0);
@@ -303,13 +337,12 @@ class PlanCalculationServiceTest {
                 .thenReturn(Optional.empty());
         when(inventoryCountRepository.findFirstByItemCodeAndVersion(item, version))
                 .thenReturn(Optional.of(new InventoryCount(null, item, 202601, 0.0, version)));
-        when(bomRepository.findByParentCodeAndVersion(item, version)).thenReturn(Collections.emptyList());
-        when(bomRepository.findFirstByParentCodeAndVersion(item, version)).thenReturn(Optional.empty());
+        when(bomRepository.findByVersion(version)).thenReturn(Collections.emptyList());
 
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository, times(2)).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository, times(2)).bulkInsert(batchCaptor.capture());
         List<ProductionPlan> plans = batchCaptor.getAllValues().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -321,8 +354,8 @@ class PlanCalculationServiceTest {
         assertThat(p1.getPlanQty()).isEqualTo(100.0);
 
         assertThat(p2.getYearMonth()).isEqualTo(202602);
-        assertThat(p2.getCurrentInventory()).isEqualTo(0.0);
-        assertThat(p2.getPlanQty()).isEqualTo(120.0);
+        assertThat(p2.getCurrentInventory()).isEqualTo(100.0);
+        assertThat(p2.getPlanQty()).isEqualTo(20.0);
         assertThat(p2.getIsProduce()).isEqualTo("Y");
     }
 
@@ -348,15 +381,197 @@ class PlanCalculationServiceTest {
         when(safetyStockRepository.findFirstByItemCodeAndVersion(item, version)).thenReturn(Optional.empty());
         when(inventoryCountRepository.findFirstByItemCodeAndVersion(item, version))
                 .thenReturn(Optional.empty());
-        when(bomRepository.findByParentCodeAndVersion(item, version)).thenReturn(Collections.emptyList());
-        when(bomRepository.findFirstByParentCodeAndVersion(item, version)).thenReturn(Optional.empty());
+        when(bomRepository.findByVersion(version)).thenReturn(Collections.emptyList());
 
         service.calculate(request(version));
 
         // 只有 202601 生成了计划
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository, times(2)).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository, times(2)).bulkInsert(batchCaptor.capture());
         assertThat(batchCaptor.getAllValues().stream().flatMap(List::stream).count()).isEqualTo(1);
+    }
+
+    @Test
+    void testChildForecast_isReducedByPreviousPeriodCarryoverInventory() {
+        String parent = "P001";
+        String child = "C001";
+        String version = "202601";
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(parent));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(202606, 202607));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(parent, 202606, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", parent, 202606, 100.0, null, null, 100.0, version)));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(parent, 202607, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", parent, 202607, 464.0, null, null, 464.0, version)));
+
+        Bom bomRel = new Bom(null, parent, parent, child, 1.0, null, null, "制造一部", "单元A", null, null, null, null, null, version);
+        Bom childLeaf = new Bom(null, parent, child, null, 0.0, "PROC-A", "EQ-A", "制造一部", "单元A", null, null, null, null, null, version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(bomRel, childLeaf));
+
+        when(inventoryCountRepository.findAllByVersion(version))
+                .thenReturn(List.of(new InventoryCount(null, child, 202606, 150.0, version)));
+        when(safetyStockRepository.findAllByVersion(version)).thenReturn(Collections.emptyList());
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository, times(2)).bulkInsert(batchCaptor.capture());
+        List<ProductionPlan> plans = batchCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .filter(plan -> child.equals(plan.getItemCode()))
+                .sorted((left, right) -> left.getYearMonth().compareTo(right.getYearMonth()))
+                .collect(Collectors.toList());
+
+        assertThat(plans).hasSize(2);
+        assertThat(plans.get(0).getYearMonth()).isEqualTo(202606);
+        assertThat(plans.get(0).getForecast()).isEqualTo(100.0);
+        assertThat(plans.get(0).getPlanQty()).isEqualTo(0.0);
+
+        assertThat(plans.get(1).getYearMonth()).isEqualTo(202607);
+        assertThat(plans.get(1).getCurrentInventory()).isEqualTo(50.0);
+        assertThat(plans.get(1).getForecast()).isEqualTo(314.0);
+        assertThat(plans.get(1).getPlanQty()).isEqualTo(314.0);
+    }
+
+    @Test
+    void testFinishedProductForecast_isRecalculatedFromPreviousPeriodCarryover() {
+        String item = "P001";
+        String version = "202601";
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(item));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(202606, 202607));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(item, 202606, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", item, 202606, 537.0, 1152.0, 120.0, 0.0, version)));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(item, 202607, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", item, 202607, 374.0, 0.0, 90.0, 464.0, version)));
+
+        when(bomRepository.findByVersion(version)).thenReturn(Collections.emptyList());
+        when(inventoryCountRepository.findAllByVersion(version)).thenReturn(Collections.emptyList());
+        when(safetyStockRepository.findAllByVersion(version)).thenReturn(Collections.emptyList());
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository, times(2)).bulkInsert(batchCaptor.capture());
+        List<ProductionPlan> plans = batchCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .sorted((left, right) -> left.getYearMonth().compareTo(right.getYearMonth()))
+                .collect(Collectors.toList());
+
+        assertThat(plans).hasSize(2);
+        assertThat(plans.get(0).getYearMonth()).isEqualTo(202606);
+        assertThat(plans.get(0).getForecast()).isEqualTo(0.0);
+        assertThat(plans.get(0).getPlanQty()).isEqualTo(0.0);
+
+        assertThat(plans.get(1).getYearMonth()).isEqualTo(202607);
+        assertThat(plans.get(1).getCurrentInventory()).isEqualTo(615.0);
+        assertThat(plans.get(1).getForecast()).isEqualTo(0.0);
+        assertThat(plans.get(1).getPlanQty()).isEqualTo(0.0);
+        assertThat(plans.get(1).getIsProduce()).isEqualTo("N");
+    }
+
+    @Test
+    void testSharedSemiFinishedInventory_isConsumedProgressivelyAcrossFinishedProductsInSamePeriod() {
+        String finishedA = "P001";
+        String finishedB = "P002";
+        String sharedChild = "C001";
+        String version = "202601";
+        int period = 202606;
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(finishedA, finishedB));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(period));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(finishedA, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", finishedA, period, 100.0, 0.0, 0.0, 100.0, version)));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(finishedB, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", finishedB, period, 80.0, 0.0, 0.0, 80.0, version)));
+
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(
+                new Bom(null, finishedA, finishedA, sharedChild, 1.0, null, null, "制造一部", "单元A", null, null, null, null, null, version),
+                new Bom(null, finishedB, finishedB, sharedChild, 1.0, null, null, "制造一部", "单元A", null, null, null, null, null, version),
+                new Bom(null, finishedA, sharedChild, null, 0.0, "PROC-C", "EQ-C", "制造一部", "单元A", null, null, null, null, null, version)
+        ));
+        when(inventoryCountRepository.findAllByVersion(version))
+                .thenReturn(List.of(new InventoryCount(null, sharedChild, period, 150.0, version)));
+        when(safetyStockRepository.findAllByVersion(version)).thenReturn(Collections.emptyList());
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
+        List<ProductionPlan> childPlans = batchCaptor.getValue().stream()
+                .filter(plan -> sharedChild.equals(plan.getItemCode()))
+                .sorted((left, right) -> left.getFinishedProductCode().compareTo(right.getFinishedProductCode()))
+                .collect(Collectors.toList());
+
+        assertThat(childPlans).hasSize(2);
+        assertThat(childPlans.get(0).getFinishedProductCode()).isEqualTo(finishedA);
+        assertThat(childPlans.get(0).getCurrentInventory()).isEqualTo(150.0);
+        assertThat(childPlans.get(0).getForecast()).isEqualTo(100.0);
+        assertThat(childPlans.get(0).getPlanQty()).isEqualTo(0.0);
+
+        assertThat(childPlans.get(1).getFinishedProductCode()).isEqualTo(finishedB);
+        assertThat(childPlans.get(1).getCurrentInventory()).isEqualTo(50.0);
+        assertThat(childPlans.get(1).getForecast()).isEqualTo(80.0);
+        assertThat(childPlans.get(1).getPlanQty()).isEqualTo(30.0);
+    }
+
+    @Test
+    void testSharedMoldProducts_alignPlanQtyBeforeBomExplosion() {
+        String productA = "203000324D";
+        String productB = "203000326D";
+        String childA = "C-A";
+        String childB = "C-B";
+        String version = "202601";
+        int period = 202606;
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(productA, productB));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(period));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(productA, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", productA, period, 80.0, 0.0, 0.0, 80.0, version)));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(productB, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", productB, period, 120.0, 0.0, 0.0, 120.0, version)));
+        when(sharedMoldRuleService.findEnabledRules()).thenReturn(List.of(
+                new SharedMoldRule(1L, productA, productB, null, null, true, null)
+        ));
+
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(
+                new Bom(null, productA, productA, childA, 1.0, "注塑", "EQ-1", "制造一部", "单元A", null, null, null, null, null, version),
+                new Bom(null, productB, productB, childB, 1.0, "注塑", "EQ-1", "制造一部", "单元A", null, null, null, null, null, version),
+                new Bom(null, productA, childA, null, 0.0, "后处理", "EQ-2", "制造一部", "单元A", null, null, null, null, null, version),
+                new Bom(null, productB, childB, null, 0.0, "后处理", "EQ-2", "制造一部", "单元A", null, null, null, null, null, version)
+        ));
+        when(inventoryCountRepository.findAllByVersion(version)).thenReturn(Collections.emptyList());
+        when(safetyStockRepository.findAllByVersion(version)).thenReturn(Collections.emptyList());
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
+        List<ProductionPlan> plans = batchCaptor.getValue();
+
+        ProductionPlan productAPlan = plans.stream()
+                .filter(plan -> productA.equals(plan.getItemCode()))
+                .findFirst()
+                .orElseThrow();
+        ProductionPlan productBPlan = plans.stream()
+                .filter(plan -> productB.equals(plan.getItemCode()))
+                .findFirst()
+                .orElseThrow();
+        ProductionPlan childAPlan = plans.stream()
+                .filter(plan -> childA.equals(plan.getItemCode()))
+                .findFirst()
+                .orElseThrow();
+        ProductionPlan childBPlan = plans.stream()
+                .filter(plan -> childB.equals(plan.getItemCode()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(productAPlan.getRawPlanQty()).isEqualTo(80.0);
+        assertThat(productBPlan.getRawPlanQty()).isEqualTo(120.0);
+        assertThat(productAPlan.getPlanQty()).isEqualTo(120.0);
+        assertThat(productBPlan.getPlanQty()).isEqualTo(120.0);
+        assertThat(childAPlan.getForecast()).isEqualTo(120.0);
+        assertThat(childBPlan.getForecast()).isEqualTo(120.0);
     }
 
     // =========================================================================
@@ -392,8 +607,6 @@ class PlanCalculationServiceTest {
                 .thenReturn(Optional.empty());
         when(inventoryCountRepository.findFirstByItemCodeAndVersion(parent, version))
                 .thenReturn(Optional.of(new InventoryCount(null, parent, period, 0.0, version)));
-        when(bomRepository.findFirstByParentCodeAndVersion(parent, version)).thenReturn(Optional.empty());
-
         // 子件参数（报废率0、安全天数0）
         when(scrapRateRepository.findByItemCode(child)).thenReturn(Optional.empty());
         when(inventoryDaysRepository.findByItemCode(child)).thenReturn(Optional.empty());
@@ -403,17 +616,15 @@ class PlanCalculationServiceTest {
                 .thenReturn(Optional.empty());
         when(inventoryCountRepository.findFirstByItemCodeAndVersion(child, version))
                 .thenReturn(Optional.of(new InventoryCount(null, child, period, 0.0, version)));
-        when(bomRepository.findByParentCodeAndVersion(child, version)).thenReturn(Collections.emptyList());
-        when(bomRepository.findFirstByParentCodeAndVersion(child, version)).thenReturn(Optional.empty());
 
         // BOM 关系
-        Bom bomRow = new Bom(null, parent, child, 2.0, null, null, null, null, null, null, null, null, null, version);
-        when(bomRepository.findByParentCodeAndVersion(parent, version)).thenReturn(List.of(bomRow));
+        Bom bomRow = new Bom(null, parent, parent, child, 2.0, null, null, null, null, null, null, null, null, null, version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(bomRow));
 
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository, times(1)).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository, times(1)).bulkInsert(batchCaptor.capture());
         List<ProductionPlan> plans = batchCaptor.getAllValues().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -429,11 +640,162 @@ class PlanCalculationServiceTest {
 
         assertThat(childPlan.getForecast()).isEqualTo(expectedParentQty * 2);
         assertThat(childPlan.getPlanQty()).isEqualTo(expectedParentQty * 2);
+        assertThat(plans).extracting(ProductionPlan::getCalculatedAt).doesNotContainNull();
+        assertThat(plans).extracting(ProductionPlan::getCalculatedAt).containsOnly(plans.get(0).getCalculatedAt());
+    }
+
+    @Test
+    void testDuplicateBomEdges_sameChildUnderSameParent_expandsOnlyOnce() {
+        String parent = "P001";
+        String child = "C001";
+        int period = 202601;
+        String version = "202601";
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(parent));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(period));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(parent, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", parent, period, 100.0, null, null, 100.0, version)));
+        when(operatingDaysRepository.findByYearMonth(period))
+                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0, 22.0, 0.0, 0.0)));
+
+        when(scrapRateRepository.findByItemCode(parent)).thenReturn(Optional.empty());
+        when(inventoryDaysRepository.findByItemCode(parent)).thenReturn(Optional.empty());
+        when(safetyStockRepository.findByItemCodeAndYearMonthAndVersion(parent, period, version)).thenReturn(Optional.empty());
+        when(safetyStockRepository.findFirstByItemCodeAndVersion(parent, version)).thenReturn(Optional.empty());
+        when(inventoryCountRepository.findFirstByItemCodeAndVersion(parent, version)).thenReturn(Optional.empty());
+
+        when(scrapRateRepository.findByItemCode(child)).thenReturn(Optional.empty());
+        when(inventoryDaysRepository.findByItemCode(child)).thenReturn(Optional.empty());
+        when(safetyStockRepository.findByItemCodeAndYearMonthAndVersion(child, period, version)).thenReturn(Optional.empty());
+        when(safetyStockRepository.findFirstByItemCodeAndVersion(child, version)).thenReturn(Optional.empty());
+        when(inventoryCountRepository.findFirstByItemCodeAndVersion(child, version)).thenReturn(Optional.empty());
+
+        Bom edge1 = new Bom(null, parent, parent, child, 1.0, null, null, null, null, null, null, null, null, null, version);
+        Bom edge2 = new Bom(null, parent, parent, child, 1.0, null, null, null, null, null, null, null, null, null, version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(edge1, edge2));
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
+        List<ProductionPlan> plans = batchCaptor.getValue();
+
+        assertThat(plans).hasSize(2);
+        assertThat(plans.stream().filter(p -> child.equals(p.getItemCode())).count()).isEqualTo(1);
+    }
+
+    @Test
+    void testCalculation_usesOnlyBomRowsForMatchingRootProduct() {
+        String finished1 = "P001";
+        String finished2 = "P002";
+        String sharedParent = "A001";
+        String child1 = "C001";
+        String child2 = "C002";
+        int period = 202601;
+        String version = "202601";
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(finished1, finished2));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(period));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(finished1, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", finished1, period, 100.0, null, null, 100.0, version)));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(finished2, period, version))
+                .thenReturn(Optional.empty());
+        when(operatingDaysRepository.findByYearMonth(period))
+                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0, 22.0, 0.0, 0.0)));
+
+        for (String code : List.of(finished1, finished2, sharedParent, child1, child2)) {
+            when(scrapRateRepository.findByItemCode(code)).thenReturn(Optional.empty());
+            when(inventoryDaysRepository.findByItemCode(code)).thenReturn(Optional.empty());
+            when(safetyStockRepository.findByItemCodeAndYearMonthAndVersion(code, period, version)).thenReturn(Optional.empty());
+            when(safetyStockRepository.findFirstByItemCodeAndVersion(code, version)).thenReturn(Optional.empty());
+            when(inventoryCountRepository.findFirstByItemCodeAndVersion(code, version)).thenReturn(Optional.empty());
+        }
+
+        Bom root1 = new Bom(null, finished1, finished1, sharedParent, 1.0, null, null, "制造一部", "单元A", null, null, null, null, null, version);
+        Bom root2 = new Bom(null, finished2, finished2, sharedParent, 1.0, null, null, "制造一部", "单元A", null, null, null, null, null, version);
+        Bom branch1 = new Bom(null, finished1, sharedParent, child1, 1.0, null, null, "制造一部", "单元A", null, null, null, null, null, version);
+        Bom branch2 = new Bom(null, finished2, sharedParent, child2, 1.0, null, null, "制造一部", "单元A", null, null, null, null, null, version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(root1, root2, branch1, branch2));
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
+        List<ProductionPlan> plans = batchCaptor.getValue();
+
+        assertThat(plans).extracting(ProductionPlan::getItemCode)
+                .containsExactlyInAnyOrder(finished1, sharedParent, child1);
+        assertThat(plans).extracting(ProductionPlan::getItemCode)
+                .doesNotContain(child2);
     }
 
     /**
      * BOM 展开时子件包含工序/设备等工艺信息，应正确回填到结果
      */
+    @Test
+    void testSharedBomChild_isPreloadedAndNotRequeriedPerTraversal() {
+        String parent1 = "P001";
+        String parent2 = "P002";
+        String child = "C001";
+        int period = 202601;
+        String version = "202601";
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(parent1, parent2));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(period));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(parent1, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", parent1, period, 10.0, null, null, 10.0, version)));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(parent2, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", parent2, period, 20.0, null, null, 20.0, version)));
+
+        when(safetyStockRepository.findByItemCodeAndYearMonthAndVersion(anyString(), eq(period), eq(version)))
+                .thenReturn(Optional.empty());
+        when(safetyStockRepository.findFirstByItemCodeAndVersion(anyString(), eq(version)))
+                .thenReturn(Optional.empty());
+        when(inventoryCountRepository.findFirstByItemCodeAndVersion(anyString(), eq(version)))
+                .thenReturn(Optional.empty());
+
+        Bom bom1 = new Bom(null, parent1, parent1, child, 1.0, null, null, null, null, null, null, null, null, null, version);
+        Bom bom2 = new Bom(null, parent2, parent2, child, 1.0, null, null, null, null, null, null, null, null, null, version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(bom1, bom2));
+
+        service.calculate(request(version));
+
+        verify(bomRepository, times(2)).findByVersion(version);
+    }
+
+    @Test
+    void testSharedBomChild_reusesPreloadedInventoryAndSafetyLookups() {
+        String parent1 = "P001";
+        String parent2 = "P002";
+        String child = "C001";
+        int period = 202601;
+        String version = "202601";
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(parent1, parent2));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(period));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(parent1, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", parent1, period, 10.0, null, null, 10.0, version)));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(parent2, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", parent2, period, 20.0, null, null, 20.0, version)));
+
+        Bom bom1 = new Bom(null, parent1, parent1, child, 1.0, null, null, null, null, null, null, null, null, null, version);
+        Bom bom2 = new Bom(null, parent2, parent2, child, 1.0, null, null, null, null, null, null, null, null, null, version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(bom1, bom2));
+
+        SafetyStock childSafety = new SafetyStock(null, child, period, 3.0, null, null, version);
+        InventoryCount childInventory = new InventoryCount(null, child, period, 5.0, version);
+        when(safetyStockRepository.findAllByVersion(version)).thenReturn(List.of(childSafety));
+        when(inventoryCountRepository.findAllByVersion(version)).thenReturn(List.of(childInventory));
+
+        service.calculate(request(version));
+
+        verify(safetyStockRepository).findAllByVersion(version);
+        verify(inventoryCountRepository).findAllByVersion(version);
+        verify(safetyStockRepository, never()).findByItemCodeAndYearMonthAndVersion(anyString(), anyInt(), anyString());
+        verify(safetyStockRepository, never()).findFirstByItemCodeAndVersion(anyString(), anyString());
+        verify(inventoryCountRepository, never()).findFirstByItemCodeAndVersion(anyString(), anyString());
+    }
+
     @Test
     void testBomNode_processAndEquipmentCopiedToResult() {
         String parent = "P001";
@@ -457,21 +819,17 @@ class PlanCalculationServiceTest {
                     .thenReturn(Optional.empty());
             when(inventoryCountRepository.findFirstByItemCodeAndVersion(code, version))
                     .thenReturn(Optional.empty());
-            when(bomRepository.findByParentCodeAndVersion(code, version)).thenReturn(Collections.emptyList());
         }
 
         // C001 作为父零件的 BOM 行，含工序/设备信息
-        Bom childBomInfo = new Bom(null, child, null, 0.0, "CNC", "EQ-01", null, null, 4, 30.0, 2.0, 15.0, null, version);
-        when(bomRepository.findFirstByParentCodeAndVersion(child, version)).thenReturn(Optional.of(childBomInfo));
-        when(bomRepository.findFirstByParentCodeAndVersion(parent, version)).thenReturn(Optional.empty());
-
-        Bom bomRel = new Bom(null, parent, child, 1.0, null, null, null, null, null, null, null, null, null, version);
-        when(bomRepository.findByParentCodeAndVersion(parent, version)).thenReturn(List.of(bomRel));
+        Bom childBomInfo = new Bom(null, parent, child, null, 0.0, "CNC", "EQ-01", null, null, 4, 30.0, 2.0, 15.0, null, version);
+        Bom bomRel = new Bom(null, parent, parent, child, 1.0, null, null, null, null, null, null, null, null, null, version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(bomRel, childBomInfo));
 
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         ProductionPlan childPlan = batchCaptor.getValue().get(1);
 
         assertThat(childPlan.getProcess()).isEqualTo("CNC");
@@ -503,24 +861,20 @@ class PlanCalculationServiceTest {
                     .thenReturn(Optional.empty());
             when(inventoryCountRepository.findFirstByItemCodeAndVersion(code, version))
                     .thenReturn(Optional.empty());
-            when(bomRepository.findByParentCodeAndVersion(code, version)).thenReturn(Collections.emptyList());
         }
 
         Bom childBomInfo = new Bom(
-                null, child, null, 0.0, "CNC", "EQ-01",
+                null, parent, child, null, 0.0, "CNC", "EQ-01",
                 "制造一部", "单元A", 4, 30.0, 2.0, 15.0, null, version);
-        when(bomRepository.findFirstByParentCodeAndVersion(child, version)).thenReturn(Optional.of(childBomInfo));
-        when(bomRepository.findFirstByParentCodeAndVersion(parent, version)).thenReturn(Optional.empty());
-
         Bom bomRel = new Bom(
-                null, parent, child, 1.0, null, null,
+                null, parent, parent, child, 1.0, null, null,
                 "制造一部", "单元A", null, null, null, null, null, version);
-        when(bomRepository.findByParentCodeAndVersion(parent, version)).thenReturn(List.of(bomRel));
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(bomRel, childBomInfo));
 
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         ProductionPlan childPlan = batchCaptor.getValue().get(1);
 
         assertThat(childPlan.getManufacturingDepartment()).isEqualTo("制造一部");
@@ -557,18 +911,16 @@ class PlanCalculationServiceTest {
                     .thenReturn(Optional.empty());
             when(inventoryCountRepository.findFirstByItemCodeAndVersion(code, version))
                     .thenReturn(Optional.empty());
-            when(bomRepository.findFirstByParentCodeAndVersion(code, version)).thenReturn(Optional.empty());
         }
 
-        Bom bom1 = new Bom(null, item1, item2, 1.0, null, null, null, null, null, null, null, null, null, version);
-        Bom bom2 = new Bom(null, item2, item1, 1.0, null, null, null, null, null, null, null, null, null, version);
-        when(bomRepository.findByParentCodeAndVersion(item1, version)).thenReturn(List.of(bom1));
-        when(bomRepository.findByParentCodeAndVersion(item2, version)).thenReturn(List.of(bom2));
+        Bom bom1 = new Bom(null, item1, item1, item2, 1.0, null, null, null, null, null, null, null, null, null, version);
+        Bom bom2 = new Bom(null, item1, item2, item1, 1.0, null, null, null, null, null, null, null, null, null, version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(bom1, bom2));
 
         assertThatCode(() -> service.calculate(request(version))).doesNotThrowAnyException();
         // item1 和 item2 各计算一次
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
-        verify(productionPlanRepository, times(1)).saveAll(batchCaptor.capture());
+        verify(productionPlanBatchRepository, times(1)).bulkInsert(batchCaptor.capture());
         assertThat(batchCaptor.getAllValues().stream().flatMap(List::stream).count()).isEqualTo(2);
     }
 
@@ -584,6 +936,6 @@ class PlanCalculationServiceTest {
 
         service.calculate(request(version));
 
-        verify(productionPlanRepository).deleteByVersion(version);
+        verify(productionPlanRepository).deleteByVersion("result-" + version);
     }
 }

@@ -1,0 +1,90 @@
+{
+  "projectName": "Example App",
+  "featureRoot": "docs/features",
+  "bugfixRoot": "docs/bugfix",
+  "codeLikeRoots": ["backend/", "frontend/", "db/"],
+  "scaffoldRoots": ["tools/ai-scaffold/", "docs/features/", ".github/workflows/ci.yml"],
+  "portableCopy": {
+    "includeReadme": false,
+    "includeGitignore": true,
+    "includeDist": false,
+    "includeNodeModules": false,
+    "includeSmokeFeature": false
+  },
+  "backend": {
+    "path": "backend",
+    "changeRoot": "backend/",
+    "modulePathPrefix": "backend/",
+    "commands": {
+      "compile": { "command": "mvn", "args": ["compile", "-q"] },
+      "test": { "command": "mvn", "args": ["test", "-q"] },
+      "verify": { "command": "mvn", "args": ["verify"] },
+      "verifyWithoutIntegration": { "command": "mvn", "args": ["verify", "-DskipITs"] }
+    }
+  },
+  "frontends": [
+    {
+      "name": "web",
+      "path": "frontend",
+      "changeRoot": "frontend/",
+      "commands": {
+        "lint": { "command": "npm", "args": ["run", "lint"] },
+        "test": { "command": "npm", "args": ["run", "test:ci"] },
+        "build": { "command": "npm", "args": ["run", "build"] },
+        "e2e": { "command": "npm", "args": ["run", "e2e"] }
+      }
+    }
+  ],
+  "database": {
+    "testName": "app_test",
+    "user": "app",
+    "password": "app",
+    "dockerContainer": "postgres"
+  },
+  "e2e": {
+    "username": "admin",
+    "password": "change-me",
+    "tenantCode": "default"
+  },
+  "e2eDocker": {
+    "backendComposeDir": "backend",
+    "composeFiles": ["docker-compose.yml"],
+    "services": ["postgres", "redis", "backend", "frontend"],
+    "backendHealthUrl": "http://127.0.0.1:8080/actuator/health",
+    "frontendPath": "frontend",
+    "frontendBaseUrl": "http://127.0.0.1:4173",
+    "postgresContainer": "postgres",
+    "postgresAdminDatabase": "postgres",
+    "applicationDatabase": "app",
+    "postBootstrapSql": [],
+    "playwrightProject": "chromium"
+  },
+  "manualTest": {
+    "composeFile": "backend/docker-compose.yml",
+    "infraServices": ["postgres", "redis"],
+    "appServices": ["backend", "frontend"],
+    "appContainers": ["backend", "frontend"],
+    "backendPath": "backend",
+    "backendCommand": { "command": "mvn", "args": ["spring-boot:run"] },
+    "frontendPath": "frontend",
+    "frontendPreviewCommand": { "command": "npm", "args": ["run", "preview", "--", "--host", "127.0.0.1", "--port", "{port}"] },
+    "frontendDevCommand": { "command": "npm", "args": ["run", "dev", "--", "--host", "127.0.0.1", "--port", "{port}"] },
+    "backendPort": 8080,
+    "frontendPreviewPort": 4173,
+    "frontendDevPort": 5173,
+    "backendHealthPath": "/actuator/health",
+    "loginPath": "/api/v1/auth/login",
+    "databasePatchSql": "",
+    "localEnv": {},
+    "frontendEnv": {},
+    "playwrightInstallCommand": { "command": "npm", "args": ["run", "e2e:install"] }
+  },
+  "pdaShell": {
+    "frontendPath": "",
+    "reportFeatureDir": "",
+    "artifacts": [],
+    "routes": [],
+    "testCommand": { "command": "npx", "args": ["vitest", "run"] },
+    "typecheckCommand": { "command": "npx", "args": ["tsc", "--noEmit", "--pretty", "false", "--project", "tsconfig.json"] }
+  }
+}
