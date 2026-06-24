@@ -133,6 +133,7 @@ public class PartMasterService {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet(SHEET_NAME);
+            List<PartMaster> rows = repository.findAll();
             CellStyle noticeStyle = workbook.createCellStyle();
             noticeStyle.setAlignment(HorizontalAlignment.LEFT);
 
@@ -166,6 +167,15 @@ public class PartMasterService {
             sheet.setColumnWidth(1, 24 * 256);
             sheet.setColumnWidth(2, 18 * 256);
             sheet.setColumnWidth(3, 20 * 256);
+
+            int rowIndex = 2;
+            for (PartMaster partMaster : rows) {
+                Row row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(defaultString(partMaster.getPartNo()));
+                row.createCell(1).setCellValue(defaultString(partMaster.getProductName()));
+                row.createCell(2).setCellValue(defaultString(partMaster.getProductNo()));
+                row.createCell(3).setCellValue(defaultString(partMaster.getProjectName()));
+            }
 
             workbook.write(outputStream);
             return outputStream.toByteArray();
@@ -210,5 +220,9 @@ public class PartMasterService {
         }
         DataFormatter formatter = new DataFormatter();
         return formatter.formatCellValue(cell).trim();
+    }
+
+    private String defaultString(String value) {
+        return value == null ? "" : value;
     }
 }

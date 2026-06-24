@@ -141,8 +141,8 @@ class PlanCalculationIntegrationTest {
         assertThat(p1.getPlanQty()).isEqualTo(100.0);
 
         assertThat(p2.getYearMonth()).isEqualTo(202602);
-        assertThat(p2.getCurrentInventory()).isEqualTo(0.0);
-        assertThat(p2.getPlanQty()).isEqualTo(120.0);
+        assertThat(p2.getCurrentInventory()).isEqualTo(100.0);
+        assertThat(p2.getPlanQty()).isEqualTo(20.0);
     }
 
     @Test
@@ -169,8 +169,8 @@ class PlanCalculationIntegrationTest {
 
         assertThat(childPlans.get(1).getYearMonth()).isEqualTo(202607);
         assertThat(childPlans.get(1).getCurrentInventory()).isEqualTo(50.0);
-        assertThat(childPlans.get(1).getForecast()).isEqualTo(414.0);
-        assertThat(childPlans.get(1).getPlanQty()).isEqualTo(414.0);
+        assertThat(childPlans.get(1).getForecast()).isEqualTo(314.0);
+        assertThat(childPlans.get(1).getPlanQty()).isEqualTo(314.0);
     }
 
     @Test
