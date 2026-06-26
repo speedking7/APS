@@ -65,6 +65,10 @@ public class ProductionPlan {
     @Column(name = "takt_time")
     private Double taktTime;
 
+    /** 子零件属性 */
+    @Column(name = "part_attribute", length = 100)
+    private String partAttribute;
+
     /** 当前库存 */
     @Column(name = "current_inventory")
     private Double currentInventory;

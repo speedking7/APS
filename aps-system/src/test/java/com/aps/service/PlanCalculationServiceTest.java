@@ -242,13 +242,28 @@ class PlanCalculationServiceTest {
         String version = "202601";
         setupSingleProductSinglePeriod("P001", 202601, 100.0, 0.0, 7.0, 22.0, 0.0, version);
         when(bomRepository.findByVersion(version))
-                .thenReturn(List.of(new Bom(null, "P001", null, 0.0, null, null, null, null, null, null, null, null, 1.0, version)));
+                .thenReturn(List.of(new Bom(null, "P001", null, 0.0, null, null, null, null, null, null, null, null, 1.0, "采购件", version)));
 
         service.calculate(request(version));
 
         ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
         verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
         assertThat(batchCaptor.getValue().get(0).getPlanQty()).isEqualTo(0.0);
+    }
+
+    @Test
+    void calculate_finishedProductLeavesPartAttributeEmptyWhenNoIncomingBomExists() {
+        String version = "202601";
+        setupSingleProductSinglePeriod("P001", 202601, 100.0, 0.0, 7.0, 22.0, 0.0, version);
+        when(bomRepository.findByVersion(version))
+                .thenReturn(List.of(new Bom(null, "P001", null, 0.0, null, null, null, null, null, null, null, null, 0.0, "采购件", version)));
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
+        assertThat(batchCaptor.getValue()).hasSize(1);
+        assertThat(batchCaptor.getValue().get(0).getPartAttribute()).isNull();
     }
 
     /**
@@ -879,6 +894,104 @@ class PlanCalculationServiceTest {
 
         assertThat(childPlan.getManufacturingDepartment()).isEqualTo("制造一部");
         assertThat(childPlan.getManufacturingUnit()).isEqualTo("单元A");
+    }
+
+    @Test
+    void calculate_usesCurrentNodePartAttributeFromIncomingBomChildRelation() {
+        String finished = "P001";
+        String semiFinished = "A001";
+        String rawMaterial = "C001";
+        int period = 202601;
+        String version = "202601";
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(finished));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(period));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(finished, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", finished, period, 100.0, null, null, 100.0, version)));
+        when(operatingDaysRepository.findByYearMonth(period))
+                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0, 22.0, 0.0, 0.0)));
+
+        for (String code : List.of(finished, semiFinished, rawMaterial)) {
+            when(scrapRateRepository.findByItemCode(code)).thenReturn(Optional.empty());
+            when(inventoryDaysRepository.findByItemCode(code)).thenReturn(Optional.empty());
+            when(safetyStockRepository.findByItemCodeAndYearMonthAndVersion(code, period, version))
+                    .thenReturn(Optional.empty());
+            when(safetyStockRepository.findFirstByItemCodeAndVersion(code, version))
+                    .thenReturn(Optional.empty());
+            when(inventoryCountRepository.findFirstByItemCodeAndVersion(code, version))
+                    .thenReturn(Optional.empty());
+        }
+
+        Bom finishedToSemi = new Bom(
+                null, finished, finished, semiFinished, 1.0, null, null,
+                "制造一部", "单元A", null, null, null, null, null, "半成品", version);
+        Bom semiToRaw = new Bom(
+                null, finished, semiFinished, rawMaterial, 1.0, "冲压", "EQ-01",
+                "制造一部", "单元A", null, null, null, null, null, "采购件", version);
+        Bom rawLeaf = new Bom(
+                null, finished, rawMaterial, null, 0.0, "下料", "EQ-02",
+                "制造二部", "单元B", null, null, null, null, null, "原材料", version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(finishedToSemi, semiToRaw, rawLeaf));
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
+        List<ProductionPlan> plans = batchCaptor.getValue();
+
+        ProductionPlan semiFinishedPlan = plans.stream()
+                .filter(plan -> semiFinished.equals(plan.getItemCode()))
+                .findFirst()
+                .orElseThrow();
+        ProductionPlan rawMaterialPlan = plans.stream()
+                .filter(plan -> rawMaterial.equals(plan.getItemCode()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(semiFinishedPlan.getPartAttribute()).isEqualTo("半成品");
+        assertThat(rawMaterialPlan.getPartAttribute()).isEqualTo("采购件");
+    }
+
+    @Test
+    void calculate_leafNodeWithoutOutgoingBomStillUsesIncomingPartAttribute() {
+        String finished = "P001";
+        String leaf = "C001";
+        int period = 202601;
+        String version = "202601";
+
+        when(demandRepository.findDistinctItemCodesByVersion(version)).thenReturn(List.of(finished));
+        when(demandRepository.findDistinctYearMonthsByVersion(version)).thenReturn(List.of(period));
+        when(demandRepository.findFirstByItemCodeAndYearMonthAndVersion(finished, period, version))
+                .thenReturn(Optional.of(new Demand(null, "AAA", finished, period, 100.0, null, null, 100.0, version)));
+        when(operatingDaysRepository.findByYearMonth(period))
+                .thenReturn(Optional.of(new OperatingDays(null, period, 22.0, 22.0, 0.0, 0.0)));
+
+        for (String code : List.of(finished, leaf)) {
+            when(scrapRateRepository.findByItemCode(code)).thenReturn(Optional.empty());
+            when(inventoryDaysRepository.findByItemCode(code)).thenReturn(Optional.empty());
+            when(safetyStockRepository.findByItemCodeAndYearMonthAndVersion(code, period, version))
+                    .thenReturn(Optional.empty());
+            when(safetyStockRepository.findFirstByItemCodeAndVersion(code, version))
+                    .thenReturn(Optional.empty());
+            when(inventoryCountRepository.findFirstByItemCodeAndVersion(code, version))
+                    .thenReturn(Optional.empty());
+        }
+
+        Bom finishedToLeaf = new Bom(
+                null, finished, finished, leaf, 1.0, null, null,
+                "制造一部", "单元A", null, null, null, null, null, "采购件", version);
+        when(bomRepository.findByVersion(version)).thenReturn(List.of(finishedToLeaf));
+
+        service.calculate(request(version));
+
+        ArgumentCaptor<List<ProductionPlan>> batchCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productionPlanBatchRepository).bulkInsert(batchCaptor.capture());
+        ProductionPlan leafPlan = batchCaptor.getValue().stream()
+                .filter(plan -> leaf.equals(plan.getItemCode()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(leafPlan.getPartAttribute()).isEqualTo("采购件");
     }
 
     // =========================================================================

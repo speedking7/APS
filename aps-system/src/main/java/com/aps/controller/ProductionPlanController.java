@@ -73,10 +73,11 @@ public class ProductionPlanController {
             @RequestParam(required = false) String version,
             @RequestParam(required = false) Integer yearMonth,
             @RequestParam(required = false) String finishedProductCode,
-            @RequestParam(required = false) String itemCode) throws Exception {
+            @RequestParam(required = false) String itemCode,
+            @RequestParam(required = false) String partAttribute) throws Exception {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=production-plan.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(service.exportWorkbook(version, yearMonth, finishedProductCode, itemCode));
+                .body(service.exportWorkbook(version, yearMonth, finishedProductCode, itemCode, partAttribute));
     }
 }

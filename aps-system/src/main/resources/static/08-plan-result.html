@@ -242,6 +242,9 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <div class="field"><label>完成品</label>
         <select id="filterProduct"><option value="">全部完成品</option></select>
       </div>
+      <div class="field"><label>子零件属性</label>
+        <select id="filterPartAttribute"><option value="">全部属性</option></select>
+      </div>
       <div class="field"><label>存货编码</label><input type="text" id="filterItemCode" placeholder="搜索编码"></div>
       <div class="spacer"></div>
       <button class="btn btn-ghost" onclick="resetFilters()">重置</button>
@@ -265,6 +268,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
             <th data-sort-key="itemProductName">自制件名称</th>
             <th data-sort-key="itemProductNo">自制件番号</th>
             <th data-sort-key="itemProjectName">自制件项目</th>
+            <th data-sort-key="partAttribute">子零件属性</th>
             <th data-sort-key="yearMonth">年月</th>
             <th data-sort-key="process">工序</th>
             <th data-sort-key="equipment">设备</th>
@@ -322,6 +326,7 @@ const planColumnDefs = {
   itemProductName: { type: 'text' },
   itemProductNo: { type: 'text' },
   itemProjectName: { type: 'text' },
+  partAttribute: { type: 'text' },
   yearMonth: { type: 'yearMonth' },
   process: { type: 'text' },
   equipment: { type: 'text' },
@@ -342,6 +347,7 @@ function closeModal(){document.getElementById('detailModal').classList.remove('s
 document.getElementById('detailModal').addEventListener('click',e=>{if(e.target.id==='detailModal')closeModal()})
 
 const API = location.origin;
+const EMPTY_PART_ATTRIBUTE_FILTER = '__EMPTY_PART_ATTRIBUTE__';
 let planData = [];
 let filteredData = [];
 let pageSize = parseInt(localStorage.getItem('aps.pageSize')||'20');
@@ -432,11 +438,14 @@ function applyFilters() {
   const version   = document.getElementById('filterVersion')?.value || '';
   const period    = document.getElementById('filterPeriod')?.value || '';
   const product   = document.getElementById('filterProduct')?.value || '';
+  const partAttribute = document.getElementById('filterPartAttribute')?.value || '';
   const itemCode  = (document.getElementById('filterItemCode')?.value || '').trim().toLowerCase();
   filteredData = planData.filter(d => {
     if (version  && d.version !== version) return false;
     if (period   && String(d.yearMonth) !== period) return false;
     if (product  && d.finishedProductCode !== product) return false;
+    if (partAttribute === EMPTY_PART_ATTRIBUTE_FILTER && (d.partAttribute || '') !== '') return false;
+    if (partAttribute && partAttribute !== EMPTY_PART_ATTRIBUTE_FILTER && (d.partAttribute || '') !== partAttribute) return false;
     if (itemCode && !(d.itemCode||'').toLowerCase().includes(itemCode)) return false;
     return true;
   });
@@ -445,7 +454,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  const ids = ['filterVersion','filterPeriod','filterProduct','filterItemCode'];
+  const ids = ['filterVersion','filterPeriod','filterProduct','filterPartAttribute','filterItemCode'];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -457,10 +466,12 @@ function exportExcel() {
   const version = document.getElementById('filterVersion')?.value?.trim();
   const period = document.getElementById('filterPeriod')?.value?.trim();
   const product = document.getElementById('filterProduct')?.value?.trim();
+  const partAttribute = document.getElementById('filterPartAttribute')?.value?.trim();
   const itemCode = document.getElementById('filterItemCode')?.value?.trim();
   if (version) params.set('version', version);
   if (period) params.set('yearMonth', period);
   if (product) params.set('finishedProductCode', product);
+  if (partAttribute) params.set('partAttribute', partAttribute);
   if (itemCode) params.set('itemCode', itemCode);
   const query = params.toString();
   window.location.href = `${API}/api/production-plan/export${query ? `?${query}` : ''}`;
@@ -472,7 +483,7 @@ function renderTable(data) {
   const sortedData = ApsTableMultiSort.sortRows(data, planSortState.sortChain, planColumnDefs);
   const total = sortedData.length;
   if (total === 0) {
-    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据，请先执行计划计算</td></tr>';
     const tl = document.querySelector('.toolbar-left');
     if (tl) tl.innerHTML = '共 <b>0</b> 条计划记录';
     const pi = document.getElementById('pagerInfo'); if(pi) pi.textContent='共 0 条';
@@ -496,6 +507,7 @@ function renderTable(data) {
       <td>${d.itemProductName||'—'}</td>
       <td>${d.itemProductNo||'—'}</td>
       <td>${d.itemProjectName||'—'}</td>
+      <td>${d.partAttribute||'—'}</td>
       <td>${d.yearMonth||'—'}</td>
       <td>${d.process||'—'}</td>
       <td>${d.equipment||'—'}</td>
@@ -532,10 +544,17 @@ function updateStats(data) {
 function populateFilters(data) {
   const periods  = [...new Set(data.map(d=>d.yearMonth))].sort();
   const products = [...new Set(data.map(d=>d.finishedProductCode))].sort();
+  const hasEmptyPartAttribute = data.some(d => !d.partAttribute);
+  const partAttributes = [...new Set(data.map(d => d.partAttribute).filter(Boolean))].sort();
   const pSel = document.getElementById('filterPeriod');
   if (pSel) pSel.innerHTML = '<option value="">全部期间</option>' + periods.map(p=>`<option value="${p}">${p}</option>`).join('');
   const fpSel = document.getElementById('filterProduct');
   if (fpSel) fpSel.innerHTML = '<option value="">全部完成品</option>' + products.map(p=>`<option value="${p}">${p}</option>`).join('');
+  const paSel = document.getElementById('filterPartAttribute');
+  if (paSel) {
+    const emptyOption = hasEmptyPartAttribute ? `<option value="${EMPTY_PART_ATTRIBUTE_FILTER}">-</option>` : '';
+    paSel.innerHTML = '<option value="">全部属性</option>' + emptyOption + partAttributes.map(p=>`<option value="${p}">${p}</option>`).join('');
+  }
 }
 
 window.showDetailFromData = function(d) {

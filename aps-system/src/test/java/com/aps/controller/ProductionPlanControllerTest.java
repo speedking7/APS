@@ -172,30 +172,33 @@ class ProductionPlanControllerTest {
     void getByVersion_returnsEnrichedFields() throws Exception {
         ProductionPlanView plan = makePlan(1L, "P001", "C001", 202601, 146.46);
         plan.setItemProductName("支架");
+        plan.setPartAttribute("采购件");
         plan.setFinishedProductName("总成A");
         when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(plan));
 
         mockMvc.perform(get("/api/production-plan/by-version/v1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].itemProductName").value("支架"))
+                .andExpect(jsonPath("$.data[0].partAttribute").value("采购件"))
                 .andExpect(jsonPath("$.data[0].finishedProductName").value("总成A"));
     }
 
     @Test
     void exportWorkbook_returnsExcelAttachmentAndPassesFilters() throws Exception {
-        when(productionPlanService.exportWorkbook("v1", 202601, "P001", "C001"))
+        when(productionPlanService.exportWorkbook("v1", 202601, "P001", "C001", "采购件"))
                 .thenReturn(new byte[]{1, 2, 3});
 
         mockMvc.perform(get("/api/production-plan/export")
                         .param("version", "v1")
                         .param("yearMonth", "202601")
                         .param("finishedProductCode", "P001")
-                        .param("itemCode", "C001"))
+                        .param("itemCode", "C001")
+                        .param("partAttribute", "采购件"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", containsString("attachment; filename=production-plan.xlsx")))
                 .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .andExpect(content().bytes(new byte[]{1, 2, 3}));
 
-        verify(productionPlanService).exportWorkbook("v1", 202601, "P001", "C001");
+        verify(productionPlanService).exportWorkbook("v1", 202601, "P001", "C001", "采购件");
     }
 }

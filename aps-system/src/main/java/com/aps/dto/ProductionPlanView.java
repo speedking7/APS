@@ -33,6 +33,7 @@ public class ProductionPlanView {
     private String itemProductName;
     private String itemProductNo;
     private String itemProjectName;
+    private String partAttribute;
 
     private String finishedProductName;
     private String finishedProductNo;

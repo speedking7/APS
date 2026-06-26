@@ -43,6 +43,7 @@ public class BomService {
         existing.setStaffCount(entity.getStaffCount());
         existing.setTaktTime(entity.getTaktTime());
         existing.setScrapRate(entity.getScrapRate());
+        existing.setPartAttribute(entity.getPartAttribute());
         existing.setVersion(entity.getVersion());
         return repository.save(existing);
     }

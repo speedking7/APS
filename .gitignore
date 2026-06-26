@@ -25,8 +25,13 @@ scripts/__pycache__/
 # Local runtime logs and scratch files
 aps-system/server.log*
 aps-system/server.err.log*
+aps-system/server-*.log
+aps-system/server-*.err.log
 *.bak-force
 ;; esac; done
+
+# Docker image exports
+*.tar
 
 # AI scaffold runtime and generated/cache outputs
 .omx/

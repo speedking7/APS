@@ -46,12 +46,13 @@ class WorkforceDetailControllerTest {
         row.setTaktTime(30.0);
         row.setRequiredSeconds(7200.0);
         row.setRequiredHours(2.0);
+        row.setRequiredPeople(0.01);
         return row;
     }
 
     @Test
     void getDetails_withVersion_returnsDetailRows() throws Exception {
-        when(workforceDetailService.findDetailsByVersion("v1")).thenReturn(List.of(makeRow()));
+        when(workforceDetailService.findDetailsByVersion("v1", 10.5)).thenReturn(List.of(makeRow()));
 
         mockMvc.perform(get("/api/workforce-report/details").param("version", "v1"))
                 .andExpect(status().isOk())
@@ -62,9 +63,10 @@ class WorkforceDetailControllerTest {
                 .andExpect(jsonPath("$.data[0].staffCount").value(2.0))
                 .andExpect(jsonPath("$.data[0].taktTime").value(30.0))
                 .andExpect(jsonPath("$.data[0].requiredSeconds").value(7200.0))
-                .andExpect(jsonPath("$.data[0].requiredHours").value(2.0));
+                .andExpect(jsonPath("$.data[0].requiredHours").value(2.0))
+                .andExpect(jsonPath("$.data[0].requiredPeople").value(0.01));
 
-        verify(workforceDetailService).findDetailsByVersion("v1");
+        verify(workforceDetailService).findDetailsByVersion("v1", 10.5);
     }
 
     @Test
@@ -77,7 +79,7 @@ class WorkforceDetailControllerTest {
 
     @Test
     void getDetails_emptyResult_returnsEmptyArray() throws Exception {
-        when(workforceDetailService.findDetailsByVersion("v1")).thenReturn(Collections.emptyList());
+        when(workforceDetailService.findDetailsByVersion("v1", 10.5)).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/workforce-report/details").param("version", "v1"))
                 .andExpect(status().isOk())

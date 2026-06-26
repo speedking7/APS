@@ -27,6 +27,7 @@ class GenerateImportTemplatesFromBomTests(unittest.TestCase):
             bom_rows = load_bom_rows_from_workbook(bom_path)
             self.assertEqual(3, len(bom_rows))
             self.assertEqual("FP100", bom_rows[0]["parent_code"])
+            self.assertEqual("采购件", bom_rows[0]["part_attribute"])
             self.assertEqual("V1", bom_rows[0]["version"])
 
             generated = write_template_workbooks(
@@ -66,11 +67,11 @@ class GenerateImportTemplatesFromBomTests(unittest.TestCase):
         workbook = Workbook()
         sheet = workbook.active
         sheet.title = "BOM"
-        sheet.append(["说明：测试", None, None, None, None, None, None, None, None, None, None, None, None])
-        sheet.append(["父零件", "子零件", "用量", "工序", "设备", "制造部门", "制造单元", "模腔数/取数（pcs）", "制造周期（S）", "持台人数（人）", "单件节拍（S）", "报废率", "版本号"])
-        sheet.append(["FP100", "FP100-1", 1, "焊接", "EQ-01", "制造一课", "焊接", 1, 64, 1, 64, 0.01, "V1"])
-        sheet.append(["FP100-1", "SEMI200", 1, "整理", None, "制造二课", "组立", 1, 60, 1, 60, 0, "V1"])
-        sheet.append(["FP200", "SEMI300", 1, "注塑", "EQ-02", "制造三课", "成型", 2, 80, 1, 40, 0.02, "V1"])
+        sheet.append(["说明：测试", None, None, None, None, None, None, None, None, None, None, None, None, None])
+        sheet.append(["父零件", "子零件", "用量", "工序", "设备", "制造部门", "制造单元", "模腔数/取数（pcs）", "制造周期（S）", "持台人数（人）", "单件节拍（S）", "报废率", "版本号", "子零件属性"])
+        sheet.append(["FP100", "FP100-1", 1, "焊接", "EQ-01", "制造一课", "焊接", 1, 64, 1, 64, 0.01, "V1", "采购件"])
+        sheet.append(["FP100-1", "SEMI200", 1, "整理", None, "制造二课", "组立", 1, 60, 1, 60, 0, "V1", "自制半成品"])
+        sheet.append(["FP200", "SEMI300", 1, "注塑", "EQ-02", "制造三课", "成型", 2, 80, 1, 40, 0.02, "V1", ""])
         workbook.save(path)
 
 

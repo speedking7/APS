@@ -45,6 +45,7 @@ class ProductionPlanServiceTest {
         ProductionPlan plan = new ProductionPlan();
         plan.setFinishedProductCode("FP001");
         plan.setItemCode("C001");
+        plan.setPartAttribute("采购件");
         plan.setVersion("v1");
         plan.setCalculatedAt(LocalDateTime.of(2026, 5, 26, 22, 0, 0));
 
@@ -53,13 +54,13 @@ class ProductionPlanServiceTest {
                 .thenReturn(List.of(
                         new PartMaster(1L, "FP001", "整机", "FNO-1", "项目A"),
                         new PartMaster(2L, "C001", "支架", "CNO-1", "项目A")));
-
         List<ProductionPlanView> views = service.findViewsByVersion("v1");
 
         assertThat(views).hasSize(1);
         ProductionPlanView view = views.get(0);
         assertThat(view.getItemProductName()).isEqualTo("支架");
         assertThat(view.getItemProductNo()).isEqualTo("CNO-1");
+        assertThat(view.getPartAttribute()).isEqualTo("采购件");
         assertThat(view.getFinishedProductName()).isEqualTo("整机");
         assertThat(view.getFinishedProductNo()).isEqualTo("FNO-1");
         assertThat(view.getCalculatedAt()).isEqualTo(LocalDateTime.of(2026, 5, 26, 22, 0, 0));
@@ -75,11 +76,34 @@ class ProductionPlanServiceTest {
         when(repository.findByVersion("v1")).thenReturn(List.of(plan));
         when(partMasterRepository.findByPartNoIn(Set.of("FP001", "C001")))
                 .thenReturn(Collections.emptyList());
-
         ProductionPlanView view = service.findViewsByVersion("v1").get(0);
 
         assertThat(view.getItemProductName()).isNull();
         assertThat(view.getFinishedProductName()).isNull();
+    }
+
+    @Test
+    void filterViews_filtersByPartAttribute() {
+        ProductionPlan keep = new ProductionPlan();
+        keep.setFinishedProductCode("FP001");
+        keep.setItemCode("C001");
+        keep.setPartAttribute("采购件");
+        keep.setVersion("v1");
+
+        ProductionPlan drop = new ProductionPlan();
+        drop.setFinishedProductCode("FP001");
+        drop.setItemCode("C002");
+        drop.setPartAttribute("自制件");
+        drop.setVersion("v1");
+
+        when(repository.findAll()).thenReturn(List.of(keep, drop));
+        when(partMasterRepository.findByPartNoIn(Set.of("FP001", "C001", "C002"))).thenReturn(Collections.emptyList());
+
+        List<ProductionPlanView> result = service.filterViews("v1", null, null, null, "采购件");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getItemCode()).isEqualTo("C001");
+        assertThat(result.get(0).getPartAttribute()).isEqualTo("采购件");
     }
 
     @Test
@@ -123,6 +147,7 @@ class ProductionPlanServiceTest {
         january.setScrapRate(0.05);
         january.setSafetyDays(3.0);
         january.setCurrentInventory(20.0);
+        january.setPartAttribute("采购件");
         january.setVersion("v1");
         january.setIsProduce("Y");
         january.setCalculatedAt(LocalDateTime.of(2026, 6, 20, 12, 0, 0));
@@ -139,17 +164,19 @@ class ProductionPlanServiceTest {
                         new PartMaster(1L, "FP001", "成品A", "F-001", "项目A"),
                         new PartMaster(2L, "C001", "子件A", "C-001", "项目A")));
 
-        byte[] bytes = service.exportWorkbook("v1", 202601, "FP001", "C001");
+        byte[] bytes = service.exportWorkbook("v1", 202601, "FP001", "C001", "采购件");
 
         try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             Sheet sheet = workbook.getSheet("计划结果");
             assertThat(sheet).isNotNull();
             assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("完成品");
             assertThat(sheet.getRow(0).getCell(1).getStringCellValue()).isEqualTo("自制件编码");
+            assertThat(sheet.getRow(0).getCell(5).getStringCellValue()).isEqualTo("子零件属性");
             assertThat(sheet.getLastRowNum()).isEqualTo(1);
             assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("FP001");
             assertThat(sheet.getRow(1).getCell(1).getStringCellValue()).isEqualTo("C001");
-            assertThat(sheet.getRow(1).getCell(15).getStringCellValue()).isEqualTo("v1");
+            assertThat(sheet.getRow(1).getCell(5).getStringCellValue()).isEqualTo("采购件");
+            assertThat(sheet.getRow(1).getCell(16).getStringCellValue()).isEqualTo("v1");
         }
     }
 }

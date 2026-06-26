@@ -134,7 +134,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
     </div>
     <div class="table-wrap">
       <table class="matrix">
-        <thead id="tableHead"><tr><th data-sort-key="manufacturingDepartment">制造部门</th><th data-sort-key="manufacturingUnit">制造单元</th><th data-sort-key="project">项目</th><th data-sort-key="productName">产品名称</th><th data-sort-key="productNo">产品番号</th><th data-sort-key="productCode">产品编码</th><th data-sort-key="yearMonth">月份</th><th data-sort-key="planQty">计划生产数</th><th data-sort-key="process">工序</th><th data-sort-key="requiredHours">所需工时</th></tr></thead>
+        <thead id="tableHead"><tr><th data-sort-key="manufacturingDepartment">制造部门</th><th data-sort-key="manufacturingUnit">制造单元</th><th data-sort-key="project">项目</th><th data-sort-key="productName">产品名称</th><th data-sort-key="productNo">产品番号</th><th data-sort-key="productCode">产品编码</th><th data-sort-key="yearMonth">月份</th><th data-sort-key="planQty">计划生产数</th><th data-sort-key="process">工序</th><th data-sort-key="requiredHours">所需工时</th><th data-sort-key="requiredPeople">所需人数</th></tr></thead>
         <tbody id="dataTbody"></tbody>
       </table>
     </div>
@@ -169,13 +169,14 @@ const workforceColumnDefs = {
   yearMonth: { type: 'yearMonth' },
   planQty: { type: 'number' },
   process: { type: 'text' },
-  requiredHours: { type: 'number' }
+  requiredHours: { type: 'number' },
+  requiredPeople: { type: 'number' }
 };
 
 function getActiveSortKeys(viewMode) {
   return viewMode === 'summary'
-    ? ['manufacturingDepartment', 'manufacturingUnit', 'process', 'yearMonth', 'requiredHours']
-    : ['manufacturingDepartment', 'manufacturingUnit', 'project', 'productName', 'productNo', 'productCode', 'yearMonth', 'planQty', 'process', 'requiredHours'];
+    ? ['manufacturingDepartment', 'manufacturingUnit', 'process', 'yearMonth', 'requiredHours', 'requiredPeople']
+    : ['manufacturingDepartment', 'manufacturingUnit', 'project', 'productName', 'productNo', 'productCode', 'yearMonth', 'planQty', 'process', 'requiredHours', 'requiredPeople'];
 }
 
 function syncSortState(viewMode) {
@@ -223,14 +224,14 @@ function renderTable(data) {
   const tableHead = document.getElementById('tableHead');
   if (tableHead) {
     tableHead.innerHTML = viewMode === 'summary'
-      ? '<tr><th data-sort-key="manufacturingDepartment">制造部门</th><th data-sort-key="manufacturingUnit">制造单元</th><th data-sort-key="process">工序</th><th data-sort-key="yearMonth">月份</th><th data-sort-key="requiredHours">所需工时</th></tr>'
-      : '<tr><th data-sort-key="manufacturingDepartment">制造部门</th><th data-sort-key="manufacturingUnit">制造单元</th><th data-sort-key="project">项目</th><th data-sort-key="productName">产品名称</th><th data-sort-key="productNo">产品番号</th><th data-sort-key="productCode">产品编码</th><th data-sort-key="yearMonth">月份</th><th data-sort-key="planQty">计划生产数</th><th data-sort-key="process">工序</th><th data-sort-key="requiredHours">所需工时</th></tr>';
+      ? '<tr><th data-sort-key="manufacturingDepartment">制造部门</th><th data-sort-key="manufacturingUnit">制造单元</th><th data-sort-key="process">工序</th><th data-sort-key="yearMonth">月份</th><th data-sort-key="requiredHours">所需工时</th><th data-sort-key="requiredPeople">所需人数</th></tr>'
+      : '<tr><th data-sort-key="manufacturingDepartment">制造部门</th><th data-sort-key="manufacturingUnit">制造单元</th><th data-sort-key="project">项目</th><th data-sort-key="productName">产品名称</th><th data-sort-key="productNo">产品番号</th><th data-sort-key="productCode">产品编码</th><th data-sort-key="yearMonth">月份</th><th data-sort-key="planQty">计划生产数</th><th data-sort-key="process">工序</th><th data-sort-key="requiredHours">所需工时</th><th data-sort-key="requiredPeople">所需人数</th></tr>';
   }
   syncSortState(viewMode);
   ApsTableMultiSort.bindTable(document.querySelector('.matrix'), workforceSortState, () => applyFilters());
   const sortedData = ApsTableMultiSort.sortRows(data, workforceSortState.sortChain, workforceColumnDefs);
   if (!sortedData.length) {
-    tbody.innerHTML = `<tr><td class="empty" colspan="${viewMode === 'summary' ? 5 : 10}">暂无匹配数据，请调整筛选条件或先执行计划计算。</td></tr>`;
+    tbody.innerHTML = `<tr><td class="empty" colspan="${viewMode === 'summary' ? 6 : 11}">暂无匹配数据，请调整筛选条件或先执行计划计算。</td></tr>`;
     return;
   }
   if (viewMode === 'summary') {
@@ -241,6 +242,7 @@ function renderTable(data) {
         <td>${row.process}</td>
         <td class="code">${row.yearMonth}</td>
         <td class="num">${formatNumber(row.requiredHours, 3)}</td>
+        <td class="num">${formatNumber(row.requiredPeople, 3)}</td>
       </tr>
     `).join('');
     return;
@@ -257,6 +259,7 @@ function renderTable(data) {
       <td class="num">${formatNumber(row.planQty, 3)}</td>
       <td>${row.process}</td>
       <td class="num">${formatNumber(row.requiredHours, 3)}</td>
+      <td class="num">${formatNumber(row.requiredPeople, 3)}</td>
     </tr>
   `).join('');
 }
@@ -268,6 +271,7 @@ function summarizeRows(data) {
     const current = groups.get(key);
     if (current) {
       current.requiredHours += row.requiredHours;
+      current.requiredPeople += row.requiredPeople;
       return;
     }
     groups.set(key, {
@@ -285,6 +289,7 @@ function summarizeRows(data) {
       taktTime: 0,
       requiredSeconds: 0,
       requiredHours: row.requiredHours,
+      requiredPeople: row.requiredPeople,
       sharedMoldAdjusted: false,
       sharedMoldSuppressed: false,
       sharedMoldGroupKey: '—'
@@ -307,12 +312,14 @@ window.showWorkforceDetail = function (row) {
       <div><span style="color:var(--color-neutral-400)">完成品编码</span><br><b>${row.finishedProductCode || '—'}</b></div>
       <div><span style="color:var(--color-neutral-400)">工序</span><br><b>${row.process}</b></div>
     </div>
-    ${row.sharedMoldAdjusted ? `<div class="calc-step">${row.sharedMoldSuppressed ? `共模规则已命中：组 <span class="ck">${row.sharedMoldGroupKey || '—'}</span> 在同月份同工序同部门/单元下，另一产品计划生产数更大，因此本行工时按 <span class="res">0</span> 计算。` : `共模规则已命中：组 <span class="ck">${row.sharedMoldGroupKey || '—'}</span> 在同月份同工序同部门/单元下，本行计划生产数较大，因此本行工时正常参与计算。`}</div>` : ''}
     <div class="calc-step">
       所需秒数 = 计划生产数 × 持台人数 × 节拍 = <span class="ck">${formatNumber(row.planQty, 3)}</span> × <span class="ck">${formatNumber(row.staffCount, 3)}</span> × <span class="ck">${formatNumber(row.taktTime, 3)}</span> = <span class="res">${formatNumber(row.requiredSeconds, 3)}</span>
     </div>
     <div class="calc-step">
       所需工时 = 所需秒数 ÷ 3600 = <span class="ck">${formatNumber(row.requiredSeconds, 3)}</span> ÷ <span class="ck">3600</span> = <span class="res">${formatNumber(row.requiredHours, 3)}</span>
+    </div>
+    <div class="calc-step">
+      所需人数 = 所需工时 ÷ 当月稼动天数 ÷ 每天有效工时 = <span class="ck">${formatNumber(row.requiredHours, 3)}</span> ÷ <span class="ck">${formatNumber(row.workDays, 3)}</span> ÷ <span class="ck">${formatNumber(row.dailyHours, 3)}</span> = <span class="res">${formatNumber(row.requiredPeople, 3)}</span>
     </div>`;
   document.getElementById('detailModal').classList.add('show');
 };
@@ -348,6 +355,7 @@ async function loadVersions() {
 
 async function loadData({ applyAfterLoad = false } = {}) {
   const version = document.getElementById('versionSel')?.value || '';
+  const dailyHours = Number(localStorage.getItem('aps.dailyEffectiveHours')) || 10.5;
   if (!version) {
     rows = [];
     loadedVersion = '';
@@ -361,7 +369,7 @@ async function loadData({ applyAfterLoad = false } = {}) {
     }
     return;
   }
-  const res = await fetch(`${API}/api/workforce-report/details?version=${encodeURIComponent(version)}`);
+  const res = await fetch(`${API}/api/workforce-report/details?version=${encodeURIComponent(version)}&dailyHours=${encodeURIComponent(dailyHours)}`);
   const json = await res.json();
   rows = (json.data || []).map(d => ({
     manufacturingDepartment: d.manufacturingDepartment || '—',
@@ -378,6 +386,9 @@ async function loadData({ applyAfterLoad = false } = {}) {
     taktTime: toNumber(d.taktTime),
     requiredSeconds: toNumber(d.requiredSeconds),
     requiredHours: toNumber(d.requiredHours),
+    requiredPeople: toNumber(d.requiredPeople),
+    workDays: toNumber(d.workDays),
+    dailyHours: toNumber(d.dailyHours) || dailyHours,
     sharedMoldAdjusted: !!d.sharedMoldAdjusted,
     sharedMoldSuppressed: !!d.sharedMoldSuppressed,
     sharedMoldGroupKey: d.sharedMoldGroupKey || '—'
@@ -430,11 +441,13 @@ function exportExcel() {
   const process = document.getElementById('processSel')?.value || '';
   const keyword = (document.getElementById('keywordInput')?.value || '').trim();
   const viewMode = document.getElementById('viewModeSel')?.value || 'detail';
+  const dailyHours = Number(localStorage.getItem('aps.dailyEffectiveHours')) || 10.5;
   if (month) params.set('month', month);
   if (department) params.set('department', department);
   if (unit) params.set('unit', unit);
   if (process) params.set('process', process);
   if (keyword) params.set('keyword', keyword);
+  params.set('dailyHours', String(dailyHours));
   if (viewMode) params.set('viewMode', viewMode);
   window.location.href = `${API}/api/workforce-report/details/export?${params.toString()}`;
 }

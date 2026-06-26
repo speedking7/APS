@@ -1,6 +1,7 @@
 package com.aps.service;
 
 import com.aps.dto.ProductionPlanView;
+import com.aps.entity.OperatingDays;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -16,6 +17,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,7 +32,7 @@ class WorkforceDetailServiceTest {
     private ProductionPlanService productionPlanService;
 
     @Mock
-    private SharedMoldRuleService sharedMoldRuleService;
+    private com.aps.repository.OperatingDaysRepository operatingDaysRepository;
 
     private ProductionPlanView makePlan(
             String version,
@@ -63,8 +65,10 @@ class WorkforceDetailServiceTest {
         when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(
                 makePlan("v1", "制造一部", "单元A", "P-100", "P-100", 202601, 120.0, "冲压", 2.0, 30.0)
         ));
+        when(operatingDaysRepository.findByYearMonth(202601))
+                .thenReturn(java.util.Optional.of(new OperatingDays(1L, 202601, 26.0, 20.0, 6.0, 0.0)));
 
-        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1");
+        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1", 10.0);
 
         assertThat(result).hasSize(1);
         WorkforceDetailRow row = result.get(0);
@@ -78,6 +82,7 @@ class WorkforceDetailServiceTest {
         assertThat(row.getTaktTime()).isCloseTo(30.0, within(0.000001));
         assertThat(row.getRequiredSeconds()).isCloseTo(120.0 * 2.0 * 30.0, within(0.000001));
         assertThat(row.getRequiredHours()).isCloseTo((120.0 * 2.0 * 30.0) / 3600.0, within(0.000001));
+        assertThat(row.getRequiredPeople()).isCloseTo(((120.0 * 2.0 * 30.0) / 3600.0) / 20.0 / 10.0, within(0.000001));
     }
 
     @Test
@@ -85,8 +90,10 @@ class WorkforceDetailServiceTest {
         when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(
                 makePlan("v1", null, null, null, null, 202601, 100.0, "焊接", null, null)
         ));
+        when(operatingDaysRepository.findByYearMonth(202601))
+                .thenReturn(java.util.Optional.empty());
 
-        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1");
+        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1", 10.5);
 
         assertThat(result).hasSize(1);
         WorkforceDetailRow row = result.get(0);
@@ -97,6 +104,7 @@ class WorkforceDetailServiceTest {
         assertThat(row.getTaktTime()).isEqualTo(0.0);
         assertThat(row.getRequiredSeconds()).isEqualTo(0.0);
         assertThat(row.getRequiredHours()).isEqualTo(0.0);
+        assertThat(row.getRequiredPeople()).isEqualTo(0.0);
     }
 
     @Test
@@ -105,7 +113,7 @@ class WorkforceDetailServiceTest {
         ProductionPlanView missingProcess = makePlan("v1", "制造一部", "单元A", "P-2", "P-2", 202601, 100.0, null, 2.0, 30.0);
         when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(missingMonth, missingProcess));
 
-        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1");
+        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1", 10.5);
 
         assertThat(result).isEmpty();
     }
@@ -115,8 +123,9 @@ class WorkforceDetailServiceTest {
         ProductionPlanView row1 = makePlan("v1", "制造二部", "单元B", "B-200", "B-200", 202602, 100.0, "装配", 1.0, 10.0);
         ProductionPlanView row2 = makePlan("v1", "制造一部", "单元A", "A-100", "A-100", 202601, 100.0, "冲压", 1.0, 10.0);
         when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(row1, row2));
+        when(operatingDaysRepository.findByYearMonth(anyInt())).thenReturn(java.util.Optional.empty());
 
-        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1");
+        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1", 10.5);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getYearMonth()).isEqualTo(202601);
@@ -127,31 +136,29 @@ class WorkforceDetailServiceTest {
     void emptyVersionResult_returnsEmptyList() {
         when(productionPlanService.findViewsByVersion("v1")).thenReturn(Collections.emptyList());
 
-        assertThat(service.findDetailsByVersion("v1")).isEmpty();
+        assertThat(service.findDetailsByVersion("v1", 10.5)).isEmpty();
     }
 
     @Test
     void repositoryIsQueriedByVersion() {
         when(productionPlanService.findViewsByVersion("v1")).thenReturn(Collections.emptyList());
 
-        service.findDetailsByVersion("v1");
+        service.findDetailsByVersion("v1", 10.5);
 
         verify(productionPlanService).findViewsByVersion("v1");
         verify(productionPlanService, never()).findAllViews();
     }
 
     @Test
-    void sharedMoldPair_keepsBothRowsButSuppressesSmallerSelfProductDemand() {
-        when(sharedMoldRuleService.findEnabledRules()).thenReturn(List.of(
-                new com.aps.entity.SharedMoldRule(1L, "203000324D", "203000326D", null, null, true, null),
-                new com.aps.entity.SharedMoldRule(2L, "203000328D", "203000330D", null, null, true, null)
-        ));
+    void sharedMoldPair_calculatesBothRowsIndependentlyAndSummarizesTogether() {
         ProductionPlanView smaller = makePlan("v1", "制造一部", "单元A", "203000324D", "203000324D", 202606, 80.0, "加饰注塑", 1.0, 20.0);
         ProductionPlanView larger = makePlan("v1", "制造一部", "单元A", "203000326D", "203000326D", 202606, 120.0, "加饰注塑", 1.0, 20.0);
         ProductionPlanView child = makePlan("v1", "制造一部", "单元A", "203000324D", "206100001D", 202606, 200.0, "热压", 1.0, 30.0);
         when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(smaller, larger, child));
+        when(operatingDaysRepository.findByYearMonth(202606))
+                .thenReturn(java.util.Optional.of(new OperatingDays(1L, 202606, 30.0, 20.0, 8.0, 2.0)));
 
-        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1");
+        List<WorkforceDetailRow> result = service.findDetailsByVersion("v1", 10.0);
 
         assertThat(result).hasSize(3);
         WorkforceDetailRow suppressed = result.stream()
@@ -162,12 +169,23 @@ class WorkforceDetailServiceTest {
                 .filter(row -> "203000326D".equals(row.getProductCode()))
                 .findFirst()
                 .orElseThrow();
-        assertThat(suppressed.getSharedMoldAdjusted()).isTrue();
-        assertThat(suppressed.getSharedMoldSuppressed()).isTrue();
-        assertThat(suppressed.getRequiredSeconds()).isEqualTo(0.0);
-        assertThat(suppressed.getRequiredHours()).isEqualTo(0.0);
+        assertThat(suppressed.getSharedMoldAdjusted()).isFalse();
+        assertThat(suppressed.getSharedMoldSuppressed()).isFalse();
+        assertThat(suppressed.getRequiredSeconds()).isCloseTo(80.0 * 1.0 * 20.0, within(0.000001));
+        assertThat(suppressed.getRequiredHours()).isCloseTo((80.0 * 1.0 * 20.0) / 3600.0, within(0.000001));
+        assertThat(suppressed.getRequiredPeople()).isCloseTo(((80.0 * 1.0 * 20.0) / 3600.0) / 20.0 / 10.0, within(0.000001));
         assertThat(active.getSharedMoldSuppressed()).isFalse();
-        assertThat(active.getRequiredSeconds()).isGreaterThan(0.0);
+        assertThat(active.getRequiredSeconds()).isCloseTo(120.0 * 1.0 * 20.0, within(0.000001));
+        assertThat(active.getRequiredHours()).isCloseTo((120.0 * 1.0 * 20.0) / 3600.0, within(0.000001));
+        assertThat(active.getRequiredPeople()).isCloseTo(((120.0 * 1.0 * 20.0) / 3600.0) / 20.0 / 10.0, within(0.000001));
+
+        List<WorkforceDetailRow> summary = service.summarizeRows(result.stream()
+                .filter(row -> "加饰注塑".equals(row.getProcess()))
+                .collect(java.util.stream.Collectors.toList()));
+        assertThat(summary).hasSize(1);
+        assertThat(summary.get(0).getRequiredHours()).isCloseTo(
+                ((80.0 * 1.0 * 20.0) + (120.0 * 1.0 * 20.0)) / 3600.0,
+                within(0.000001));
     }
 
     @Test
@@ -175,16 +193,20 @@ class WorkforceDetailServiceTest {
         when(productionPlanService.findViewsByVersion("v1")).thenReturn(List.of(
                 makePlan("v1", "制造一部", "单元A", "P-100", "P-100", 202601, 120.0, "冲压", 2.0, 30.0)
         ));
+        when(operatingDaysRepository.findByYearMonth(202601))
+                .thenReturn(java.util.Optional.of(new OperatingDays(1L, 202601, 26.0, 20.0, 6.0, 0.0)));
 
-        byte[] bytes = service.exportWorkbook("v1", null, null, null, null, null, "detail");
+        byte[] bytes = service.exportWorkbook("v1", null, null, null, null, null, "detail", 10.0);
 
         try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             Sheet sheet = workbook.getSheet("工时分析");
             assertThat(sheet).isNotNull();
             assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("制造部门");
             assertThat(sheet.getRow(0).getCell(9).getStringCellValue()).isEqualTo("所需工时");
+            assertThat(sheet.getRow(0).getCell(10).getStringCellValue()).isEqualTo("所需人数");
             assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("制造一部");
             assertThat(sheet.getRow(1).getCell(8).getStringCellValue()).isEqualTo("冲压");
+            assertThat(sheet.getRow(1).getCell(10).getNumericCellValue()).isCloseTo(0.01, within(0.000001));
         }
     }
 
@@ -194,18 +216,22 @@ class WorkforceDetailServiceTest {
                 makePlan("v1", "制造一部", "单元A", "P-100", "P-100", 202601, 120.0, "冲压", 2.0, 30.0),
                 makePlan("v1", "制造一部", "单元A", "P-200", "P-200", 202601, 60.0, "冲压", 1.0, 30.0)
         ));
+        when(operatingDaysRepository.findByYearMonth(202601))
+                .thenReturn(java.util.Optional.of(new OperatingDays(1L, 202601, 26.0, 20.0, 6.0, 0.0)));
 
-        byte[] bytes = service.exportWorkbook("v1", null, null, null, null, null, "summary");
+        byte[] bytes = service.exportWorkbook("v1", null, null, null, null, null, "summary", 10.0);
 
         try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             Sheet sheet = workbook.getSheet("工时分析汇总");
             assertThat(sheet).isNotNull();
             assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("制造部门");
             assertThat(sheet.getRow(0).getCell(4).getStringCellValue()).isEqualTo("所需工时");
+            assertThat(sheet.getRow(0).getCell(5).getStringCellValue()).isEqualTo("所需人数");
             assertThat(sheet.getLastRowNum()).isEqualTo(1);
             assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("制造一部");
             assertThat(sheet.getRow(1).getCell(2).getStringCellValue()).isEqualTo("冲压");
             assertThat(sheet.getRow(1).getCell(4).getNumericCellValue()).isCloseTo(2.5, within(0.000001));
+            assertThat(sheet.getRow(1).getCell(5).getNumericCellValue()).isCloseTo(0.0125, within(0.000001));
         }
     }
 }

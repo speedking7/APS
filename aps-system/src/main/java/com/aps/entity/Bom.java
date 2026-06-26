@@ -70,6 +70,10 @@ public class Bom {
     @Column(name = "scrap_rate")
     private Double scrapRate;
 
+    /** 零件属性 */
+    @Column(name = "part_attribute", length = 100)
+    private String partAttribute;
+
     /** 版本号 */
     @Column(name = "version", length = 50)
     private String version;
@@ -88,6 +92,7 @@ public class Bom {
             Double staffCount,
             Double taktTime,
             Double scrapRate,
+            String partAttribute,
             String version) {
         this.id = id;
         this.parentCode = parentCode;
@@ -102,7 +107,49 @@ public class Bom {
         this.staffCount = staffCount;
         this.taktTime = taktTime;
         this.scrapRate = scrapRate;
+            this.partAttribute = partAttribute;
         this.version = version;
+    }
+
+    public Bom(
+            Long id,
+            String parentCode,
+            String childCode,
+            Double usageQty,
+            String process,
+            String equipment,
+            String manufacturingDepartment,
+            String manufacturingUnit,
+            Integer moldCavity,
+            Double cycleTime,
+            Double staffCount,
+            Double taktTime,
+            Double scrapRate,
+            String version) {
+        this(id, parentCode, childCode, usageQty, process, equipment, manufacturingDepartment,
+                manufacturingUnit, moldCavity, cycleTime, staffCount, taktTime, scrapRate, null, version);
+    }
+
+    public Bom(
+            Long id,
+            String rootProductCode,
+            String parentCode,
+            String childCode,
+            Double usageQty,
+            String process,
+            String equipment,
+            String manufacturingDepartment,
+            String manufacturingUnit,
+            Integer moldCavity,
+            Double cycleTime,
+            Double staffCount,
+            Double taktTime,
+            Double scrapRate,
+            String partAttribute,
+            String version) {
+        this(id, parentCode, childCode, usageQty, process, equipment, manufacturingDepartment,
+                manufacturingUnit, moldCavity, cycleTime, staffCount, taktTime, scrapRate, partAttribute, version);
+        this.rootProductCode = rootProductCode;
     }
 
     public Bom(
@@ -121,8 +168,7 @@ public class Bom {
             Double taktTime,
             Double scrapRate,
             String version) {
-        this(id, parentCode, childCode, usageQty, process, equipment, manufacturingDepartment,
-                manufacturingUnit, moldCavity, cycleTime, staffCount, taktTime, scrapRate, version);
-        this.rootProductCode = rootProductCode;
+        this(id, rootProductCode, parentCode, childCode, usageQty, process, equipment, manufacturingDepartment,
+                manufacturingUnit, moldCavity, cycleTime, staffCount, taktTime, scrapRate, null, version);
     }
 }

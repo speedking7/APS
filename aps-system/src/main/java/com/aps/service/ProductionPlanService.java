@@ -88,15 +88,15 @@ public class ProductionPlanService {
         return toViews(repository.findByFinishedProductCodeAndYearMonth(code, yearMonth));
     }
 
-    public byte[] exportWorkbook(String version, Integer yearMonth, String finishedProductCode, String itemCode) throws Exception {
-        List<ProductionPlanView> views = filterViews(version, yearMonth, finishedProductCode, itemCode);
+    public byte[] exportWorkbook(String version, Integer yearMonth, String finishedProductCode, String itemCode, String partAttribute) throws Exception {
+        List<ProductionPlanView> views = filterViews(version, yearMonth, finishedProductCode, itemCode, partAttribute);
 
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("计划结果");
             Row header = sheet.createRow(0);
             String[] headers = {
-                    "完成品", "自制件编码", "自制件名称", "自制件番号", "自制件项目", "年月",
+                    "完成品", "自制件编码", "自制件名称", "自制件番号", "自制件项目", "子零件属性", "年月",
                     "工序", "设备", "制造部门", "制造单元", "需求(毛)", "计划数量",
                     "报废率", "安全天数", "当前库存", "版本", "是否生产"
             };
@@ -112,18 +112,19 @@ public class ProductionPlanService {
                 row.createCell(2).setCellValue(defaultString(view.getItemProductName()));
                 row.createCell(3).setCellValue(defaultString(view.getItemProductNo()));
                 row.createCell(4).setCellValue(defaultString(view.getItemProjectName()));
-                writeInteger(row, 5, view.getYearMonth());
-                row.createCell(6).setCellValue(defaultString(view.getProcess()));
-                row.createCell(7).setCellValue(defaultString(view.getEquipment()));
-                row.createCell(8).setCellValue(defaultString(view.getManufacturingDepartment()));
-                row.createCell(9).setCellValue(defaultString(view.getManufacturingUnit()));
-                writeDouble(row, 10, view.getForecast());
-                writeDouble(row, 11, view.getPlanQty());
-                writeDouble(row, 12, view.getScrapRate());
-                writeDouble(row, 13, view.getSafetyDays());
-                writeDouble(row, 14, view.getCurrentInventory());
-                row.createCell(15).setCellValue(defaultString(view.getVersion()));
-                row.createCell(16).setCellValue(defaultString(view.getIsProduce()));
+                row.createCell(5).setCellValue(defaultString(view.getPartAttribute()));
+                writeInteger(row, 6, view.getYearMonth());
+                row.createCell(7).setCellValue(defaultString(view.getProcess()));
+                row.createCell(8).setCellValue(defaultString(view.getEquipment()));
+                row.createCell(9).setCellValue(defaultString(view.getManufacturingDepartment()));
+                row.createCell(10).setCellValue(defaultString(view.getManufacturingUnit()));
+                writeDouble(row, 11, view.getForecast());
+                writeDouble(row, 12, view.getPlanQty());
+                writeDouble(row, 13, view.getScrapRate());
+                writeDouble(row, 14, view.getSafetyDays());
+                writeDouble(row, 15, view.getCurrentInventory());
+                row.createCell(16).setCellValue(defaultString(view.getVersion()));
+                row.createCell(17).setCellValue(defaultString(view.getIsProduce()));
             }
 
             workbook.write(outputStream);
@@ -131,12 +132,13 @@ public class ProductionPlanService {
         }
     }
 
-    public List<ProductionPlanView> filterViews(String version, Integer yearMonth, String finishedProductCode, String itemCode) {
+    public List<ProductionPlanView> filterViews(String version, Integer yearMonth, String finishedProductCode, String itemCode, String partAttribute) {
         return findAllViews().stream()
                 .filter(view -> isBlank(version) || version.equals(view.getVersion()))
                 .filter(view -> yearMonth == null || yearMonth.equals(view.getYearMonth()))
                 .filter(view -> isBlank(finishedProductCode) || finishedProductCode.equals(view.getFinishedProductCode()))
                 .filter(view -> isBlank(itemCode) || itemCode.equals(view.getItemCode()))
+                .filter(view -> isBlank(partAttribute) || partAttribute.equals(view.getPartAttribute()))
                 .collect(Collectors.toList());
     }
 

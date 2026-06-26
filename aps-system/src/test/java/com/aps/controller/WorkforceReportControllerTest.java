@@ -84,7 +84,7 @@ class WorkforceReportControllerTest {
 
     @Test
     void exportDetails_returnsExcelAttachmentAndPassesFilters() throws Exception {
-        when(workforceDetailService.exportWorkbook("v1", "202601", "制造一部", "单元A", "冲压", "abc", "summary"))
+        when(workforceDetailService.exportWorkbook("v1", "202601", "制造一部", "单元A", "冲压", "abc", "summary", 10.5))
                 .thenReturn(new byte[]{1, 2, 3});
 
         mockMvc.perform(get("/api/workforce-report/details/export")
@@ -94,12 +94,13 @@ class WorkforceReportControllerTest {
                         .param("unit", "单元A")
                         .param("process", "冲压")
                         .param("keyword", "abc")
+                        .param("dailyHours", "10.5")
                         .param("viewMode", "summary"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", containsString("attachment; filename=workforce-report.xlsx")))
                 .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .andExpect(content().bytes(new byte[]{1, 2, 3}));
 
-        verify(workforceDetailService).exportWorkbook("v1", "202601", "制造一部", "单元A", "冲压", "abc", "summary");
+        verify(workforceDetailService).exportWorkbook("v1", "202601", "制造一部", "单元A", "冲压", "abc", "summary", 10.5);
     }
 }

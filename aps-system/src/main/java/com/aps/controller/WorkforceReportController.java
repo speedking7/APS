@@ -45,8 +45,9 @@ public class WorkforceReportController {
      */
     @GetMapping("/details")
     public ApiResponse<List<WorkforceDetailRow>> getDetails(
-            @RequestParam String version) {
-        return ApiResponse.success(workforceDetailService.findDetailsByVersion(version));
+            @RequestParam String version,
+            @RequestParam(required = false, defaultValue = "10.5") Double dailyHours) {
+        return ApiResponse.success(workforceDetailService.findDetailsByVersion(version, dailyHours));
     }
 
     @GetMapping("/details/export")
@@ -57,10 +58,11 @@ public class WorkforceReportController {
             @RequestParam(required = false) String unit,
             @RequestParam(required = false) String process,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "10.5") Double dailyHours,
             @RequestParam(required = false, defaultValue = "detail") String viewMode) throws Exception {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=workforce-report.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(workforceDetailService.exportWorkbook(version, month, department, unit, process, keyword, viewMode));
+                .body(workforceDetailService.exportWorkbook(version, month, department, unit, process, keyword, viewMode, dailyHours));
     }
 }

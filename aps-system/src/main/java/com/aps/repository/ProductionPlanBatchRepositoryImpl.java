@@ -15,10 +15,10 @@ public class ProductionPlanBatchRepositoryImpl implements ProductionPlanBatchRep
 
     private static final String INSERT_SQL = "INSERT INTO t_production_plan ("
             + "calculated_at, current_inventory, cycle_time, equipment, finished_product_code, "
-            + "forecast, is_produce, item_code, manufacturing_department, manufacturing_unit, "
+            + "forecast, is_produce, item_code, manufacturing_department, manufacturing_unit, part_attribute, "
             + "mold_cavity, operating_days, plan_qty, raw_plan_qty, process, safety_days, scrap_rate, "
             + "staff_count, takt_time, version, `year_month`) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -45,17 +45,18 @@ public class ProductionPlanBatchRepositoryImpl implements ProductionPlanBatchRep
                 ps.setString(8, plan.getItemCode());
                 ps.setString(9, plan.getManufacturingDepartment());
                 ps.setString(10, plan.getManufacturingUnit());
-                setNullableInteger(ps, 11, plan.getMoldCavity());
-                setNullableDouble(ps, 12, plan.getOperatingDays());
-                setNullableDouble(ps, 13, plan.getPlanQty());
-                setNullableDouble(ps, 14, plan.getRawPlanQty());
-                ps.setString(15, plan.getProcess());
-                setNullableDouble(ps, 16, plan.getSafetyDays());
-                setNullableDouble(ps, 17, plan.getScrapRate());
-                setNullableDouble(ps, 18, plan.getStaffCount());
-                setNullableDouble(ps, 19, plan.getTaktTime());
-                ps.setString(20, plan.getVersion());
-                setNullableInteger(ps, 21, plan.getYearMonth());
+                ps.setString(11, plan.getPartAttribute());
+                setNullableInteger(ps, 12, plan.getMoldCavity());
+                setNullableDouble(ps, 13, plan.getOperatingDays());
+                setNullableDouble(ps, 14, plan.getPlanQty());
+                setNullableDouble(ps, 15, plan.getRawPlanQty());
+                ps.setString(16, plan.getProcess());
+                setNullableDouble(ps, 17, plan.getSafetyDays());
+                setNullableDouble(ps, 18, plan.getScrapRate());
+                setNullableDouble(ps, 19, plan.getStaffCount());
+                setNullableDouble(ps, 20, plan.getTaktTime());
+                ps.setString(21, plan.getVersion());
+                setNullableInteger(ps, 22, plan.getYearMonth());
             }
 
             @Override

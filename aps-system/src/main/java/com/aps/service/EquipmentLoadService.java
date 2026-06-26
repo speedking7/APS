@@ -187,18 +187,14 @@ public class EquipmentLoadService {
                 continue;
             }
             adjustedKeys.add(entry.getKey());
-            boolean alreadyAdjustedInPlanLayer = groupRows.stream().anyMatch(plan -> plan.getRawPlanQty() != null);
-            if (alreadyAdjustedInPlanLayer) {
-                activePeerByKey.put(entry.getKey(), null);
-                continue;
-            }
             ProductionPlan activePlan = groupRows.stream()
-                    .max(Comparator.comparingDouble(plan -> rawOrAdjustedPlanQty(plan)))
+                    .max(Comparator
+                            .comparingDouble(this::rawOrAdjustedPlanQty)
+                            .thenComparing(plan -> defaultText(plan.getItemCode(), "")))
                     .orElse(null);
-            double maxPlanQty = activePlan == null ? 0.0 : rawOrAdjustedPlanQty(activePlan);
             activePeerByKey.put(entry.getKey(), activePlan != null ? activePlan.getItemCode() : null);
             for (ProductionPlan plan : groupRows) {
-                if (rawOrAdjustedPlanQty(plan) < maxPlanQty) {
+                if (plan != activePlan) {
                     suppressedPlans.add(plan);
                 }
             }

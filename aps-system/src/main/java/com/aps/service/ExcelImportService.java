@@ -164,7 +164,8 @@ public class ExcelImportService {
             String manufacturingDepartment = str(row, 6);
             String manufacturingUnit = str(row, 7);
             Double scrapRate  = numOrNull(row, 12);
-            String version    = str(row, 13);
+            String partAttribute = str(row, 13);
+            String version    = str(row, 14);
 
             String err = null;
             if (!isValidCode(rootProductCode)) err = "根完成品编码无效: " + rootProductCode;
@@ -199,6 +200,7 @@ public class ExcelImportService {
             b.setStaffCount(numOrNull(row, 10));
             b.setTaktTime(numOrNull(row, 11));
             b.setScrapRate(scrapRate);
+            b.setPartAttribute(partAttribute);
             b.setVersion(version);
             list.add(b);
         }

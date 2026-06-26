@@ -36,7 +36,9 @@ public class PlanCalculationService {
         private final Map<String, Bom> firstByParentCode;
         private final Map<String, List<Bom>> childrenByParentCode;
 
-        private BomIndexes(Map<String, Bom> firstByParentCode, Map<String, List<Bom>> childrenByParentCode) {
+        private BomIndexes(
+                Map<String, Bom> firstByParentCode,
+                Map<String, List<Bom>> childrenByParentCode) {
             this.firstByParentCode = firstByParentCode;
             this.childrenByParentCode = childrenByParentCode;
         }
@@ -65,6 +67,7 @@ public class PlanCalculationService {
         private final Integer period;
         private final BomIndexes bomIndexes;
         private final Demand finishedProductDemand;
+        private final Bom incomingBom;
         private final Set<String> ancestorPath;
 
         private NodeRequest(
@@ -75,6 +78,7 @@ public class PlanCalculationService {
                 Integer period,
                 BomIndexes bomIndexes,
                 Demand finishedProductDemand,
+                Bom incomingBom,
                 Set<String> ancestorPath) {
             this.itemCode = itemCode;
             this.finishedProduct = finishedProduct;
@@ -83,6 +87,7 @@ public class PlanCalculationService {
             this.period = period;
             this.bomIndexes = bomIndexes;
             this.finishedProductDemand = finishedProductDemand;
+            this.incomingBom = incomingBom;
             this.ancestorPath = ancestorPath;
         }
     }
@@ -97,6 +102,7 @@ public class PlanCalculationService {
         private final Double cycleTime;
         private final Double staffCount;
         private final Double taktTime;
+        private final String partAttribute;
         private final double currentInventory;
         private final double recordedGrossDemand;
         private final double safetyDaysRecorded;
@@ -116,6 +122,7 @@ public class PlanCalculationService {
                 Double cycleTime,
                 Double staffCount,
                 Double taktTime,
+                String partAttribute,
                 double currentInventory,
                 double recordedGrossDemand,
                 double safetyDaysRecorded,
@@ -131,6 +138,7 @@ public class PlanCalculationService {
             this.cycleTime = cycleTime;
             this.staffCount = staffCount;
             this.taktTime = taktTime;
+            this.partAttribute = partAttribute;
             this.currentInventory = currentInventory;
             this.recordedGrossDemand = recordedGrossDemand;
             this.safetyDaysRecorded = safetyDaysRecorded;
@@ -207,6 +215,7 @@ public class PlanCalculationService {
                         period,
                         bomIndexes,
                         demand,
+                        null,
                         Collections.emptySet()
                 ));
             }
@@ -235,7 +244,7 @@ public class PlanCalculationService {
                     periodEndingInventory.put(result.request.itemCode, result.endingInventoryForNextPeriod);
                     saveRecord(batch, result.request.finishedProduct, result.request.itemCode, result.request.period,
                             result.process, result.equipment, result.manufacturingDepartment, result.manufacturingUnit,
-                            result.moldCavity, result.cycleTime, result.staffCount, result.taktTime,
+                            result.moldCavity, result.cycleTime, result.staffCount, result.taktTime, result.partAttribute,
                             result.currentInventory, result.recordedGrossDemand, result.safetyDaysRecorded,
                             result.scrapRate, result.adjustedPlanQty, result.rawPlanQty, resultVersion, calculatedAt);
 
@@ -256,6 +265,7 @@ public class PlanCalculationService {
                                     period,
                                     result.request.bomIndexes,
                                     null,
+                                    child,
                                     currentPath
                             ));
                         }
@@ -309,6 +319,7 @@ public class PlanCalculationService {
             Double  cycleTime  = null;
             Double  staffCount = null;
             Double  taktTime   = null;
+            String  partAttribute = request.incomingBom != null ? request.incomingBom.getPartAttribute() : null;
             double  scrapRate  = 0.0;
 
             if (bomOpt.isPresent()) {
@@ -321,6 +332,9 @@ public class PlanCalculationService {
                 cycleTime  = b.getCycleTime();
                 staffCount = b.getStaffCount();
                 taktTime   = b.getTaktTime();
+                if (partAttribute == null && !request.finishedProductNode) {
+                    partAttribute = b.getPartAttribute();
+                }
                 scrapRate  = b.getScrapRate() != null ? b.getScrapRate() : 0.0;
             }
 
@@ -391,6 +405,7 @@ public class PlanCalculationService {
                     cycleTime,
                     staffCount,
                     taktTime,
+                    partAttribute,
                     currentInventory,
                     recordedGrossDemand,
                     safetyDaysRecorded,
@@ -553,7 +568,7 @@ public class PlanCalculationService {
             String finishedProduct, String itemCode, Integer period,
             String process, String equipment, String manufacturingDepartment,
             String manufacturingUnit, Integer moldCavity,
-            Double cycleTime, Double staffCount, Double taktTime,
+            Double cycleTime, Double staffCount, Double taktTime, String partAttribute,
             double currentInventory, double forecast, double safetyDays,
             double scrapRate, double planQty, double rawPlanQty, String version,
             LocalDateTime calculatedAt) {
@@ -570,6 +585,7 @@ public class PlanCalculationService {
         plan.setCycleTime(cycleTime);
         plan.setStaffCount(staffCount);
         plan.setTaktTime(taktTime);
+        plan.setPartAttribute(partAttribute);
         plan.setCurrentInventory(currentInventory);
         plan.setForecast(forecast);
         plan.setSafetyDays(safetyDays);

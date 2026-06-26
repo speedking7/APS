@@ -1,7 +1,7 @@
 package com.aps.service;
 
 import com.aps.dto.ProductionPlanView;
-import com.aps.entity.SharedMoldRule;
+import com.aps.repository.OperatingDaysRepository;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -16,7 +16,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,16 +26,16 @@ public class WorkforceDetailService {
     private ProductionPlanService productionPlanService;
 
     @Autowired
-    private SharedMoldRuleService sharedMoldRuleService;
+    private OperatingDaysRepository operatingDaysRepository;
 
-    public List<WorkforceDetailRow> findDetailsByVersion(String version) {
+    public List<WorkforceDetailRow> findDetailsByVersion(String version, Double dailyHours) {
         List<ProductionPlanView> plans = productionPlanService.findViewsByVersion(version);
         List<WorkforceDetailRow> rawRows = plans.stream()
                 .filter(p -> p.getYearMonth() != null && p.getProcess() != null)
-                .map(this::toRow)
+                .map(plan -> toRow(plan, dailyHours))
                 .collect(Collectors.toList());
 
-        return applySharedMoldRule(rawRows).stream()
+        return rawRows.stream()
                 .sorted(Comparator
                         .comparing(WorkforceDetailRow::getYearMonth)
                         .thenComparing(WorkforceDetailRow::getManufacturingDepartment)
@@ -53,9 +52,10 @@ public class WorkforceDetailService {
             String unit,
             String process,
             String keyword,
-            String viewMode
+            String viewMode,
+            Double dailyHours
     ) throws Exception {
-        List<WorkforceDetailRow> filteredRows = filterRows(version, month, department, unit, process, keyword);
+        List<WorkforceDetailRow> filteredRows = filterRows(version, month, department, unit, process, keyword, dailyHours);
         boolean summaryMode = "summary".equalsIgnoreCase(viewMode);
         List<WorkforceDetailRow> exportRows = summaryMode ? summarizeRows(filteredRows) : filteredRows;
 
@@ -64,8 +64,8 @@ public class WorkforceDetailService {
             Sheet sheet = workbook.createSheet(summaryMode ? "工时分析汇总" : "工时分析");
             Row header = sheet.createRow(0);
             String[] headers = summaryMode
-                    ? new String[]{"制造部门", "制造单元", "工序", "月份", "所需工时"}
-                    : new String[]{"制造部门", "制造单元", "项目", "产品名称", "产品番号", "产品编码", "月份", "计划生产数", "工序", "所需工时"};
+                    ? new String[]{"制造部门", "制造单元", "工序", "月份", "所需工时", "所需人数"}
+                    : new String[]{"制造部门", "制造单元", "项目", "产品名称", "产品番号", "产品编码", "月份", "计划生产数", "工序", "所需工时", "所需人数"};
             for (int i = 0; i < headers.length; i++) {
                 header.createCell(i).setCellValue(headers[i]);
             }
@@ -79,6 +79,7 @@ public class WorkforceDetailService {
                     excelRow.createCell(2).setCellValue(defaultText(row.getProcess()));
                     writeInteger(excelRow, 3, row.getYearMonth());
                     writeDouble(excelRow, 4, row.getRequiredHours());
+                    writeDouble(excelRow, 5, row.getRequiredPeople());
                 } else {
                     excelRow.createCell(2).setCellValue(defaultText(row.getProject()));
                     excelRow.createCell(3).setCellValue(defaultText(row.getProductName()));
@@ -88,6 +89,7 @@ public class WorkforceDetailService {
                     writeDouble(excelRow, 7, row.getPlanQty());
                     excelRow.createCell(8).setCellValue(defaultText(row.getProcess()));
                     writeDouble(excelRow, 9, row.getRequiredHours());
+                    writeDouble(excelRow, 10, row.getRequiredPeople());
                 }
             }
 
@@ -102,9 +104,10 @@ public class WorkforceDetailService {
             String department,
             String unit,
             String process,
-            String keyword
+            String keyword,
+            Double dailyHours
     ) {
-        return findDetailsByVersion(version).stream()
+        return findDetailsByVersion(version, dailyHours).stream()
                 .filter(row -> isBlank(month) || String.valueOf(row.getYearMonth()).equals(month))
                 .filter(row -> isBlank(department) || Objects.equals(row.getManufacturingDepartment(), department))
                 .filter(row -> isBlank(unit) || Objects.equals(row.getManufacturingUnit(), unit))
@@ -138,10 +141,14 @@ public class WorkforceDetailService {
                 summary.setManufacturingUnit(row.getManufacturingUnit());
                 summary.setProcess(row.getProcess());
                 summary.setYearMonth(row.getYearMonth());
+                summary.setWorkDays(row.getWorkDays());
+                summary.setDailyHours(row.getDailyHours());
                 summary.setRequiredHours(0.0);
+                summary.setRequiredPeople(0.0);
                 groups.put(key, summary);
             }
             summary.setRequiredHours(summary.getRequiredHours() + toNumber(row.getRequiredHours()));
+            summary.setRequiredPeople(summary.getRequiredPeople() + toNumber(row.getRequiredPeople()));
         }
         return groups.values().stream()
                 .sorted(Comparator
@@ -152,7 +159,7 @@ public class WorkforceDetailService {
                 .collect(Collectors.toList());
     }
 
-    private WorkforceDetailRow toRow(ProductionPlanView plan) {
+    private WorkforceDetailRow toRow(ProductionPlanView plan, Double dailyHours) {
         WorkforceDetailRow row = new WorkforceDetailRow();
         row.setManufacturingDepartment(defaultText(plan.getManufacturingDepartment()));
         row.setManufacturingUnit(defaultText(plan.getManufacturingUnit()));
@@ -167,81 +174,14 @@ public class WorkforceDetailService {
         row.setProcess(defaultText(plan.getProcess()));
         row.setStaffCount(toNumber(plan.getStaffCount()));
         row.setTaktTime(toNumber(plan.getTaktTime()));
+        row.setWorkDays(resolveWorkDays(row.getYearMonth()));
+        row.setDailyHours(normalizeDailyHours(dailyHours));
         row.setRequiredSeconds(row.getPlanQty() * row.getStaffCount() * row.getTaktTime());
         row.setRequiredHours(row.getRequiredSeconds() / 3600.0);
+        row.setRequiredPeople(calculateRequiredPeople(row.getWorkDays(), row.getRequiredHours(), row.getDailyHours()));
+        row.setSharedMoldAdjusted(false);
+        row.setSharedMoldSuppressed(false);
         return row;
-    }
-
-    private List<WorkforceDetailRow> applySharedMoldRule(List<WorkforceDetailRow> rows) {
-        Map<String, Set<String>> sharedMoldGroups = buildSharedMoldGroups();
-        Map<String, List<WorkforceDetailRow>> grouped = new LinkedHashMap<>();
-        List<WorkforceDetailRow> passthrough = new java.util.ArrayList<>();
-
-        for (WorkforceDetailRow row : rows) {
-            if (!isSharedMoldSelfProductRow(row, sharedMoldGroups)) {
-                passthrough.add(row);
-                continue;
-            }
-            String key = buildSharedMoldKey(row, sharedMoldGroups);
-            row.setSharedMoldAdjusted(true);
-            row.setSharedMoldGroupKey(key.substring(key.lastIndexOf('|') + 1));
-            grouped.computeIfAbsent(key, ignored -> new java.util.ArrayList<>()).add(row);
-        }
-
-        for (List<WorkforceDetailRow> groupRows : grouped.values()) {
-            boolean alreadyAdjustedInPlanLayer = groupRows.stream().anyMatch(row -> row.getRawPlanQty() != null);
-            if (alreadyAdjustedInPlanLayer) {
-                for (WorkforceDetailRow row : groupRows) {
-                    row.setSharedMoldSuppressed(false);
-                    row.setSharedMoldPeerItemCode(null);
-                    passthrough.add(row);
-                }
-                continue;
-            }
-            WorkforceDetailRow activeRow = groupRows.stream()
-                    .max(Comparator.comparingDouble(row -> rawOrAdjustedPlanQty(row)))
-                    .orElse(null);
-            double maxPlanQty = activeRow == null ? 0.0 : rawOrAdjustedPlanQty(activeRow);
-            for (WorkforceDetailRow row : groupRows) {
-                if (rawOrAdjustedPlanQty(row) < maxPlanQty) {
-                    row.setSharedMoldSuppressed(true);
-                    row.setRequiredSeconds(0.0);
-                    row.setRequiredHours(0.0);
-                    row.setSharedMoldPeerItemCode(activeRow != null ? activeRow.getProductCode() : null);
-                } else {
-                    row.setSharedMoldSuppressed(false);
-                    row.setSharedMoldPeerItemCode(null);
-                }
-                passthrough.add(row);
-            }
-        }
-
-        return passthrough;
-    }
-
-    private boolean isSharedMoldSelfProductRow(WorkforceDetailRow row, Map<String, Set<String>> sharedMoldGroups) {
-        if (row == null) return false;
-        String productCode = row.getProductCode();
-        return productCode != null
-                && sharedMoldGroups.containsKey(productCode);
-    }
-
-    private String buildSharedMoldKey(WorkforceDetailRow row, Map<String, Set<String>> sharedMoldGroups) {
-        Set<String> group = sharedMoldGroups.get(row.getProductCode());
-        String groupKey = group.stream().sorted().collect(Collectors.joining("|"));
-        return row.getYearMonth() + "|" + defaultText(row.getProcess()) + "|" +
-                defaultText(row.getManufacturingDepartment()) + "|" +
-                defaultText(row.getManufacturingUnit()) + "|" + groupKey;
-    }
-
-    private Map<String, Set<String>> buildSharedMoldGroups() {
-        Map<String, Set<String>> groups = new LinkedHashMap<>();
-        for (SharedMoldRule rule : sharedMoldRuleService.findEnabledRules()) {
-            Set<String> pair = Set.of(rule.getProductACode(), rule.getProductBCode());
-            groups.put(rule.getProductACode(), pair);
-            groups.put(rule.getProductBCode(), pair);
-        }
-        return groups;
     }
 
     private String firstNonBlank(String primary, String fallback) {
@@ -259,12 +199,28 @@ public class WorkforceDetailService {
         return Objects.requireNonNullElse(value, 0.0);
     }
 
-    private double rawOrAdjustedPlanQty(WorkforceDetailRow row) {
-        if (row == null) return 0.0;
-        if (row.getRawPlanQty() != null) {
-            return row.getRawPlanQty();
+    private Double calculateRequiredPeople(Double workDays, Double requiredHours, Double dailyHours) {
+        double hours = toNumber(requiredHours);
+        double configuredDailyHours = toNumber(dailyHours);
+        double normalizedWorkDays = toNumber(workDays);
+        if (hours <= 0 || configuredDailyHours <= 0 || normalizedWorkDays <= 0) {
+            return 0.0;
         }
-        return toNumber(row.getPlanQty());
+        return hours / normalizedWorkDays / configuredDailyHours;
+    }
+
+    private Double resolveWorkDays(Integer yearMonth) {
+        if (yearMonth == null) {
+            return 0.0;
+        }
+        return operatingDaysRepository.findByYearMonth(yearMonth)
+                .map(od -> toNumber(od.getWorkDays()))
+                .orElse(0.0);
+    }
+
+    private Double normalizeDailyHours(Double dailyHours) {
+        double value = toNumber(dailyHours);
+        return value > 0 ? value : 10.5;
     }
 
     private boolean isBlank(String value) {

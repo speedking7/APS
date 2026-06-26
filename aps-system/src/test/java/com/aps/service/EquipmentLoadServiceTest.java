@@ -323,7 +323,7 @@ class EquipmentLoadServiceTest {
     }
 
     @Test
-    void sharedMoldPair_whenPlanQtyAlreadyAligned_shouldNotSuppressEitherRow() {
+    void sharedMoldPair_whenPlanQtyAlreadyAligned_suppressesOneRowForEquipmentLoad() {
         when(sharedMoldRuleService.findEnabledRules()).thenReturn(List.of(
                 new com.aps.entity.SharedMoldRule(1L, "203000324D", "203000326D", null, null, true, null)
         ));
@@ -340,8 +340,17 @@ class EquipmentLoadServiceTest {
         List<EquipmentLoadRow> result = service.calculateEquipmentLoad(null);
 
         assertThat(result).hasSize(1);
-        double expectedRequiredSeconds = (120.0 * 10.0) / 2.0 + (120.0 * 10.0) / 2.0;
+        double expectedRequiredSeconds = (120.0 * 10.0) / 2.0;
         assertThat(result.get(0).getRequiredSeconds()).isCloseTo(expectedRequiredSeconds, within(0.000001));
-        assertThat(result.get(0).getDetailRows()).allMatch(row -> !Boolean.TRUE.equals(row.getSharedMoldSuppressed()));
+        assertThat(result.get(0).getDetailRows())
+                .filteredOn(row -> Boolean.TRUE.equals(row.getSharedMoldSuppressed()))
+                .hasSize(1)
+                .allMatch(row -> "203000324D".equals(row.getItemCode()))
+                .allMatch(row -> row.getRequiredSecondsEffective() == 0.0);
+        assertThat(result.get(0).getDetailRows())
+                .filteredOn(row -> !Boolean.TRUE.equals(row.getSharedMoldSuppressed()))
+                .hasSize(1)
+                .allMatch(row -> "203000326D".equals(row.getItemCode()))
+                .allMatch(row -> row.getRequiredSecondsEffective() > 0.0);
     }
 }

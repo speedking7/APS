@@ -247,7 +247,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
               <th data-sort-key="process">工序</th><th data-sort-key="equipment">设备</th><th data-sort-key="manufacturingDepartment">制造部门</th><th data-sort-key="manufacturingUnit">制造单元</th><th class="num" data-sort-key="moldCavity">模腔数</th>
               <th class="num" data-sort-key="cycleTime">制造周期(s)</th><th class="num" data-sort-key="staffCount">持台人数</th>
               <th class="num" data-sort-key="taktTime">节拍(s)</th><th class="num" data-sort-key="scrapRate">报废率</th>
-              <th data-sort-key="version">版本号</th><th>操作</th>
+              <th data-sort-key="partAttribute">子零件属性</th><th data-sort-key="version">版本号</th><th>操作</th>
             </tr>
           </thead>
           <tbody id="dataTbody"></tbody>
@@ -336,6 +336,10 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
         <label class="form-label">报废率 <span style="color:var(--color-neutral-400);font-weight:400">（0~1，如 0.01）</span></label>
         <input class="form-input" id="bomScrapRate" type="number" min="0" max="0.9999" step="0.0001" placeholder="0.01">
       </div>
+      <div class="form-group">
+        <label class="form-label">子零件属性</label>
+        <input class="form-input" id="bomPartAttribute" placeholder="如 采购件 / 自制件">
+      </div>
       <div class="form-group full">
         <label class="form-label">版本号<span class="req">*</span></label>
         <input class="form-input" id="bomVersion" placeholder="如 20260331-1">
@@ -355,7 +359,7 @@ body{font-family:var(--font-body);background:var(--color-neutral-050);color:var(
       <span>批量导入 BOM</span>
       <button class="modal-close" onclick="closeImportModal()">×</button>
     </div>
-    <div class="tpl-row">Sheet 名称：<b>BOM</b>，列顺序：根完成品/父零件/子零件/用量/工序/设备/制造部门/制造单元/模腔数/制造周期/持台人数/节拍/报废率/版本号</div>
+    <div class="tpl-row">Sheet 名称：<b>BOM</b>，列顺序：根完成品/父零件/子零件/用量/工序/设备/制造部门/制造单元/模腔数/制造周期/持台人数/节拍/报废率/子零件属性/版本号</div>
     <div class="upload-zone" onclick="document.getElementById('importFile').click()">
       <div class="upload-icon">⇪</div>
       <div class="upload-text" id="importFileName">点击或拖拽文件到此处上传</div>
@@ -395,6 +399,7 @@ const bomColumnDefs = {
   staffCount: { type: 'number' },
   taktTime: { type: 'number' },
   scrapRate: { type: 'number' },
+  partAttribute: { type: 'text' },
   version: { type: 'text' }
 };
 const API = location.origin;
@@ -450,6 +455,7 @@ function openBomModal(d){
   document.getElementById('bomStaffCount').value = d && d.staffCount != null ? d.staffCount : '';
   document.getElementById('bomTaktTime').value = d && d.taktTime != null ? d.taktTime : '';
   document.getElementById('bomScrapRate').value = d && d.scrapRate != null ? d.scrapRate : '';
+  document.getElementById('bomPartAttribute').value = d ? (d.partAttribute || '') : '';
   document.getElementById('bomVersion').value = d ? (d.version || '') : '';
   document.getElementById('bomModal').classList.add('show');
 }
@@ -487,6 +493,7 @@ async function saveBom(){
     staffCount: toNum('bomStaffCount'),
     taktTime: toNum('bomTaktTime'),
     scrapRate: toNum('bomScrapRate'),
+    partAttribute: document.getElementById('bomPartAttribute').value.trim() || null,
     version
   };
   const url = id ? `${API}/api/bom/${id}` : `${API}/api/bom`;
@@ -533,7 +540,7 @@ function showLoadError(message){
   const msg = message || '加载失败，请刷新重试';
   const tbody = document.getElementById('dataTbody');
   const tree = document.getElementById('treeContainer');
-  if(tbody) tbody.innerHTML = `<tr><td colspan="15" style="text-align:center;padding:32px;color:var(--color-error)">${msg}</td></tr>`;
+  if(tbody) tbody.innerHTML = `<tr><td colspan="16" style="text-align:center;padding:32px;color:var(--color-error)">${msg}</td></tr>`;
   if(tree) tree.innerHTML = `<div style="padding:32px;color:var(--color-error);font-size:13px">${msg}</div>`;
   document.getElementById('totalCount').textContent = '0';
   document.getElementById('pageInfo').textContent = '加载失败';
@@ -630,7 +637,7 @@ function renderListView(data){
   const total = sortedData.length;
   document.getElementById('totalCount').textContent = total;
   if(total === 0){
-    tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:32px;color:var(--color-neutral-400)">暂无数据</td></tr>';
     document.getElementById('pageInfo').textContent = '共 0 条';
     document.getElementById('pageBtns').innerHTML = '';
     return;
@@ -659,6 +666,7 @@ function renderListView(data){
       <td class="num">${d.staffCount ?? '—'}</td>
       <td class="num">${d.taktTime ?? '—'}</td>
       <td class="num">${d.scrapRate != null ? (d.scrapRate * 100).toFixed(2) + '%' : '—'}</td>
+      <td>${d.partAttribute || '—'}</td>
       <td><span style="font-family:var(--font-data);font-size:11px;color:var(--color-neutral-400)">${d.version || '—'}</span></td>
       <td>
         <a class="action-link" onclick="openBomModal(filteredBoms[${offset+i}])">编辑</a>

@@ -17,8 +17,11 @@ public class WorkforceDetailRow {
     private String process;
     private Double staffCount;
     private Double taktTime;
+    private Double workDays;
+    private Double dailyHours;
     private Double requiredSeconds;
     private Double requiredHours;
+    private Double requiredPeople;
     private Boolean sharedMoldAdjusted;
     private Boolean sharedMoldSuppressed;
     private String sharedMoldGroupKey;

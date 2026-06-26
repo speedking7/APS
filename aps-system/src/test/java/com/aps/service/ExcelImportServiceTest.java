@@ -11,6 +11,7 @@ import com.aps.repository.InventoryCountRepository;
 import com.aps.repository.OperatingDaysRepository;
 import com.aps.repository.SafetyStockRepository;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -71,7 +72,22 @@ class ExcelImportServiceTest {
     private byte[] buildWorkbookWithBomRow(
             String rootProductCode,
             String manufacturingDepartment,
-            String manufacturingUnit) throws Exception {
+            String manufacturingUnit,
+            String partAttribute) throws Exception {
+        return buildWorkbookWithBomRowInTemplateOrder(
+                rootProductCode,
+                manufacturingDepartment,
+                manufacturingUnit,
+                partAttribute,
+                "v1");
+    }
+
+    private byte[] buildWorkbookWithBomRowInTemplateOrder(
+            String rootProductCode,
+            String manufacturingDepartment,
+            String manufacturingUnit,
+            String partAttribute,
+            String version) throws Exception {
         Workbook wb = new XSSFWorkbook();
 
         Sheet demandSheet = wb.createSheet("完成品入库需求数");
@@ -85,7 +101,7 @@ class ExcelImportServiceTest {
         addRow(bomSheet, 2,
                 rootProductCode, "P001", "C001", 1.0, "STAMP", "EQ-01",
                 manufacturingDepartment, manufacturingUnit,
-                2, 30.0, 1.0, 15.0, 0.02, "v1");
+                2, 30.0, 1.0, 15.0, 0.02, partAttribute, version);
 
         Sheet inventorySheet = wb.createSheet("半成品期末盘点数");
         addRow(inventorySheet, 0);
@@ -130,7 +146,7 @@ class ExcelImportServiceTest {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
         ImportResult result = service.importFromExcel(
-                new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A")));
+                new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A", "采购件")));
 
         assertThat(result.getDemandCount()).isEqualTo(1);
         assertThat(result.getBomCount()).isEqualTo(1);
@@ -144,13 +160,27 @@ class ExcelImportServiceTest {
     void importFromExcel_savesRootProductCodeAndManufacturingFields() throws Exception {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A")));
+        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A", "采购件")));
 
         verify(bomRepository).saveAll(bomsCaptor.capture());
         Bom saved = bomsCaptor.getValue().get(0);
         assertThat(saved.getRootProductCode()).isEqualTo("P001");
         assertThat(saved.getManufacturingDepartment()).isEqualTo("制造一部");
         assertThat(saved.getManufacturingUnit()).isEqualTo("单元A");
+        assertThat(saved.getPartAttribute()).isEqualTo("采购件");
+    }
+
+    @Test
+    void importFromExcel_bomColumnsFollowTemplateOrderForPartAttributeAndVersion() throws Exception {
+        when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
+
+        service.importFromExcel(new ByteArrayInputStream(
+                buildWorkbookWithBomRowInTemplateOrder("P001", "制造一部", "单元A", "采购件", "v-template")));
+
+        verify(bomRepository).saveAll(bomsCaptor.capture());
+        Bom saved = bomsCaptor.getValue().get(0);
+        assertThat(saved.getPartAttribute()).isEqualTo("采购件");
+        assertThat(saved.getVersion()).isEqualTo("v-template");
     }
 
     @Test
@@ -158,7 +188,7 @@ class ExcelImportServiceTest {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
         ImportResult result = service.importFromExcel(
-                new ByteArrayInputStream(buildWorkbookWithBomRow(null, "制造一部", "单元A")));
+                new ByteArrayInputStream(buildWorkbookWithBomRow(null, "制造一部", "单元A", "采购件")));
 
         assertThat(result.getBomCount()).isEqualTo(0);
         assertThat(result.getErrors()).anyMatch(msg -> msg.contains("根完成品编码无效"));
@@ -170,7 +200,7 @@ class ExcelImportServiceTest {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
         ImportResult result = service.importFromExcel(
-                new ByteArrayInputStream(buildWorkbookWithBomRow("P001", null, "单元A")));
+                new ByteArrayInputStream(buildWorkbookWithBomRow("P001", null, "单元A", "采购件")));
 
         assertThat(result.getBomCount()).isEqualTo(0);
         assertThat(result.getErrors()).anyMatch(msg -> msg.contains("制造部门必填"));
@@ -182,7 +212,7 @@ class ExcelImportServiceTest {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
         ImportResult result = service.importFromExcel(
-                new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", null)));
+                new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", null, "采购件")));
 
         assertThat(result.getBomCount()).isEqualTo(0);
         assertThat(result.getErrors()).anyMatch(msg -> msg.contains("制造单元必填"));
@@ -193,7 +223,7 @@ class ExcelImportServiceTest {
     void importFromExcel_savesOtherSheetsUsingCurrentRepositories() throws Exception {
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.empty());
 
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A")));
+        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A", "采购件")));
 
         verify(demandRepository).saveAll(demandsCaptor.capture());
         verify(inventoryCountRepository).saveAll(inventoryCaptor.capture());
@@ -219,7 +249,7 @@ class ExcelImportServiceTest {
         OperatingDays existing = new OperatingDays(1L, 202601, 30.0, 20.0, 8.0, 2.0);
         when(operatingDaysRepository.findByYearMonth(202601)).thenReturn(Optional.of(existing));
 
-        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A")));
+        service.importFromExcel(new ByteArrayInputStream(buildWorkbookWithBomRow("P001", "制造一部", "单元A", "采购件")));
 
         assertThat(existing.getTotalDays()).isEqualTo(31.0);
         assertThat(existing.getWorkDays()).isEqualTo(22.0);
@@ -238,6 +268,18 @@ class ExcelImportServiceTest {
                 assertThat(sheet).isNotNull();
                 assertThat(sheet.getRow(0).getCell(0).getCellStyle().getAlignment())
                         .isEqualTo(HorizontalAlignment.CENTER);
+                assertThat(sheet.getMergedRegions()).anySatisfy(range -> {
+                    assertThat(range.formatAsString()).isEqualTo("A1:O1");
+                });
+                assertThat(sheet.getRow(1).getCell(12).getStringCellValue()).isEqualTo("报废率");
+                assertThat(sheet.getRow(1).getCell(13).getStringCellValue()).isEqualTo("子零件属性");
+                assertThat(sheet.getRow(1).getCell(14).getStringCellValue()).isEqualTo("版本号");
+                assertThat(sheet.getRow(1).getCell(12).getCellStyle().getFillForegroundColor())
+                        .isEqualTo(sheet.getRow(1).getCell(13).getCellStyle().getFillForegroundColor());
+                assertThat(sheet.getRow(1).getCell(12).getCellStyle().getFillPattern())
+                        .isEqualTo(sheet.getRow(1).getCell(13).getCellStyle().getFillPattern());
+                assertThat(sheet.getRow(1).getCell(12).getCellStyle().getFontIndexAsInt())
+                        .isEqualTo(sheet.getRow(1).getCell(13).getCellStyle().getFontIndexAsInt());
             }
         }
     }

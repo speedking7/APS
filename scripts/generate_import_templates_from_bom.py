@@ -28,6 +28,7 @@ class BomRow:
     staff_count: float | None
     takt_time: float | None
     scrap_rate: float | None
+    part_attribute: str | None
     version: str
 
 
@@ -53,6 +54,7 @@ def load_bom_rows_from_workbook(path: Path) -> list[dict[str, object]]:
                 "takt_time": to_float(row[10]),
                 "scrap_rate": to_float(row[11]),
                 "version": normalize_text(row[12]) or DEFAULT_VERSION,
+                "part_attribute": normalize_text(row[13]),
             }
         )
     return rows
