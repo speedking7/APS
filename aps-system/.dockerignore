@@ -1,0 +1,8 @@
+target/
+!target/aps-system-1.0.0.jar
+*.tar
+server*.log
+server*.err.log
+.local-run/
+.omc/
+docker-mysql-init/
